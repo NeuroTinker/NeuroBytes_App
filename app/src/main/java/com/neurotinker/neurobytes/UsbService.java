@@ -18,7 +18,7 @@ import com.felhr.usbserial.CDCSerialDevice;
 import com.felhr.usbserial.UsbSerialDevice;
 import com.felhr.usbserial.UsbSerialInterface;
 
-import java.io.UnsupportedEncodingException;
+import java.io.ByteArrayOutputStream;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
@@ -57,14 +57,21 @@ public class UsbService extends Service {
      *  be treated there.
      */
     private UsbSerialInterface.UsbReadCallback mCallback = new UsbSerialInterface.UsbReadCallback() {
+        ByteArrayOutputStream nidStream = new ByteArrayOutputStream();
+        int count = 0;
+
         @Override
         public void onReceivedData(byte[] arg0) {
+            nidStream.write(arg0, 0, arg0.length);
+            count += arg0.length;
             Log.d("Read length", Integer.toString(arg0.length));
-            if (arg0.length >= 4) {
-                byte[] sub = Arrays.copyOfRange(arg0, 2, 4);
+            if (count >= 4) {
+                byte[] sub = Arrays.copyOfRange(nidStream.toByteArray(), 2, 4);
                 //String data = new String(arg0, "UTF-8");
                 short data = ByteBuffer.wrap(sub).getShort();
                 Log.d("Read data", Short.toString(data));
+                nidStream.reset();
+                count = 0;
                 //Log.d("Read", String(data));
                 if (mHandler != null)
                     mHandler.obtainMessage(MESSAGE_FROM_SERIAL_PORT, data).sendToTarget();
@@ -217,7 +224,7 @@ public class UsbService extends Service {
     private class ConnectionThread extends Thread {
         @Override
         public void run() {
-            serialPort = UsbSerialDevice.createUsbSerialDevice(device, connection);
+            serialPort = UsbSerialDevice.createUsbSerialDevice(device, connection, 3);
             if (serialPort != null) {
                 if (serialPort.open()) {
                     serialPort.setBaudRate(BAUD_RATE);

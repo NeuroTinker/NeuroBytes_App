@@ -71,6 +71,9 @@ public class GraphController {
         yAxis.setAxisMaximum(12000);
         chart.setVisibleYRange(-12000, 12000, YAxis.AxisDependency.RIGHT);
 
+        // temp disable right axis
+        chart.getAxisRight().setDrawLabels(false);
+        chart.getAxisRight().setDrawAxisLine(false);
 
         LimitLine ll = new LimitLine(10000, "");
         ll.setLineColor(Color.RED);
@@ -80,10 +83,13 @@ public class GraphController {
         ll.enableDashedLine(10f,10f,0f);
         //yAxis.setDrawTopYLabelEntry(true);
 
-        yAxis.addLimitLine(ll);
+        //yAxis.addLimitLine(ll);
 
         chart.setScaleYEnabled(false);
         chart.setScaleEnabled(false);
+
+        chart.getLegend().setEnabled(false);
+        chart.getDescription().setEnabled(false);
 
         lineData = new LineData(dataSet);
 
@@ -111,7 +117,7 @@ public class GraphController {
 
             //chart.notifyDataSetChanged();
 
-            chart.setVisibleXRangeMaximum(120);
+            chart.setVisibleXRangeMaximum(240); // 120 at 20 hz
             //YAxis yAxis = chart.getAxisRight();
             chart.setVisibleYRange(-12000, 12000, YAxis.AxisDependency.RIGHT);
             chart.moveViewToX(data.getEntryCount());

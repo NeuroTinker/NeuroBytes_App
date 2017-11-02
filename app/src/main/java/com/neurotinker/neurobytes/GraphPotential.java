@@ -98,7 +98,7 @@ public class GraphPotential extends AppCompatActivity {
                 usbService.write(nidPing);
                 //usbService.write(blink);
             }
-            timerHandler.postDelayed(this, 500);
+            timerHandler.postDelayed(this, 200);
         }
     };
 
