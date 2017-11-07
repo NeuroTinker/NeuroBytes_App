@@ -70,11 +70,14 @@ public class UsbService extends Service {
                 //String data = new String(arg0, "UTF-8");
                 short data = ByteBuffer.wrap(sub).getShort();
                 Log.d("Read data", Short.toString(data));
+                sub = Arrays.copyOfRange(nidStream.toByteArray(), 0, 2);
+                short headers = ByteBuffer.wrap(sub).getShort();
                 nidStream.reset();
                 count = 0;
                 //Log.d("Read", String(data));
+                short [] packet = {headers, data};
                 if (mHandler != null)
-                    mHandler.obtainMessage(MESSAGE_FROM_SERIAL_PORT, data).sendToTarget();
+                    mHandler.obtainMessage(MESSAGE_FROM_SERIAL_PORT, packet).sendToTarget();
             } else {
                 Log.d("Read", "length mismatch");
             }

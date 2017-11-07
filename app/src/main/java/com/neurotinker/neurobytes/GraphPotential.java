@@ -6,6 +6,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.ServiceConnection;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
@@ -14,6 +15,7 @@ import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.util.Log;
 import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -62,9 +64,16 @@ public class GraphPotential extends AppCompatActivity {
         }
     };
 
-    private static final byte[] identifyMessage = new byte[] {
+    private static final byte[] identifyMessage1 = new byte[] {
             (byte) 0b11000000,
             (byte) 0b01001000,
+            0x0,
+            0x0
+    };
+
+    private static final byte[] identifyMessage2 = new byte[] {
+            (byte) 0b11000000,
+            (byte) 0b01000100,
             0x0,
             0x0
     };
@@ -113,16 +122,27 @@ public class GraphPotential extends AppCompatActivity {
 
         mHandler = new NidHandler(this);
 
-        FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
-        fab.setOnClickListener(new View.OnClickListener() {
+        final FloatingActionButton fab1 = (FloatingActionButton) findViewById(R.id.fab1);
+        fab1.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Snackbar.make(view, "Identify device", Snackbar.LENGTH_LONG)
+                Snackbar.make(view, "Identify device 1", Snackbar.LENGTH_LONG)
                         .setAction("Action", null).show();
-                usbService.write(identifyMessage);
-                //usbService.write("Hola!".getBytes());
+                usbService.write(identifyMessage1);
             }
         });
+
+        final FloatingActionButton fab2 = (FloatingActionButton) findViewById(R.id.fab2);
+        fab2.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Snackbar.make(view, "Identify device 2", Snackbar.LENGTH_LONG)
+                        .setAction("Action", null).show();
+                usbService.write(identifyMessage2);
+            }
+        });
+
+
 
             // Initialize Chart
 
@@ -215,9 +235,14 @@ public class GraphPotential extends AppCompatActivity {
         public void handleMessage(Message msg) {
             switch (msg.what) {
                 case UsbService.MESSAGE_FROM_SERIAL_PORT:
-                    short data = (short) msg.obj;
+                    short [] packet = (short []) msg.obj;
+                    short headers = packet[0];
+                    int channel = (headers & 0b0000111111000000) >> 6;
+                    Log.d("Read Channel", Short.toString(headers));
+                    short data = packet[1];
                     //mActivity.get().display.append(data);
-                    mActivity.get().graph1.update((int) data);
+                    //mActivity.get().graph1.update((int) data, channel);
+                    mActivity.get().graph1.update((int) data, 0);
                     break;
             }
         }
