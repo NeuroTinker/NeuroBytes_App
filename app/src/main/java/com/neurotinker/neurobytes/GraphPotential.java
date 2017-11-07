@@ -63,8 +63,8 @@ public class GraphPotential extends AppCompatActivity {
     };
 
     private static final byte[] identifyMessage = new byte[] {
-            (byte) 0b11001000,
-            (byte) 0b00100000,
+            (byte) 0b11000000,
+            (byte) 0b01001000,
             0x0,
             0x0
     };
@@ -92,8 +92,8 @@ public class GraphPotential extends AppCompatActivity {
 
         @Override
         public void run() {
-            byte[] nidPing = new byte[] {(byte)0b11101000, 0x0, 0x0, 0x0};
-            byte[] blink = new byte[] {(byte) 0b10011000, 0x0, 0x0, 0x0};
+            byte[] nidPing = new byte[] {(byte)0b11100000, 0x0, 0x0, 0x0};
+            byte[] blink = new byte[] {(byte) 0b10010000, 0x0, 0x0, 0x0};
             if (usbService != null) {
                 usbService.write(nidPing);
                 //usbService.write(blink);
