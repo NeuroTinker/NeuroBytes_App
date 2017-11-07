@@ -73,7 +73,7 @@ public class GraphPotential extends AppCompatActivity {
 
     private static final byte[] identifyMessage2 = new byte[] {
             (byte) 0b11000000,
-            (byte) 0b01000100,
+            (byte) 0b01010000,
             0x0,
             0x0
     };
@@ -112,6 +112,7 @@ public class GraphPotential extends AppCompatActivity {
     };
 
     GraphController graph1;
+    GraphController graph2;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -147,11 +148,17 @@ public class GraphPotential extends AppCompatActivity {
             // Initialize Chart
 
         LineChart chart1 = (LineChart) findViewById(R.id.chart1);
+        LineChart chart2 = findViewById(R.id.chart2);
 
         chart1.setDrawGridBackground(false);
 
         graph1 = new GraphController();
         graph1.PotentialGraph(chart1);
+
+        chart2.setDrawGridBackground(false);
+
+        graph2 = new GraphController();
+        graph2.PotentialGraph(chart2, Color.RED);
         // start sending nid pings
         timerHandler.postDelayed(pingRunnable, 500);
         //display.append("test"); // debug
@@ -226,11 +233,13 @@ public class GraphPotential extends AppCompatActivity {
      */
     private static class NidHandler extends Handler {
         private final WeakReference<GraphPotential> mActivity;
-
         public NidHandler(GraphPotential activity) {
             mActivity = new WeakReference<>(activity);
         }
-
+        private int update1 = 0;
+        private boolean update1Ready = false;
+        private int update2 = 0;
+        private boolean update2Ready = false;
         @Override
         public void handleMessage(Message msg) {
             switch (msg.what) {
@@ -238,11 +247,24 @@ public class GraphPotential extends AppCompatActivity {
                     short [] packet = (short []) msg.obj;
                     short headers = packet[0];
                     int channel = (headers & 0b0000111111000000) >> 6;
-                    Log.d("Read Channel", Short.toString(headers));
                     short data = packet[1];
-                    //mActivity.get().display.append(data);
-                    //mActivity.get().graph1.update((int) data, channel);
-                    mActivity.get().graph1.update((int) data, 0);
+                    if (headers == -22496){
+                        update1 = (int) data;
+                        update1Ready = true;
+                        Log.d("Update graph", "graph1");
+                    } else if (headers == -22464){
+                        update2 = (int) data;
+                        update2Ready = true;
+                        Log.d("Update graph", "graph2");
+                    }
+
+                    if (update2Ready && update1Ready){
+                        mActivity.get().graph1.update(update1);
+                        mActivity.get().graph2.update(update2);
+                        update1Ready = false;
+                        update2Ready = false;
+                    }
+                    Log.d("Read Channel", Short.toString(headers));
                     break;
             }
         }

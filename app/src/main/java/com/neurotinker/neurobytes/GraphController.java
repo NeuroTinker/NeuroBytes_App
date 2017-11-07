@@ -24,9 +24,10 @@ public class GraphController {
 
     LineChart chart; // = (LineChart) findViewById(R.id.chart);
     List<Entry> entries = new ArrayList<Entry>();
-    LineDataSet dataSet1;
+    LineDataSet dataSet;
     LineData lineData;
     int numPoints = 500;
+
 
     Handler timerHandler = new Handler();
     Runnable timerRunnable = new Runnable() {
@@ -39,7 +40,11 @@ public class GraphController {
         }
     };
 
-    public void PotentialGraph(LineChart ch) {
+    public void PotentialGraph(LineChart ch){
+        PotentialGraph(ch, Color.BLUE);
+    }
+
+    public void PotentialGraph(LineChart ch, int clr) {
         chart = ch;
 
         ch.setDrawGridBackground(false);
@@ -47,17 +52,17 @@ public class GraphController {
         ch.getAxisLeft().setDrawGridLines(false);
         ch.getAxisRight().setDrawGridLines(false);
 
-        dataSet1 = new LineDataSet(entries, "Label");
+        dataSet = new LineDataSet(entries, "Label");
         for (int i=0; i<numPoints; i++) {
-            dataSet1.addEntry(new Entry(dataSet1.getEntryCount(), 0));
+            dataSet.addEntry(new Entry(dataSet.getEntryCount(), 0));
         }
-        dataSet1.setColor(Color.BLUE);
-        dataSet1.setCircleRadius(1);
-        dataSet1.setCircleColor(Color.BLACK);
-        dataSet1.setValueTextColor(4);
-        dataSet1.setDrawValues(false);
-        dataSet1.setLineWidth(3);
-        dataSet1.setAxisDependency(YAxis.AxisDependency.RIGHT);
+        dataSet.setColor(clr);
+        dataSet.setCircleRadius(1);
+        dataSet.setCircleColor(Color.BLACK);
+        dataSet.setValueTextColor(4);
+        dataSet.setDrawValues(false);
+        dataSet.setLineWidth(3);
+        dataSet.setAxisDependency(YAxis.AxisDependency.RIGHT);
         //dataSet.setMode(LineDataSet.Mode.HORIZONTAL_BEZIER);
 
         chart.getXAxis().setDrawAxisLine(false);
@@ -90,7 +95,7 @@ public class GraphController {
         chart.getLegend().setEnabled(false);
         chart.getDescription().setEnabled(false);
 
-        lineData = new LineData(dataSet1);
+        lineData = new LineData(dataSet);
 
         chart.setData(lineData);
         chart.invalidate();
@@ -98,12 +103,12 @@ public class GraphController {
         timerHandler.postDelayed(timerRunnable, 0);
     }
 
-    public void update(int potential, int channel) {
+    public void update(int potential) {
 
         LineData data = chart.getData();
 
         if (data != null) {
-            ILineDataSet set = data.getDataSetByIndex(channel);
+            ILineDataSet set = data.getDataSetByIndex(0);
 
             if (set == null) {
                 set = createSet();
