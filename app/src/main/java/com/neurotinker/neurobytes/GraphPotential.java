@@ -249,21 +249,26 @@ public class GraphPotential extends AppCompatActivity {
                     int channel = (headers & 0b0000111111000000) >> 6;
                     short data = packet[1];
                     if (headers == -22496){
-                        update1 = (int) data;
-                        update1Ready = true;
+                        //update1 = (int) data;
+                        //update1Ready = true;
+                        mActivity.get().graph1.update(data);
+                        //mActivity.get().graph1.addPoint(data);
                         Log.d("Update graph", "graph1");
                     } else if (headers == -22464){
-                        update2 = (int) data;
-                        update2Ready = true;
+                       // update2 = (int) data;
+                       // update2Ready = true;
+                        mActivity.get().graph2.update(data);
+                        //mActivity.get().graph2.addPoint(data);
                         Log.d("Update graph", "graph2");
                     }
-
+                    /*
                     if (update2Ready && update1Ready){
-                        mActivity.get().graph1.update(update1);
-                        mActivity.get().graph2.update(update2);
+                        mActivity.get().graph1.addPoint(update1);
+                        mActivity.get().graph2.addPoint(update2);
                         update1Ready = false;
                         update2Ready = false;
                     }
+                    */
                     Log.d("Read Channel", Short.toString(headers));
                     break;
             }

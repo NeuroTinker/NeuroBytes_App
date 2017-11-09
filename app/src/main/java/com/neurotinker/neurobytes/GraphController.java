@@ -27,6 +27,7 @@ public class GraphController {
     LineDataSet dataSet;
     LineData lineData;
     int numPoints = 500;
+    private int nextPotential = 0;
 
 
     Handler timerHandler = new Handler();
@@ -35,8 +36,9 @@ public class GraphController {
 
         @Override
         public void run() {
-            //update(rand.nextInt(100) + 5);
-            timerHandler.postDelayed(this, 50);
+            //update(rand.nextInt(10000) + 5);
+            //update(nextPotential);
+            timerHandler.postDelayed(this, 10);
         }
     };
 
@@ -63,7 +65,7 @@ public class GraphController {
         dataSet.setDrawValues(false);
         dataSet.setLineWidth(3);
         dataSet.setAxisDependency(YAxis.AxisDependency.RIGHT);
-        //dataSet.setMode(LineDataSet.Mode.HORIZONTAL_BEZIER);
+        dataSet.setMode(LineDataSet.Mode.HORIZONTAL_BEZIER);
 
         chart.getXAxis().setDrawAxisLine(false);
         chart.getXAxis().setDrawLabels(false);
@@ -134,6 +136,11 @@ public class GraphController {
 
         }
     }
+
+    public void addPoint(int potential) {
+        nextPotential = potential;
+    }
+
     public int checkForEvent() {
         Random rand = new Random();
         int impulse = rand.nextInt(120);

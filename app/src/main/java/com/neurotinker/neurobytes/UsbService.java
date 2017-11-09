@@ -65,7 +65,7 @@ public class UsbService extends Service {
             nidStream.write(arg0, 0, arg0.length);
             count += arg0.length;
             Log.d("Read length", Integer.toString(arg0.length));
-            if (count >= 4) {
+            if (count >= 4 && count % 4 == 0) {
                 byte[] sub = Arrays.copyOfRange(nidStream.toByteArray(), 2, 4);
                 //String data = new String(arg0, "UTF-8");
                 short data = ByteBuffer.wrap(sub).getShort();
