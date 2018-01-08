@@ -36,8 +36,6 @@ public class GraphController {
 
         @Override
         public void run() {
-            //update(rand.nextInt(10000) + 5);
-            //update(nextPotential);
             timerHandler.postDelayed(this, 10);
         }
     };
@@ -121,8 +119,6 @@ public class GraphController {
 
             chart.notifyDataSetChanged();
 
-            //chart.notifyDataSetChanged();
-
             chart.setVisibleXRangeMaximum(240); // 120 at 20 hz
             //YAxis yAxis = chart.getAxisRight();
             chart.setVisibleYRange(-12000, 12000, YAxis.AxisDependency.RIGHT);
@@ -130,11 +126,26 @@ public class GraphController {
             //chart.moveViewTo(data.getEntryCount(), 0, YAxis.AxisDependency.RIGHT);
             chart.setVisibleYRange(-12000, 12000, YAxis.AxisDependency.RIGHT);
             chart.invalidate();
-            //yAxis.setAxisMinimum(-12000);
-            //yAxis.setAxisMaximum(12000);
-            //Log.d("Graph", "updates");
-
         }
+    }
+
+    public void clear() {
+        LineData data = chart.getData();
+        ILineDataSet set = data.getDataSetByIndex(0);
+
+        for (int i=0; i<240; i++){
+            data.addEntry(new Entry(set.getEntryCount(), 0), 0);
+        }
+
+        chart.notifyDataSetChanged();
+
+        chart.setVisibleXRangeMaximum(240); // 120 at 20 hz
+        //YAxis yAxis = chart.getAxisRight();
+        chart.setVisibleYRange(-12000, 12000, YAxis.AxisDependency.RIGHT);
+        chart.moveViewToX(data.getEntryCount());
+        //chart.moveViewTo(data.getEntryCount(), 0, YAxis.AxisDependency.RIGHT);
+        chart.setVisibleYRange(-12000, 12000, YAxis.AxisDependency.RIGHT);
+        chart.invalidate();
     }
 
     public void addPoint(int potential) {

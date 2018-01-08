@@ -30,6 +30,8 @@ import java.util.Set;
 
 public class GraphPotential extends AppCompatActivity {
 
+    private boolean pingRunning;
+
     private final BroadcastReceiver mUsbReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
@@ -58,7 +60,10 @@ public class GraphPotential extends AppCompatActivity {
                 case UsbService.ACTION_USB_READY:
                     Toast.makeText(context, "USB communication established", Toast.LENGTH_SHORT).show();
                     // start sending nid pings
-                    timerHandler.postDelayed(pingRunnable, 500);
+                    if (!pingRunning){
+                        timerHandler.postDelayed(pingRunnable, 500);
+                        pingRunning = true;
+                    }
                     break;
             }
         }
@@ -74,6 +79,19 @@ public class GraphPotential extends AppCompatActivity {
     private static final byte[] identifyMessage2 = new byte[] {
             (byte) 0b11000000,
             (byte) 0b01010000,
+            0x0,
+            0x0
+    };
+    private static final byte[] identifyMessage3 = new byte[] {
+            (byte) 0b11000000,
+            (byte) 0b01011000,
+            0x0,
+            0x0
+    };
+
+    private static final byte[] blinkMessage = new byte[] {
+            (byte) 0b10010000,
+            0x0,
             0x0,
             0x0
     };
@@ -93,6 +111,7 @@ public class GraphPotential extends AppCompatActivity {
         @Override
         public void onServiceDisconnected(ComponentName arg0) {
             usbService = null;
+            //pingRunning = false;
         }
     };
 
@@ -103,16 +122,60 @@ public class GraphPotential extends AppCompatActivity {
         public void run() {
             byte[] nidPing = new byte[] {(byte)0b11100000, 0x0, 0x0, 0x0};
             byte[] blink = new byte[] {(byte) 0b10010000, 0x0, 0x0, 0x0};
+            int chan1Rate;
+            int chan2Rate;
+            Log.d("chan1Cnt", Integer.toString(chan1Cnt));
+            if (chan1Cnt != 0){
+                chan1Rate = chan1Cnt * 2;
+                Log.d("channel 1 enabled", Boolean.toString(chan1En));
+                if (!chan1En) {
+                    chan1En = true;
+                    Log.d("channel 1 enabled", Boolean.toString(chan1En));
+                    if (usbService != null) {
+                        Log.d("Sent message:", "identify 2");
+                        usbService.write(identifyMessage2);
+                    }
+                }
+            } else {
+                chan1Rate = 0;
+                chan1En = false;
+            }
+            if (chan2Cnt != 0){
+                chan2Rate = chan2Cnt * 2;
+                if (chan2En != true) {
+                    chan2En = true;
+                    //Log.d("Sent message:", "identify 3");
+                    //usbService.write(identifyMessage3);
+                }
+            } else {
+                chan2Rate = 0;
+                chan2En = false;
+            }
             if (usbService != null) {
                 usbService.write(nidPing);
                 //usbService.write(blink);
             }
-            timerHandler.postDelayed(this, 200);
+            chan1Cnt = 0;
+            chan2Cnt = 0;
+            if (chan1En) Log.d("Channel 1 display rate", Integer.toString(chan1Rate));
+            if (chan2En) Log.d("Channel 2 display rate", Integer.toString(chan2Rate));
+            if (usbService != null){
+                timerHandler.postDelayed(this, 200);
+            } else {
+                pingRunning = false;
+            }
+
         }
     };
 
     GraphController graph1;
     GraphController graph2;
+
+    private int chan1Cnt;
+    private int chan2Cnt;
+
+    private boolean chan1En;
+    private boolean chan2En;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -127,9 +190,26 @@ public class GraphPotential extends AppCompatActivity {
         fab1.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Snackbar.make(view, "Identify device 1", Snackbar.LENGTH_LONG)
-                        .setAction("Action", null).show();
-                usbService.write(identifyMessage1);
+                Log.d("channel 1 enabled", Boolean.toString(chan1En));
+                if (chan2En) {
+                    usbService.write(identifyMessage2);
+                    graph2.clear();
+                    Log.d("Sent message:", "identify 2");
+                    Snackbar.make(view, "Channel 2 reset", Snackbar.LENGTH_LONG)
+                            .setAction("Action", null).show();
+                } else if (chan1En){
+                    graph1.clear();
+                    usbService.write(identifyMessage1);
+                    Log.d("Sent message:", "identify 1");
+                    Snackbar.make(view, "Channel 1 reset", Snackbar.LENGTH_LONG)
+                            .setAction("Action", null).show();
+                } else {
+                    usbService.write(identifyMessage1);
+                    Log.d("Sent message:", "identify 1");
+                    Snackbar.make(view, "All channels clear", Snackbar.LENGTH_LONG)
+                            .setAction("Action", null).show();
+                }
+
             }
         });
 
@@ -137,9 +217,9 @@ public class GraphPotential extends AppCompatActivity {
         fab2.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Snackbar.make(view, "Identify device 2", Snackbar.LENGTH_LONG)
+                Snackbar.make(view, "Blink message sent", Snackbar.LENGTH_LONG)
                         .setAction("Action", null).show();
-                usbService.write(identifyMessage2);
+                usbService.write(blinkMessage);
             }
         });
 
@@ -160,7 +240,7 @@ public class GraphPotential extends AppCompatActivity {
         graph2 = new GraphController();
         graph2.PotentialGraph(chart2, Color.RED);
         // start sending nid pings
-        timerHandler.postDelayed(pingRunnable, 500);
+        //timerHandler.postDelayed(pingRunnable, 500);
         //display.append("test"); // debug
     }
 
@@ -248,13 +328,15 @@ public class GraphPotential extends AppCompatActivity {
                     short headers = packet[0];
                     int channel = (headers & 0b0000111111000000) >> 6;
                     short data = packet[1];
-                    if (headers == -22496){
+                    if (headers == -24544){
+                        mActivity.get().chan1Cnt += 1;
                         //update1 = (int) data;
                         //update1Ready = true;
                         mActivity.get().graph1.update(data);
                         //mActivity.get().graph1.addPoint(data);
                         Log.d("Update graph", "graph1");
-                    } else if (headers == -22464){
+                    } else if (headers == -24512){
+                        mActivity.get().chan2Cnt += 1;
                        // update2 = (int) data;
                        // update2Ready = true;
                         mActivity.get().graph2.update(data);
@@ -269,7 +351,7 @@ public class GraphPotential extends AppCompatActivity {
                         update2Ready = false;
                     }
                     */
-                    Log.d("Read Channel", Short.toString(headers));
+                    //Log.d("Read Channel", Short.toString(headers));
                     break;
             }
         }

@@ -131,10 +131,6 @@ public class UsbService extends Service {
         findSerialPortDevice();
     }
 
-    /* MUST READ about services
-     * http://developer.android.com/guide/components/services.html
-     * http://developer.android.com/guide/components/bound-services.html
-     */
     @Override
     public IBinder onBind(Intent intent) {
         return binder;
