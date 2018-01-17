@@ -30,7 +30,7 @@ import java.util.Set;
 
 public class GraphPotential extends AppCompatActivity {
 
-    private boolean pingRunning;
+    private boolean pingRunning = false;
 
     private final BroadcastReceiver mUsbReceiver = new BroadcastReceiver() {
         @Override
@@ -47,6 +47,8 @@ public class GraphPotential extends AppCompatActivity {
                     break;
                 case UsbService.ACTION_USB_DISCONNECTED: // USB DISCONNECTED
                     Toast.makeText(context, "USB disconnected", Toast.LENGTH_SHORT).show();
+                    pingRunning = false;
+                    //usbService = null;
                     break;
                 case UsbService.ACTION_USB_NOT_SUPPORTED: // USB NOT SUPPORTED
                     Toast.makeText(context, "USB device not supported", Toast.LENGTH_SHORT).show();
@@ -61,7 +63,7 @@ public class GraphPotential extends AppCompatActivity {
                     Toast.makeText(context, "USB communication established", Toast.LENGTH_SHORT).show();
                     // start sending nid pings
                     if (!pingRunning){
-                        timerHandler.postDelayed(pingRunnable, 500);
+                        timerHandler.postDelayed(pingRunnable, 200);
                         pingRunning = true;
                     }
                     break;
@@ -106,12 +108,13 @@ public class GraphPotential extends AppCompatActivity {
         public void onServiceConnected(ComponentName arg0, IBinder arg1) {
             usbService = ((UsbService.UsbBinder) arg1).getService();
             usbService.setHandler(mHandler);
+            pingRunning = true;
         }
 
         @Override
         public void onServiceDisconnected(ComponentName arg0) {
             usbService = null;
-            //pingRunning = false;
+            pingRunning = false;
         }
     };
 
