@@ -59,27 +59,34 @@ public class UsbService extends Service {
     private UsbSerialInterface.UsbReadCallback mCallback = new UsbSerialInterface.UsbReadCallback() {
         ByteArrayOutputStream nidStream = new ByteArrayOutputStream();
         int count = 0;
+        int offset = 0;
+        short[] allowedHeaders = {-24544, -24512};
 
         @Override
         public void onReceivedData(byte[] arg0) {
             nidStream.write(arg0, 0, arg0.length);
             count += arg0.length;
-            Log.d("Read length", Integer.toString(arg0.length));
-            if (count >= 4 && count % 4 == 0) {
-                byte[] sub = Arrays.copyOfRange(nidStream.toByteArray(), 2, 4);
+            //Log.d("Read length", Integer.toString(arg0.length));
+            if (count >= (offset + 4) && (count - offset) % 4 == 0) {
+                byte[] sub = Arrays.copyOfRange(nidStream.toByteArray(), offset + 2, offset + 4);
                 //String data = new String(arg0, "UTF-8");
                 short data = ByteBuffer.wrap(sub).getShort();
-                Log.d("Read data", Short.toString(data));
-                sub = Arrays.copyOfRange(nidStream.toByteArray(), 0, 2);
+                //Log.d("Read data", Short.toString(data));
+                sub = Arrays.copyOfRange(nidStream.toByteArray(), offset + 0, offset + 2);
                 short headers = ByteBuffer.wrap(sub).getShort();
+                //Log.d("Read header", Short.toString(headers));
                 nidStream.reset();
                 count = 0;
-                //Log.d("Read", String(data));
-                short [] packet = {headers, data};
+                short[] packet = {headers, data};
                 if (mHandler != null)
                     mHandler.obtainMessage(MESSAGE_FROM_SERIAL_PORT, packet).sendToTarget();
-            } else {
-                Log.d("Read", "length mismatch");
+                if (headers != -24544 && headers != -24512) {
+                    offset += 1;
+                    //offset = 0;
+                    Log.d("Correcting USB stream...", Integer.toString(offset));
+                } else {
+                    offset = 0;
+                }
             }
         }
     };

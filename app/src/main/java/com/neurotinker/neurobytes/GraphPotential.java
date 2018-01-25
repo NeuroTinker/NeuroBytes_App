@@ -30,14 +30,14 @@ import java.util.Set;
 
 public class GraphPotential extends AppCompatActivity {
 
-    private boolean pingRunning = false;
+    private boolean pingRunning;
 
     private final BroadcastReceiver mUsbReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
             switch (intent.getAction()) {
                 case UsbService.ACTION_USB_PERMISSION_GRANTED: // USB PERMISSION GRANTED
-                    Toast.makeText(context, "USB Ready", Toast.LENGTH_SHORT).show();
+                   // Toast.makeText(context, "USB Ready", Toast.LENGTH_SHORT).show();
                     break;
                 case UsbService.ACTION_USB_PERMISSION_NOT_GRANTED: // USB PERMISSION NOT GRANTED
                     Toast.makeText(context, "USB Permission not granted", Toast.LENGTH_SHORT).show();
@@ -47,8 +47,6 @@ public class GraphPotential extends AppCompatActivity {
                     break;
                 case UsbService.ACTION_USB_DISCONNECTED: // USB DISCONNECTED
                     Toast.makeText(context, "USB disconnected", Toast.LENGTH_SHORT).show();
-                    pingRunning = false;
-                    //usbService = null;
                     break;
                 case UsbService.ACTION_USB_NOT_SUPPORTED: // USB NOT SUPPORTED
                     Toast.makeText(context, "USB device not supported", Toast.LENGTH_SHORT).show();
@@ -63,7 +61,7 @@ public class GraphPotential extends AppCompatActivity {
                     Toast.makeText(context, "USB communication established", Toast.LENGTH_SHORT).show();
                     // start sending nid pings
                     if (!pingRunning){
-                        timerHandler.postDelayed(pingRunnable, 200);
+                        timerHandler.postDelayed(pingRunnable, 500);
                         pingRunning = true;
                     }
                     break;
@@ -108,7 +106,6 @@ public class GraphPotential extends AppCompatActivity {
         public void onServiceConnected(ComponentName arg0, IBinder arg1) {
             usbService = ((UsbService.UsbBinder) arg1).getService();
             usbService.setHandler(mHandler);
-            pingRunning = true;
         }
 
         @Override
@@ -127,9 +124,9 @@ public class GraphPotential extends AppCompatActivity {
             byte[] blink = new byte[] {(byte) 0b10010000, 0x0, 0x0, 0x0};
             int chan1Rate;
             int chan2Rate;
-            Log.d("chan1Cnt", Integer.toString(chan1Cnt));
+            //Log.d("chan1Rate", Integer.toString(chan1Cnt));
             if (chan1Cnt != 0){
-                chan1Rate = chan1Cnt * 2;
+                chan1Rate = chan1Cnt * 10;
                 Log.d("channel 1 enabled", Boolean.toString(chan1En));
                 if (!chan1En) {
                     chan1En = true;
@@ -144,7 +141,7 @@ public class GraphPotential extends AppCompatActivity {
                 chan1En = false;
             }
             if (chan2Cnt != 0){
-                chan2Rate = chan2Cnt * 2;
+                chan2Rate = chan2Cnt * 10;
                 if (chan2En != true) {
                     chan2En = true;
                     //Log.d("Sent message:", "identify 3");
@@ -156,6 +153,7 @@ public class GraphPotential extends AppCompatActivity {
             }
             if (usbService != null) {
                 usbService.write(nidPing);
+                Log.d("Sent message", "NID ping");
                 //usbService.write(blink);
             }
             chan1Cnt = 0;
@@ -211,6 +209,7 @@ public class GraphPotential extends AppCompatActivity {
                     Log.d("Sent message:", "identify 1");
                     Snackbar.make(view, "All channels clear", Snackbar.LENGTH_LONG)
                             .setAction("Action", null).show();
+                    Log.d("Reset", "USB Communication");
                 }
 
             }
@@ -337,14 +336,21 @@ public class GraphPotential extends AppCompatActivity {
                         //update1Ready = true;
                         mActivity.get().graph1.update(data);
                         //mActivity.get().graph1.addPoint(data);
-                        Log.d("Update graph", "graph1");
+                        Log.d("Received data", "channel 1");
                     } else if (headers == -24512){
                         mActivity.get().chan2Cnt += 1;
                        // update2 = (int) data;
                        // update2Ready = true;
                         mActivity.get().graph2.update(data);
                         //mActivity.get().graph2.addPoint(data);
-                        Log.d("Update graph", "graph2");
+                        Log.d("Received data", "channel 2");
+                    } else {
+                        Log.d("Communication Error", "Packet not understood");
+                        Log.d("Malformed Request", Integer.toBinaryString(packet[0]));
+                        // invalid packet. this is usually because of tablet and NID going out of sync
+                        // so reset the USB connection
+                        //mActivity.get().onPause();
+                        //mActivity.get().onResume();
                     }
                     /*
                     if (update2Ready && update1Ready){
