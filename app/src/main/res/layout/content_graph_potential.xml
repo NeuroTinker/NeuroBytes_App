@@ -16,6 +16,13 @@
         app:layout_constraintLeft_toLeftOf="@id/chart1"
         app:layout_constraintTop_toTopOf="@id/chart1" />
 
+    <android.support.v7.widget.RecyclerView
+        android:id="@+id/recview"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@drawable/ic_launcher_background"
+        android:visibility="visible" />
+
     <com.github.mikephil.charting.charts.LineChart
         android:id="@+id/chart1"
         android:layout_width="0dp"

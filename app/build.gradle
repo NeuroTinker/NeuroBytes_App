@@ -32,4 +32,15 @@ dependencies {
     compile 'com.github.felHR85:UsbSerial:4.5.1'
     androidTestImplementation 'com.android.support.test:runner:1.0.1'
     androidTestImplementation 'com.android.support.test.espresso:espresso-core:3.0.1'
+    // fast adapter https://github.com/mikepenz/FastAdapter
+    implementation 'com.mikepenz:fastadapter:3.2.3@aar'
+    implementation  'com.android.support:appcompat-v7:${latestSupportLib}'
+    implementation  'com.android.support:recyclerview-v7:${latestSupportLib}'
+    // FastItemAdapter
+    implementation 'com.mikepenz:fastadapter-commons:3.2.3@aar'
+    implementation 'com.mikepenz:fastadapter-extensions-expandable:3.2.3@aar'
+    compile 'com.jakewharton:butterknife:8.8.1'
+    annotationProcessor 'com.jakewharton:butterknife-compiler:8.8.1'
+    implementation "com.mikepenz:materialize:1.1.2@aar"
+    implementation 'com.android.support:appcompat-v7:${supportLibVersion}'
 }

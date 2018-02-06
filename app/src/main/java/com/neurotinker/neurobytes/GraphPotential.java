@@ -14,6 +14,8 @@ import android.os.Message;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.View;
@@ -24,8 +26,12 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.github.mikephil.charting.charts.LineChart;
+import com.mikepenz.fastadapter.FastAdapter;
+import com.mikepenz.fastadapter.adapters.ItemAdapter;
 
 import java.lang.ref.WeakReference;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 
 public class GraphPotential extends AppCompatActivity {
@@ -178,12 +184,33 @@ public class GraphPotential extends AppCompatActivity {
     private boolean chan1En;
     private boolean chan2En;
 
+    //private ItemAdapter itemAdapter = new ItemAdapter();
+    //private FastAdapter fastAdapter = FastAdapter.with(itemAdapter);
+    private RecyclerView recyclerView;
+
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_graph_potential);
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
+
+        ItemAdapter itemAdapter = new ItemAdapter();
+        FastAdapter fastAdapter = FastAdapter.with(itemAdapter);
+
+        recyclerView = (RecyclerView) this.findViewById(R.id.recview);
+        recyclerView.setLayoutManager(new LinearLayoutManager(this));
+        recyclerView.setAdapter(fastAdapter);
+
+        List<GraphItem> graphItems = new ArrayList<GraphItem>();
+        for (int i=0; i<20; i++) {
+            GraphItem item = new GraphItem("item number" + i);
+            graphItems.add(item);
+        }
+        itemAdapter.add(graphItems);
+        fastAdapter.notifyDataSetChanged();
+        fastAdapter.notifyAdapterDataSetChanged();
 
         mHandler = new NidHandler(this);
 
@@ -211,7 +238,6 @@ public class GraphPotential extends AppCompatActivity {
                             .setAction("Action", null).show();
                     Log.d("Reset", "USB Communication");
                 }
-
             }
         });
 
@@ -225,9 +251,7 @@ public class GraphPotential extends AppCompatActivity {
             }
         });
 
-
-
-            // Initialize Chart
+        // Initialize Chart
 
         LineChart chart1 = (LineChart) findViewById(R.id.chart1);
         LineChart chart2 = findViewById(R.id.chart2);
