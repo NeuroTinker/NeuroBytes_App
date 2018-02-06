@@ -25,6 +25,10 @@
         app:layout_anchor="@+id/fab"
         app:layout_anchorGravity="left|top" />
 
+    <GridView
+        android:id="@+id/grid_view"
+        android:layout_width="wrap_content" />
+
     <android.support.design.widget.FloatingActionButton
         android:id="@+id/fab1"
         android:layout_width="68dp"
