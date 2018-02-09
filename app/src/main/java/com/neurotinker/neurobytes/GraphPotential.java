@@ -11,12 +11,16 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
+import android.support.v7.widget.helper.ItemTouchHelper;
 import android.util.Log;
 import android.view.View;
 import android.view.Menu;
@@ -28,9 +32,15 @@ import android.widget.Toast;
 import com.github.mikephil.charting.charts.LineChart;
 import com.mikepenz.fastadapter.FastAdapter;
 import com.mikepenz.fastadapter.adapters.ItemAdapter;
+import com.mikepenz.fastadapter.expandable.ExpandableExtension;
+import com.mikepenz.fastadapter.listeners.CustomEventHook;
+import com.mikepenz.fastadapter.listeners.EventHook;
+import com.mikepenz.fastadapter_extensions.drag.ItemTouchCallback;
+import com.mikepenz.fastadapter_extensions.drag.SimpleDragCallback;
 
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
@@ -88,6 +98,7 @@ public class GraphPotential extends AppCompatActivity {
             0x0,
             0x0
     };
+
     private static final byte[] identifyMessage3 = new byte[] {
             (byte) 0b11000000,
             (byte) 0b01011000,
@@ -102,10 +113,22 @@ public class GraphPotential extends AppCompatActivity {
             0x0
     };
 
+    private byte[] makeIdentifyMessage(int ch) {
+        //byte b = (byte) ch;
+        byte chByte = (byte) ch;
+        return new byte[] {
+                (byte) 0b11000000,
+                (byte) (0b01000000 | (byte) ((byte)(chByte & 0b111) << 3)),
+                0x0,
+                0x0
+
+        };
+    }
+
     private UsbService usbService;
     private TextView display;
     private EditText editText;
-    private NidHandler mHandler;
+    public NidHandler mHandler;
 
     private final ServiceConnection usbConnection = new ServiceConnection() {
         @Override
@@ -178,16 +201,35 @@ public class GraphPotential extends AppCompatActivity {
     GraphController graph1;
     GraphController graph2;
 
+    private int chCnt = 0;
+
     private int chan1Cnt;
     private int chan2Cnt;
 
     private boolean chan1En;
     private boolean chan2En;
 
-    //private ItemAdapter itemAdapter = new ItemAdapter();
-    //private FastAdapter fastAdapter = FastAdapter.with(itemAdapter);
-    private RecyclerView recyclerView;
+    private List<GraphController> graphChannels = new ArrayList<GraphController>();
 
+    private ItemAdapter itemAdapter = new ItemAdapter();
+    private FastAdapter fastAdapter = FastAdapter.with(itemAdapter);
+    private RecyclerView recyclerView;
+    private ExpandableExtension expandableExtension;
+
+    private SimpleDragCallback dragCallback;
+    private ItemTouchCallback itemTouchCallback = new ItemTouchCallback() {
+        @Override
+        public boolean itemTouchOnMove(int oldPosition, int newPosition) {
+            Collections.swap(itemAdapter.getAdapterItems(), oldPosition, newPosition); // change position
+            fastAdapter.notifyAdapterItemMoved(oldPosition, newPosition);
+            return true;
+        }
+
+        @Override
+        public void itemTouchDropped(int oldPosition, int newPosition) {
+
+        }
+    };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -196,21 +238,46 @@ public class GraphPotential extends AppCompatActivity {
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
-        ItemAdapter itemAdapter = new ItemAdapter();
-        FastAdapter fastAdapter = FastAdapter.with(itemAdapter);
+        expandableExtension = new ExpandableExtension<>();
+        fastAdapter.addExtension(expandableExtension);
+        fastAdapter.withSelectable(true);
+        //recyclerView.setItemAnimator(new SlideDownAlphaAnimator());
+
+        //ItemAdapter itemAdapter = new ItemAdapter();
+        //FastAdapter fastAdapter = FastAdapter.with(itemAdapter);
+
+        fastAdapter.withEventHook(new EventHook() {
+            @Nullable
+            @Override
+            public View onBind(@NonNull RecyclerView.ViewHolder viewHolder) {
+                // bind to all graph_item views
+                if (viewHolder instanceof GraphItem.ViewHolder) {
+                    return ((FastAdapter.ViewHolder<GraphItem>) viewHolder).itemView;
+                }
+                return null;
+            }
+
+            @Nullable
+            @Override
+            public List<? extends View> onBindMany(RecyclerView.ViewHolder viewHolder) {
+                return null;
+            }
+        });
+
+        fastAdapter.withEventHook(new CustomEventHook() {
+            @Override
+            public void attachEvent(View view, RecyclerView.ViewHolder viewHolder) {
+
+            }
+        });
 
         recyclerView = (RecyclerView) this.findViewById(R.id.recview);
-        recyclerView.setLayoutManager(new LinearLayoutManager(this));
+        recyclerView.setLayoutManager(new GridLayoutManager(this, 2));
         recyclerView.setAdapter(fastAdapter);
 
-        List<GraphItem> graphItems = new ArrayList<GraphItem>();
-        for (int i=0; i<20; i++) {
-            GraphItem item = new GraphItem("item number" + i);
-            graphItems.add(item);
-        }
-        itemAdapter.add(graphItems);
-        fastAdapter.notifyDataSetChanged();
-        fastAdapter.notifyAdapterDataSetChanged();
+        dragCallback = new SimpleDragCallback();
+        ItemTouchHelper touchHelper = new ItemTouchHelper(dragCallback);
+        touchHelper.attachToRecyclerView(recyclerView);
 
         mHandler = new NidHandler(this);
 
@@ -218,6 +285,18 @@ public class GraphPotential extends AppCompatActivity {
         fab1.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+                // add a new graphing channel
+                GraphItem newItem = new GraphItem(++chCnt);
+                List<GraphSubItem> subList = new ArrayList<>();
+                GraphSubItem subItem = new GraphSubItem();
+                subList.add(subItem);
+                newItem.withSubItems(subList);
+                itemAdapter.add(newItem);
+                // keep reference to channel for USB comms
+                graphChannels.add(newItem.graphController);
+                //usbService.write(makeIdentifyMessage(chCnt));
+                //usbService.write(identifyMessage1);
+                /*
                 Log.d("channel 1 enabled", Boolean.toString(chan1En));
                 if (chan2En) {
                     usbService.write(identifyMessage2);
@@ -238,6 +317,7 @@ public class GraphPotential extends AppCompatActivity {
                             .setAction("Action", null).show();
                     Log.d("Reset", "USB Communication");
                 }
+                */
             }
         });
 
@@ -250,24 +330,14 @@ public class GraphPotential extends AppCompatActivity {
                 usbService.write(blinkMessage);
             }
         });
+    }
 
-        // Initialize Chart
-
-        LineChart chart1 = (LineChart) findViewById(R.id.chart1);
-        LineChart chart2 = findViewById(R.id.chart2);
-
-        chart1.setDrawGridBackground(false);
-
-        graph1 = new GraphController();
-        graph1.PotentialGraph(chart1);
-
-        chart2.setDrawGridBackground(false);
-
-        graph2 = new GraphController();
-        graph2.PotentialGraph(chart2, Color.RED);
-        // start sending nid pings
-        //timerHandler.postDelayed(pingRunnable, 500);
-        //display.append("test"); // debug
+    public void addChannel(int ch) {
+        // add a new graphing channel
+        GraphItem newItem = new GraphItem(ch);
+        itemAdapter.add(newItem);
+        // keep reference to channel for USB comms
+        //graphChannels.add(newItem.graphController);
     }
 
     @Override
@@ -349,6 +419,10 @@ public class GraphPotential extends AppCompatActivity {
         private boolean update1Ready = false;
         private int update2 = 0;
         private boolean update2Ready = false;
+
+        private final short ch1Header = -24544;
+        private final short ch2Header = -24512;
+
         @Override
         public void handleMessage(Message msg) {
             switch (msg.what) {
@@ -357,37 +431,18 @@ public class GraphPotential extends AppCompatActivity {
                     short headers = packet[0];
                     int channel = (headers & 0b0000111111000000) >> 6;
                     short data = packet[1];
-                    if (headers == -24544){
+                    Log.d("Handling message", Integer.toBinaryString(packet[0]));
+                    if (headers == ch1Header || channel == 1) {
+                        if (mActivity.get().graphChannels.size() >= 1)
+                            mActivity.get().graphChannels.get(0).update(data);
                         mActivity.get().chan1Cnt += 1;
-                        //update1 = (int) data;
-                        //update1Ready = true;
-                        mActivity.get().graph1.update(data);
-                        //mActivity.get().graph1.addPoint(data);
-                        Log.d("Received data", "channel 1");
-                    } else if (headers == -24512){
+                        //mActivity.get().graph1.update(data);
+                    } else if (headers == ch2Header) {
                         mActivity.get().chan2Cnt += 1;
-                       // update2 = (int) data;
-                       // update2Ready = true;
                         mActivity.get().graph2.update(data);
-                        //mActivity.get().graph2.addPoint(data);
-                        Log.d("Received data", "channel 2");
                     } else {
-                        Log.d("Communication Error", "Packet not understood");
-                        Log.d("Malformed Request", Integer.toBinaryString(packet[0]));
-                        // invalid packet. this is usually because of tablet and NID going out of sync
-                        // so reset the USB connection
-                        //mActivity.get().onPause();
-                        //mActivity.get().onResume();
+                        Log.d("Unrecognized Request", Integer.toBinaryString(packet[0]));
                     }
-                    /*
-                    if (update2Ready && update1Ready){
-                        mActivity.get().graph1.addPoint(update1);
-                        mActivity.get().graph2.addPoint(update2);
-                        update1Ready = false;
-                        update2Ready = false;
-                    }
-                    */
-                    //Log.d("Read Channel", Short.toString(headers));
                     break;
             }
         }

@@ -6,7 +6,9 @@ import android.support.v7.widget.RecyclerView;
 import android.view.View;
 import android.widget.TextView;
 
+import com.github.mikephil.charting.charts.LineChart;
 import com.mikepenz.fastadapter.FastAdapter;
+import com.mikepenz.fastadapter.expandable.items.AbstractExpandableItem;
 import com.mikepenz.fastadapter.items.AbstractItem;
 import com.mikepenz.materialize.holder.StringHolder;
 
@@ -19,12 +21,16 @@ import butterknife.ButterKnife;
  * Created by jarod on 2/6/18.
  */
 
-public class GraphItem extends AbstractItem<GraphItem, GraphItem.ViewHolder>{
+// AbstractItem<GraphItem, GraphItem.ViewHolder>
+public class GraphItem extends AbstractExpandableItem<GraphItem, GraphItem.ViewHolder, GraphSubItem>{
     public String name;
-    //public GraphController graphController;
+    public int channel;
+    public GraphController graphController;
 
-    public GraphItem(String name) {
-        this.name = name;
+    public GraphItem(int ch) {
+        this.channel = ch;
+        this.name = "Channel " + ch;
+        this.graphController = new GraphController();
     }
 
     @Override
@@ -46,6 +52,9 @@ public class GraphItem extends AbstractItem<GraphItem, GraphItem.ViewHolder>{
         @BindView(R.id.name)
         TextView name;
 
+        @BindView(R.id.chart)
+        LineChart chart;
+
         public ViewHolder(View view) {
             super(view);
             ButterKnife.bind(this, view);
@@ -54,6 +63,10 @@ public class GraphItem extends AbstractItem<GraphItem, GraphItem.ViewHolder>{
         @Override
         public void bindView(GraphItem item, List<Object> payloads) {
             name.setText(item.name);
+
+            // initialize chart
+            chart.setDrawGridBackground(false);
+            item.graphController.PotentialGraph(chart);
         }
 
         @Override
