@@ -1,21 +1,26 @@
 package com.neurotinker.neurobytes;
 
 
+import android.graphics.Color;
+import android.graphics.drawable.ShapeDrawable;
+import android.graphics.drawable.shapes.Shape;
 import android.support.annotation.NonNull;
-import android.support.v7.widget.RecyclerView;
 import android.view.View;
+import android.view.animation.AccelerateDecelerateInterpolator;
+import android.view.animation.Animation;
+import android.view.animation.TranslateAnimation;
+import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.github.mikephil.charting.charts.LineChart;
 import com.mikepenz.fastadapter.FastAdapter;
 import com.mikepenz.fastadapter.expandable.items.AbstractExpandableItem;
-import com.mikepenz.fastadapter.items.AbstractItem;
-import com.mikepenz.materialize.holder.StringHolder;
 
 import java.util.List;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
+import io.saeid.fabloading.LoadingView;
 
 /**
  * Created by jarod on 2/6/18.
@@ -55,6 +60,12 @@ public class GraphItem extends AbstractExpandableItem<GraphItem, GraphItem.ViewH
         @BindView(R.id.chart)
         LineChart chart;
 
+        @BindView(R.id.loading_view)
+        LoadingView loadingView;
+
+        @BindView(R.id.shine)
+        ImageView shine;
+
         public ViewHolder(View view) {
             super(view);
             ButterKnife.bind(this, view);
@@ -67,6 +78,20 @@ public class GraphItem extends AbstractExpandableItem<GraphItem, GraphItem.ViewH
             // initialize chart
             chart.setDrawGridBackground(false);
             item.graphController.PotentialGraph(chart);
+
+            // start loading animation
+            loadingView.addAnimation(Color.BLUE, R.drawable.photoreceptor_square, LoadingView.FROM_BOTTOM);
+            loadingView.addAnimation(Color.RED, R.drawable.tonic_square, LoadingView.FROM_RIGHT);
+            loadingView.addAnimation(Color.CYAN, R.drawable.touch_square, LoadingView.FROM_TOP);
+            loadingView.addAnimation(Color.MAGENTA, R.drawable.interneuron_square, LoadingView.FROM_LEFT);
+            loadingView.startAnimation();
+
+            // test shine animation
+            Animation animation = new TranslateAnimation(0, 250,100, 0);
+            animation.setDuration(500);
+            animation.setFillAfter(false);
+            animation.setInterpolator(new AccelerateDecelerateInterpolator());
+            shine.startAnimation(animation);
         }
 
         @Override
