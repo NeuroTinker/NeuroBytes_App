@@ -29,8 +29,9 @@
         android:id="@+id/fab1"
         android:layout_width="68dp"
         android:layout_height="67dp"
-        android:layout_gravity="bottom|end"
+        android:layout_gravity="top|end"
         android:layout_margin="@dimen/fab_margin"
+        android:backgroundTint="@color/cardview_shadow_start_color"
         app:srcCompat="@drawable/plus"
         tools:layout_editor_absoluteX="300dp"
         tools:layout_editor_absoluteY="484dp" />
@@ -39,11 +40,26 @@
         android:id="@+id/fab2"
         android:layout_width="68dp"
         android:layout_height="67dp"
-        android:layout_gravity="bottom|start"
+        android:layout_gravity="top|start"
         android:layout_margin="@dimen/fab_margin"
         app:srcCompat="@drawable/blink"
         tools:layout_editor_absoluteX="300dp"
         tools:layout_editor_absoluteY="484dp" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="60dp"
+        android:layout_gravity="bottom"
+        android:orientation="horizontal"
+        android:background="@drawable/chan1rect">
+
+        <ImageView
+            android:id="@+id/pauseplay_id"
+            android:layout_width="50dp"
+            android:layout_height="50dp"
+            android:layout_gravity="center_horizontal"
+            app:srcCompat="@android:drawable/ic_media_play" />
+    </LinearLayout>
 
 
 </android.support.design.widget.CoordinatorLayout>

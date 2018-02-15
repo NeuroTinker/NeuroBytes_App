@@ -84,7 +84,7 @@ public class UsbService extends Service {
                 if (headers != -24544 && headers != -24512 && channel != 0 && channel < 8) {
                     offset += 1;
                     //offset = 0;
-                    Log.d("Correcting USB stream...", Integer.toString(offset));
+                    Log.d("Correcting USB stream", Integer.toString(offset));
                 } else {
                     offset = 0;
                 }

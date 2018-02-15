@@ -88,6 +88,19 @@ public class GraphPotential extends AppCompatActivity {
         }
     };
 
+    public static final String ACTION_CHANNEL_ACQUIRED = "com.neurotinker.neurobytes.ACTION_CHANNEL_ACQUIRED";
+
+    private final BroadcastReceiver uiReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            switch (intent.getAction()) {
+                case ACTION_CHANNEL_ACQUIRED:
+                    //TODO: add channel acquisition logic
+                    break;
+            }
+        }
+    };
+
     private static final byte[] identifyMessage1 = new byte[] {
             (byte) 0b11000000,
             (byte) 0b01001000,
@@ -283,29 +296,6 @@ public class GraphPotential extends AppCompatActivity {
                     graphChannels.add(newItem.graphController);
                     usbService.write(makeIdentifyMessage(chCnt));
                 }
-                //usbService.write(identifyMessage1);
-                /*
-                Log.d("channel 1 enabled", Boolean.toString(chan1En));
-                if (chan2En) {
-                    usbService.write(identifyMessage2);
-                    graph2.clear();
-                    Log.d("Sent message:", "identify 2");
-                    Snackbar.make(view, "Channel 2 reset", Snackbar.LENGTH_LONG)
-                            .setAction("Action", null).show();
-                } else if (chan1En){
-                    graph1.clear();
-                    usbService.write(identifyMessage1);
-                    Log.d("Sent message:", "identify 1");
-                    Snackbar.make(view, "Channel 1 reset", Snackbar.LENGTH_LONG)
-                            .setAction("Action", null).show();
-                } else {
-                    usbService.write(identifyMessage1);
-                    Log.d("Sent message:", "identify 1");
-                    Snackbar.make(view, "All channels clear", Snackbar.LENGTH_LONG)
-                            .setAction("Action", null).show();
-                    Log.d("Reset", "USB Communication");
-                }
-                */
             }
         });
 

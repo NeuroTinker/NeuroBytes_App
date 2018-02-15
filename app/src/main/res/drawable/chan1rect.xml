@@ -1,6 +1,6 @@
 <!-- res/drawable/chan1rect.xml -->
 <shape xmlns:android="http://schemas.android.com/apk/res/android"
     android:shape="rectangle">
-    <solid android:color="#AA3F51B5" />
+    <solid android:color="#ded364" />
     <corners android:radius="5dp" />
 </shape>
