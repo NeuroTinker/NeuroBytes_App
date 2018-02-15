@@ -16,10 +16,18 @@ import static org.junit.Assert.*;
  */
 @RunWith(AndroidJUnit4.class)
 public class ExampleInstrumentedTest {
+    private final short ch1Header = -24544;
+    private final short ch2Header = -24512;
+
     @Test
     public void useAppContext() throws Exception {
         // Context of the app under test.
         Context appContext = InstrumentationRegistry.getTargetContext();
+        short headers = ch1Header;
+        int channel = (headers & 0b0000000111100000) >> 5;
+        assertEquals(1, channel);
+        channel = (ch2Header & 0b0000000111100000) >> 5;
+        assertEquals(2, channel);
 
         assertEquals("com.neurotinker.neurobytes", appContext.getPackageName());
     }

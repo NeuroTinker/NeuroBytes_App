@@ -19,6 +19,8 @@ import com.github.mikephil.charting.data.LineDataSet;
 import com.github.mikephil.charting.interfaces.datasets.ILineDataSet;
 import com.github.mikephil.charting.utils.ColorTemplate;
 
+import static android.view.View.VISIBLE;
+
 
 public class GraphController {
 
@@ -28,6 +30,8 @@ public class GraphController {
     LineData lineData;
     int numPoints = 500;
     private int nextPotential = 0;
+    public int count = 0;
+    public boolean enabled = false;
 
 
     Handler timerHandler = new Handler();
@@ -127,6 +131,9 @@ public class GraphController {
             chart.setVisibleYRange(-12000, 12000, YAxis.AxisDependency.RIGHT);
             chart.invalidate();
         }
+
+        count += 1;
+        chart.setVisibility(VISIBLE);
     }
 
     public void clear() {

@@ -32,6 +32,10 @@ dependencies {
     compile 'com.github.felHR85:UsbSerial:4.5.1'
     androidTestImplementation 'com.android.support.test:runner:1.0.1'
     androidTestImplementation 'com.android.support.test.espresso:espresso-core:3.0.1'
+    //FAB loading thing
+    compile 'com.github.SaeedMasoumi:FAB-Loading:0.6.0'
+    // shining FAB thing
+    compile 'com.sackcentury:shinebutton:0.2.0'
     // fast adapter https://github.com/mikepenz/FastAdapter
     implementation 'com.mikepenz:fastadapter:3.2.3@aar'
     implementation  'com.android.support:appcompat-v7:${latestSupportLib}'

@@ -74,13 +74,14 @@ public class UsbService extends Service {
                 //Log.d("Read data", Short.toString(data));
                 sub = Arrays.copyOfRange(nidStream.toByteArray(), offset + 0, offset + 2);
                 short headers = ByteBuffer.wrap(sub).getShort();
+                int channel = (headers & 0b0000011111100000) >> 5;
                 //Log.d("Read header", Short.toString(headers));
                 nidStream.reset();
                 count = 0;
                 short[] packet = {headers, data};
                 if (mHandler != null)
                     mHandler.obtainMessage(MESSAGE_FROM_SERIAL_PORT, packet).sendToTarget();
-                if (headers != -24544 && headers != -24512) {
+                if (headers != -24544 && headers != -24512 && channel != 0 && channel < 8) {
                     offset += 1;
                     //offset = 0;
                     Log.d("Correcting USB stream...", Integer.toString(offset));

@@ -31,7 +31,7 @@
         android:layout_height="67dp"
         android:layout_gravity="bottom|end"
         android:layout_margin="@dimen/fab_margin"
-        app:srcCompat="@drawable/clear"
+        app:srcCompat="@drawable/plus"
         tools:layout_editor_absoluteX="300dp"
         tools:layout_editor_absoluteY="484dp" />
 

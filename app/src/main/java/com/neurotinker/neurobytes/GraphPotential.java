@@ -7,6 +7,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.graphics.Color;
+import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
@@ -43,6 +44,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
+
+import io.saeid.fabloading.LoadingView;
 
 public class GraphPotential extends AppCompatActivity {
 
@@ -151,44 +154,27 @@ public class GraphPotential extends AppCompatActivity {
         public void run() {
             byte[] nidPing = new byte[] {(byte)0b11100000, 0x0, 0x0, 0x0};
             byte[] blink = new byte[] {(byte) 0b10010000, 0x0, 0x0, 0x0};
-            int chan1Rate;
-            int chan2Rate;
-            //Log.d("chan1Rate", Integer.toString(chan1Cnt));
-            if (chan1Cnt != 0){
-                chan1Rate = chan1Cnt * 10;
-                Log.d("channel 1 enabled", Boolean.toString(chan1En));
-                if (!chan1En) {
-                    chan1En = true;
-                    Log.d("channel 1 enabled", Boolean.toString(chan1En));
-                    if (usbService != null) {
-                        Log.d("Sent message:", "identify 2");
-                        usbService.write(identifyMessage2);
+            int size = graphChannels.size();
+            for (int i = graphChannels.size()-1; i >= 0; i--) {
+                if (graphChannels.get(i).count != 0) {
+                    if (!graphChannels.get(i).enabled) {
+                        graphChannels.get(i).enabled = true;
+                        if (usbService!= null) {
+                            usbService.write(makeIdentifyMessage(i+2));
+                        }
+                        graphChannels.get(i).count = 0;
                     }
+                } else {
+                    graphChannels.get(i).enabled = false;
                 }
-            } else {
-                chan1Rate = 0;
-                chan1En = false;
             }
-            if (chan2Cnt != 0){
-                chan2Rate = chan2Cnt * 10;
-                if (chan2En != true) {
-                    chan2En = true;
-                    //Log.d("Sent message:", "identify 3");
-                    //usbService.write(identifyMessage3);
-                }
-            } else {
-                chan2Rate = 0;
-                chan2En = false;
-            }
+
             if (usbService != null) {
                 usbService.write(nidPing);
                 Log.d("Sent message", "NID ping");
                 //usbService.write(blink);
             }
-            chan1Cnt = 0;
-            chan2Cnt = 0;
-            if (chan1En) Log.d("Channel 1 display rate", Integer.toString(chan1Rate));
-            if (chan2En) Log.d("Channel 2 display rate", Integer.toString(chan2Rate));
+
             if (usbService != null){
                 timerHandler.postDelayed(this, 200);
             } else {
@@ -240,7 +226,7 @@ public class GraphPotential extends AppCompatActivity {
 
         expandableExtension = new ExpandableExtension<>();
         fastAdapter.addExtension(expandableExtension);
-        fastAdapter.withSelectable(true);
+        //fastAdapter.withSelectable(true);
         //recyclerView.setItemAnimator(new SlideDownAlphaAnimator());
 
         //ItemAdapter itemAdapter = new ItemAdapter();
@@ -272,7 +258,7 @@ public class GraphPotential extends AppCompatActivity {
         });
 
         recyclerView = (RecyclerView) this.findViewById(R.id.recview);
-        recyclerView.setLayoutManager(new GridLayoutManager(this, 2));
+        recyclerView.setLayoutManager(new LinearLayoutManager(this));
         recyclerView.setAdapter(fastAdapter);
 
         dragCallback = new SimpleDragCallback();
@@ -286,15 +272,17 @@ public class GraphPotential extends AppCompatActivity {
             @Override
             public void onClick(View view) {
                 // add a new graphing channel
-                GraphItem newItem = new GraphItem(++chCnt);
-                List<GraphSubItem> subList = new ArrayList<>();
-                GraphSubItem subItem = new GraphSubItem();
-                subList.add(subItem);
-                newItem.withSubItems(subList);
-                itemAdapter.add(newItem);
-                // keep reference to channel for USB comms
-                graphChannels.add(newItem.graphController);
-                //usbService.write(makeIdentifyMessage(chCnt));
+                if (graphChannels.size() == 0 || graphChannels.get(graphChannels.size()-1).enabled){
+                    GraphItem newItem = new GraphItem(++chCnt);
+                    //List<GraphSubItem> subList = new ArrayList<>();
+                    //GraphSubItem subItem = new GraphSubItem();
+                    //subList.add(subItem);
+                    //newItem.withSubItems(subList);
+                    itemAdapter.add(newItem);
+                    // keep reference to channel for USB comms
+                    graphChannels.add(newItem.graphController);
+                    usbService.write(makeIdentifyMessage(chCnt));
+                }
                 //usbService.write(identifyMessage1);
                 /*
                 Log.d("channel 1 enabled", Boolean.toString(chan1En));
@@ -429,18 +417,22 @@ public class GraphPotential extends AppCompatActivity {
                 case UsbService.MESSAGE_FROM_SERIAL_PORT:
                     short [] packet = (short []) msg.obj;
                     short headers = packet[0];
-                    int channel = (headers & 0b0000111111000000) >> 6;
+                    int channel = (headers & 0b0000011111100000) >> 5;
                     short data = packet[1];
                     Log.d("Handling message", Integer.toBinaryString(packet[0]));
                     if (headers == ch1Header || channel == 1) {
                         if (mActivity.get().graphChannels.size() >= 1)
                             mActivity.get().graphChannels.get(0).update(data);
-                        mActivity.get().chan1Cnt += 1;
+                        //mActivity.get().chan1Cnt += 1;
                         //mActivity.get().graph1.update(data);
-                    } else if (headers == ch2Header) {
+                    } else if (headers == ch2Header || channel == 2) {
                         mActivity.get().chan2Cnt += 1;
-                        mActivity.get().graph2.update(data);
-                    } else {
+                        if (mActivity.get().graphChannels.size() >= 2)
+                            mActivity.get().graphChannels.get(1).update(data);
+                    } else if (channel >= 3) {
+                        mActivity.get().graphChannels.get(channel-1).update(data);
+                    }
+                    else {
                         Log.d("Unrecognized Request", Integer.toBinaryString(packet[0]));
                     }
                     break;
