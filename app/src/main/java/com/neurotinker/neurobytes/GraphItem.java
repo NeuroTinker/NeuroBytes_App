@@ -32,10 +32,21 @@ public class GraphItem extends AbstractExpandableItem<GraphItem, GraphItem.ViewH
     public int channel;
     public GraphController graphController;
 
+    public enum GraphState {
+        NEW,
+        WAITING,
+        ACQUIRED,
+        STALLED,
+        CLOSING
+    }
+
+    public GraphState state;
+
     public GraphItem(int ch) {
         this.channel = ch;
         this.name = "Channel " + ch;
         this.graphController = new GraphController();
+        this.state = GraphState.NEW;
     }
 
     @Override
@@ -65,6 +76,9 @@ public class GraphItem extends AbstractExpandableItem<GraphItem, GraphItem.ViewH
 
         @BindView(R.id.shine)
         ImageView shine;
+
+        @BindView(R.id.add_id)
+        ImageView add;
 
         public ViewHolder(View view) {
             super(view);

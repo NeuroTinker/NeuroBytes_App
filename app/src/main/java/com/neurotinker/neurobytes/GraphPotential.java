@@ -32,8 +32,10 @@ import android.widget.Toast;
 
 import com.github.mikephil.charting.charts.LineChart;
 import com.mikepenz.fastadapter.FastAdapter;
+import com.mikepenz.fastadapter.IItem;
 import com.mikepenz.fastadapter.adapters.ItemAdapter;
 import com.mikepenz.fastadapter.expandable.ExpandableExtension;
+import com.mikepenz.fastadapter.listeners.ClickEventHook;
 import com.mikepenz.fastadapter.listeners.CustomEventHook;
 import com.mikepenz.fastadapter.listeners.EventHook;
 import com.mikepenz.fastadapter_extensions.drag.ItemTouchCallback;
@@ -101,27 +103,6 @@ public class GraphPotential extends AppCompatActivity {
         }
     };
 
-    private static final byte[] identifyMessage1 = new byte[] {
-            (byte) 0b11000000,
-            (byte) 0b01001000,
-            0x0,
-            0x0
-    };
-
-    private static final byte[] identifyMessage2 = new byte[] {
-            (byte) 0b11000000,
-            (byte) 0b01010000,
-            0x0,
-            0x0
-    };
-
-    private static final byte[] identifyMessage3 = new byte[] {
-            (byte) 0b11000000,
-            (byte) 0b01011000,
-            0x0,
-            0x0
-    };
-
     private static final byte[] blinkMessage = new byte[] {
             (byte) 0b10010000,
             0x0,
@@ -141,16 +122,37 @@ public class GraphPotential extends AppCompatActivity {
         };
     }
 
+    /*
+    Data message to a channel.
+    4-bit header
+    3-bit channel
+    5-bit parameter id
+    16-bit value
+     */
+
+    private byte[] makeDataMessage(int ch, int param, int val) {
+        byte chByte = (byte) ch;
+        byte paramByte = (byte) param;
+        byte valByte1 = (byte) (val & 0xFF);
+        byte valByte2 = (byte) ((val >> 8) & 0xFF);
+        return new byte[] {
+                (byte) (0b11010000 | (byte) chByte << 1),
+                (byte) ((paramByte << 4) | ((valByte1 & 0b11110000) >> 4)),
+                (byte) (((valByte1 & 0b1111) << 4) | ((valByte2 & 0b11110000) >> 4)),
+                (byte) ((valByte2 & 0b1111) << 4)
+        };
+    }
+
     private UsbService usbService;
     private TextView display;
     private EditText editText;
-    public NidHandler mHandler;
+    public NidHandler nidHandler;
 
     private final ServiceConnection usbConnection = new ServiceConnection() {
         @Override
         public void onServiceConnected(ComponentName arg0, IBinder arg1) {
             usbService = ((UsbService.UsbBinder) arg1).getService();
-            usbService.setHandler(mHandler);
+            usbService.setHandler(nidHandler);
         }
 
         @Override
@@ -197,17 +199,7 @@ public class GraphPotential extends AppCompatActivity {
         }
     };
 
-    GraphController graph1;
-    GraphController graph2;
-
     private int chCnt = 0;
-
-    private int chan1Cnt;
-    private int chan2Cnt;
-
-    private boolean chan1En;
-    private boolean chan2En;
-
     private List<GraphController> graphChannels = new ArrayList<GraphController>();
 
     private ItemAdapter itemAdapter = new ItemAdapter();
@@ -242,33 +234,21 @@ public class GraphPotential extends AppCompatActivity {
         //fastAdapter.withSelectable(true);
         //recyclerView.setItemAnimator(new SlideDownAlphaAnimator());
 
-        //ItemAdapter itemAdapter = new ItemAdapter();
-        //FastAdapter fastAdapter = FastAdapter.with(itemAdapter);
-
-        fastAdapter.withEventHook(new EventHook() {
+        fastAdapter.withEventHook(new ClickEventHook() {
             @Nullable
             @Override
             public View onBind(@NonNull RecyclerView.ViewHolder viewHolder) {
-                // bind to all graph_item views
                 if (viewHolder instanceof GraphItem.ViewHolder) {
-                    return ((FastAdapter.ViewHolder<GraphItem>) viewHolder).itemView;
+                    return viewHolder.itemView;
                 }
                 return null;
             }
-
-            @Nullable
             @Override
-            public List<? extends View> onBindMany(RecyclerView.ViewHolder viewHolder) {
-                return null;
+            public void onClick(View v, int position, FastAdapter fastAdapter, IItem item) {
+
             }
         });
 
-        fastAdapter.withEventHook(new CustomEventHook() {
-            @Override
-            public void attachEvent(View view, RecyclerView.ViewHolder viewHolder) {
-
-            }
-        });
 
         recyclerView = (RecyclerView) this.findViewById(R.id.recview);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
@@ -278,7 +258,7 @@ public class GraphPotential extends AppCompatActivity {
         ItemTouchHelper touchHelper = new ItemTouchHelper(dragCallback);
         touchHelper.attachToRecyclerView(recyclerView);
 
-        mHandler = new NidHandler(this);
+        nidHandler = new NidHandler(this);
 
         final FloatingActionButton fab1 = (FloatingActionButton) findViewById(R.id.fab1);
         fab1.setOnClickListener(new View.OnClickListener() {
@@ -393,13 +373,6 @@ public class GraphPotential extends AppCompatActivity {
         public NidHandler(GraphPotential activity) {
             mActivity = new WeakReference<>(activity);
         }
-        private int update1 = 0;
-        private boolean update1Ready = false;
-        private int update2 = 0;
-        private boolean update2Ready = false;
-
-        private final short ch1Header = -24544;
-        private final short ch2Header = -24512;
 
         @Override
         public void handleMessage(Message msg) {
@@ -408,22 +381,13 @@ public class GraphPotential extends AppCompatActivity {
                     short [] packet = (short []) msg.obj;
                     short headers = packet[0];
                     int channel = (headers & 0b0000011111100000) >> 5;
+                    int header =  (headers & 0b1111100000000000) >> 11;
                     short data = packet[1];
                     Log.d("Handling message", Integer.toBinaryString(packet[0]));
-                    if (headers == ch1Header || channel == 1) {
-                        if (mActivity.get().graphChannels.size() >= 1)
-                            mActivity.get().graphChannels.get(0).update(data);
-                        //mActivity.get().chan1Cnt += 1;
-                        //mActivity.get().graph1.update(data);
-                    } else if (headers == ch2Header || channel == 2) {
-                        mActivity.get().chan2Cnt += 1;
-                        if (mActivity.get().graphChannels.size() >= 2)
-                            mActivity.get().graphChannels.get(1).update(data);
-                    } else if (channel >= 3) {
+                    if (mActivity.get().graphChannels.size() >= channel){
                         mActivity.get().graphChannels.get(channel-1).update(data);
-                    }
-                    else {
-                        Log.d("Unrecognized Request", Integer.toBinaryString(packet[0]));
+                    } else {
+                        Log.d("Message error", "channel out of range" + Integer.toString(channel));
                     }
                     break;
             }
