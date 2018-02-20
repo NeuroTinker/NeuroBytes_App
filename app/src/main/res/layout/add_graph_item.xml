@@ -89,7 +89,7 @@
                 <ImageView
                     android:layout_width="match_parent"
                     android:layout_height="200dp"
-                    android:src="@drawable/chan1rect"
+                    android:src="@drawable/add_item_border"
                     android:layout_centerInParent="true"
                     android:tint="@android:color/darker_gray"/>
             </RelativeLayout>

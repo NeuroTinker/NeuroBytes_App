@@ -234,18 +234,22 @@ public class GraphPotential extends AppCompatActivity {
         //fastAdapter.withSelectable(true);
         //recyclerView.setItemAnimator(new SlideDownAlphaAnimator());
 
-        fastAdapter.withEventHook(new ClickEventHook() {
+        fastAdapter.withEventHook(new ClickEventHook<GraphItem>() {
             @Nullable
             @Override
             public View onBind(@NonNull RecyclerView.ViewHolder viewHolder) {
                 if (viewHolder instanceof GraphItem.ViewHolder) {
-                    return viewHolder.itemView;
+                    // bind click event to add icon
+                    return viewHolder.itemView.findViewById(R.id.add_id);
                 }
                 return null;
             }
             @Override
-            public void onClick(View v, int position, FastAdapter fastAdapter, IItem item) {
-
+            public void onClick(View v, int position, FastAdapter fastAdapter, GraphItem item) {
+                v.setVisibility(View.GONE);
+                ((View) v.getParent()).findViewById(R.id.loading_id).setVisibility(View.VISIBLE);
+                item.state = GraphItem.GraphState.WAITING;
+                usbService.write(makeIdentifyMessage(chCnt));
             }
         });
 
@@ -260,34 +264,11 @@ public class GraphPotential extends AppCompatActivity {
 
         nidHandler = new NidHandler(this);
 
-        final FloatingActionButton fab1 = (FloatingActionButton) findViewById(R.id.fab1);
-        fab1.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                // add a new graphing channel
-                if (graphChannels.size() == 0 || graphChannels.get(graphChannels.size()-1).enabled){
-                    GraphItem newItem = new GraphItem(++chCnt);
-                    //List<GraphSubItem> subList = new ArrayList<>();
-                    //GraphSubItem subItem = new GraphSubItem();
-                    //subList.add(subItem);
-                    //newItem.withSubItems(subList);
-                    itemAdapter.add(newItem);
-                    // keep reference to channel for USB comms
-                    graphChannels.add(newItem.graphController);
-                    usbService.write(makeIdentifyMessage(chCnt));
-                }
-            }
-        });
-
-        final FloatingActionButton fab2 = (FloatingActionButton) findViewById(R.id.fab2);
-        fab2.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                Snackbar.make(view, "Blink message sent", Snackbar.LENGTH_LONG)
-                        .setAction("Action", null).show();
-                usbService.write(blinkMessage);
-            }
-        });
+        // add a new item to the adapter
+        GraphItem firstItem = new GraphItem(++chCnt);
+        itemAdapter.add(firstItem);
+        graphChannels.add(firstItem.graphController);
+        usbService.write(makeIdentifyMessage(chCnt));
     }
 
     public void addChannel(int ch) {

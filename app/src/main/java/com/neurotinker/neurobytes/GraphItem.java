@@ -10,6 +10,8 @@ import android.view.animation.AccelerateDecelerateInterpolator;
 import android.view.animation.Animation;
 import android.view.animation.TranslateAnimation;
 import android.widget.ImageView;
+import android.widget.ProgressBar;
+import android.widget.RelativeLayout;
 import android.widget.TextView;
 
 import com.github.mikephil.charting.charts.LineChart;
@@ -79,6 +81,12 @@ public class GraphItem extends AbstractExpandableItem<GraphItem, GraphItem.ViewH
 
         @BindView(R.id.add_id)
         ImageView add;
+
+        @BindView(R.id.loading_id)
+        ProgressBar loading;
+
+        @BindView(R.id.newcard_id)
+        RelativeLayout newcard;
 
         public ViewHolder(View view) {
             super(view);

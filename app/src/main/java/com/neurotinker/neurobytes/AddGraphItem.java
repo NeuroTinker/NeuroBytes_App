@@ -21,6 +21,28 @@ import io.saeid.fabloading.LoadingView;
 
 /**
  * Created by jrwhi on 2/15/2018.
+ *
+ * Defines individual graph item.
+ * Has four states:
+ * 1. Plus button. Waiting for user to add channel.
+ * 2. Loading Icon. Waiting for channel acquisition.
+ * 3. Graphing. Communication established with device.
+ * 4. Stalled. Communication lost and attempting to reconnect.
+ *
+ * init ->
+ *          [State 1] ->
+ *                         click event ->
+ *                                          [State 2] ->
+ *
+ * [State 2] ->
+ *              USB comms acquired ->
+ *                                    [State 3]
+ *
+ *
+ *
+ * Interfaces:
+ * 1. Constructor [self] (channel num)
+ *
  */
 
 // AbstractItem<GraphItem, GraphItem.ViewHolder>

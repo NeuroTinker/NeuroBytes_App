@@ -51,7 +51,7 @@
         android:layout_height="60dp"
         android:layout_gravity="bottom"
         android:orientation="horizontal"
-        android:background="@drawable/chan1rect">
+        android:background="@drawable/add_item_border">
 
         <ImageView
             android:id="@+id/pauseplay_id"

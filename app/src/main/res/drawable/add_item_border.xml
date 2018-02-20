@@ -1,6 +1,7 @@
-<!-- res/drawable/chan1rect.xml -->
+<!-- res/drawaadd_item_border.xmlerrect.xml -->
 <shape xmlns:android="http://schemas.android.com/apk/res/android"
     android:shape="rectangle">
-    <solid android:color="#ded364" />
     <corners android:radius="5dp" />
+    <stroke android:width="4px"
+        android:color="@android:color/darker_gray"/>
 </shape>
