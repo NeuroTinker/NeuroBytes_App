@@ -28,6 +28,7 @@ import android.util.Log;
 import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.ViewTreeObserver;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.TextView;
@@ -50,10 +51,14 @@ import com.mikepenz.fastadapter_extensions.drag.SimpleDragCallback;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import io.saeid.fabloading.LoadingView;
+
+import static android.view.View.VISIBLE;
 
 public class GraphPotential extends AppCompatActivity {
 
@@ -90,6 +95,7 @@ public class GraphPotential extends AppCompatActivity {
                     // start sending nid pings
                     if (!pingRunning){
                         timerHandler.postDelayed(pingRunnable, 500);
+                        timerHandler.postDelayed(new DelaySendRunnable(makeIdentifyMessage(0)), 1100);
                         pingRunning = true;
                     }
                     break;
@@ -167,12 +173,34 @@ public class GraphPotential extends AppCompatActivity {
         public void onServiceConnected(ComponentName arg0, IBinder arg1) {
             usbService = ((UsbService.UsbBinder) arg1).getService();
             usbService.setHandler(nidHandler);
+            usbService.write(makeIdentifyMessage(0));
         }
 
         @Override
         public void onServiceDisconnected(ComponentName arg0) {
             usbService = null;
             pingRunning = false;
+        }
+    };
+
+    class DelaySendRunnable implements Runnable {
+        private byte[] message;
+        public DelaySendRunnable(byte[] msg) {
+            message = msg;
+        }
+        @Override
+        public void run() {
+            if (usbService != null)
+                usbService.write(message);
+        }
+    }
+
+    Runnable clearRunnable = new Runnable() {
+        @Override
+        public void run() {
+            if (usbService != null) {
+                usbService.write(makeIdentifyMessage(0));
+            }
         }
     };
 
@@ -184,17 +212,17 @@ public class GraphPotential extends AppCompatActivity {
             byte[] nidPing = new byte[] {(byte)0b11100000, 0x0, 0x0, 0x0};
             byte[] blink = new byte[] {(byte) 0b10010000, 0x0, 0x0, 0x0};
             int size = graphChannels.size();
-            for (int i = graphChannels.size()-1; i >= 0; i--) {
-                if (graphChannels.get(i).count != 0) {
-                    if (!graphChannels.get(i).enabled) {
-                        graphChannels.get(i).enabled = true;
-                        if (usbService!= null) {
-                            usbService.write(makeIdentifyMessage(i+2));
+            for (int i = chCnt; i > 0; i--) {
+                if (graphChannels.get(i) != null ) {
+                    if (graphChannels.get(i).count != 0) {
+                        if (!graphChannels.get(i).enabled) {
+                            graphChannels.get(i).enable();
+                            Log.d("Enable channel", Integer.toString(i));
+                            graphChannels.get(i).count = 0;
                         }
-                        graphChannels.get(i).count = 0;
+                    } else if (graphChannels.get(i).enabled) {
+                        graphChannels.get(i).disable();
                     }
-                } else {
-                    graphChannels.get(i).enabled = false;
                 }
             }
 
@@ -215,7 +243,7 @@ public class GraphPotential extends AppCompatActivity {
     };
 
     private int chCnt = 0;
-    private List<GraphController> graphChannels = new ArrayList<GraphController>();
+    private Map<Integer, GraphController> graphChannels = new HashMap<>();
 
     private ItemAdapter itemAdapter = new ItemAdapter();
     private FastAdapter fastAdapter = FastAdapter.with(itemAdapter);
@@ -244,6 +272,9 @@ public class GraphPotential extends AppCompatActivity {
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
+        if (usbService != null)
+            usbService.write(makeIdentifyMessage(0));
+
         expandableExtension = new ExpandableExtension<>();
         fastAdapter.addExtension(expandableExtension);
         //fastAdapter.withSelectable(true);
@@ -262,9 +293,74 @@ public class GraphPotential extends AppCompatActivity {
             @Override
             public void onClick(View v, int position, FastAdapter fastAdapter, GraphItem item) {
                 v.setVisibility(View.GONE);
-                ((View) v.getParent()).findViewById(R.id.loading_id).setVisibility(View.VISIBLE);
-                item.state = GraphItem.GraphState.WAITING;
-                usbService.write(makeIdentifyMessage(chCnt));
+                if (usbService != null) {
+                    ((View) v.getParent()).findViewById(R.id.loading_id).setVisibility(View.VISIBLE);
+                    item.state = GraphItem.GraphState.WAITING;
+                    usbService.write(makeIdentifyMessage(chCnt));
+                } else {
+                    ((View) v.getParent()).findViewById(R.id.nousb_id).setVisibility(View.VISIBLE);
+                }
+            }
+        });
+
+        fastAdapter.withEventHook(new ClickEventHook<GraphItem>() {
+            @Nullable
+            @Override
+            public View onBind(@NonNull RecyclerView.ViewHolder viewHolder) {
+                if (viewHolder instanceof GraphItem.ViewHolder) {
+                    // bind click event to 'add' icon
+                    return viewHolder.itemView.findViewById(R.id.clear_id);
+                }
+                return null;
+            }
+            @Override
+            public void onClick(View v, int position, FastAdapter fastAdapter, GraphItem item) {
+                if (usbService != null) {
+                    //itemAdapter.remove(position);
+                    usbService.write(makeIdentifyMessage(item.channel));
+                    //timerHandler.postDelayed(new DelaySendRunnable(makeIdentifyMessage(chCnt)), 500);
+                    graphChannels.remove(item.graphController);
+                    itemAdapter.remove(position);
+                    //fastAdapter.notifyAdapterDataSetChanged();
+                    //fastAdapter.notifyAdapterItemRemoved(position);
+                }
+            }
+        });
+
+        fastAdapter.withEventHook(new CustomEventHook<GraphItem>() {
+            @Nullable
+            @Override
+            public View onBind(RecyclerView.ViewHolder viewHolder) {
+                if (viewHolder instanceof GraphItem.ViewHolder) {
+                    // bind event to graph view
+                    return ((GraphItem.ViewHolder) viewHolder).graphLayout;
+                   // return viewHolder.itemView.findViewById(R.id.channel_id);
+                }
+                return null;
+            }
+            @Override
+            public void attachEvent(final View view, final RecyclerView.ViewHolder viewHolder) {
+                view.getViewTreeObserver().addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
+                    @Override
+                    public void onGlobalLayout() {
+                        int newVis = view.getVisibility();
+                        if((int)view.getTag() != newVis)
+                        {
+                            GraphItem.ViewHolder vHold = (GraphItem.ViewHolder) viewHolder;
+                            if (newVis == View.VISIBLE) {
+                                ((View) view.getParent()).findViewById(R.id.newcard_id).setVisibility(View.GONE);
+                                if (vHold.state == GraphItem.GraphState.NEW) {
+                                    vHold.state = GraphItem.GraphState.ACQUIRED;
+                                    GraphItem nextItem = new GraphItem(++chCnt);
+                                    itemAdapter.add(nextItem);
+                                    graphChannels.put(nextItem.channel, nextItem.graphController);
+                                    //fastAdapter.notifyAdapterDataSetChanged();
+                                }
+                            }
+                            view.setTag(view.getVisibility());
+                        }
+                    }
+                });
             }
         });
 
@@ -282,14 +378,15 @@ public class GraphPotential extends AppCompatActivity {
         // add a new item to the adapter
         GraphItem firstItem = new GraphItem(++chCnt);
         itemAdapter.add(firstItem);
-        graphChannels.add(firstItem.graphController);
+        graphChannels.put(firstItem.channel, firstItem.graphController);
         //usbService.write(makeIdentifyMessage(chCnt));
 
-        ImageView pausePlayView = (ImageView) findViewById(R.id.pauseplay_id);
+        final ImageView pausePlayView = (ImageView) findViewById(R.id.pauseplay_id);
         pausePlayView.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                usbService.write(pausePlayMessage);
+                if (usbService != null)
+                    usbService.write(pausePlayMessage);
             }
         });
 
@@ -394,8 +491,11 @@ public class GraphPotential extends AppCompatActivity {
                     int header =  (headers & 0b1111100000000000) >> 11;
                     short data = packet[1];
                     Log.d("Handling message", Integer.toBinaryString(packet[0]));
-                    if (mActivity.get().graphChannels.size() >= channel){
-                        mActivity.get().graphChannels.get(channel-1).update(data);
+                    if (!mActivity.get().graphChannels.isEmpty() && channel>0){
+                        if (mActivity.get().graphChannels.get(channel) != null) {
+                            Log.d("Channel", Integer.toString(channel));
+                            mActivity.get().graphChannels.get(channel).update(data);
+                        }
                     } else {
                         Log.d("Message error", "channel out of range" + Integer.toString(channel));
                     }

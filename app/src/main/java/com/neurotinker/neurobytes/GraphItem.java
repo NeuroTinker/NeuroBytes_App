@@ -5,11 +5,13 @@ import android.graphics.Color;
 import android.graphics.drawable.ShapeDrawable;
 import android.graphics.drawable.shapes.Shape;
 import android.support.annotation.NonNull;
+import android.support.design.widget.FloatingActionButton;
 import android.view.View;
 import android.view.animation.AccelerateDecelerateInterpolator;
 import android.view.animation.Animation;
 import android.view.animation.TranslateAnimation;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
@@ -88,6 +90,11 @@ public class GraphItem extends AbstractExpandableItem<GraphItem, GraphItem.ViewH
         @BindView(R.id.newcard_id)
         RelativeLayout newcard;
 
+        @BindView(R.id.channel_id)
+        RelativeLayout graphLayout;
+
+        GraphState state;
+
         public ViewHolder(View view) {
             super(view);
             ButterKnife.bind(this, view);
@@ -96,6 +103,7 @@ public class GraphItem extends AbstractExpandableItem<GraphItem, GraphItem.ViewH
         @Override
         public void bindView(GraphItem item, List<Object> payloads) {
             name.setText(item.name);
+            state = GraphState.NEW;
 
             // initialize chart
             chart.setDrawGridBackground(false);
@@ -114,11 +122,18 @@ public class GraphItem extends AbstractExpandableItem<GraphItem, GraphItem.ViewH
             animation.setFillAfter(false);
             animation.setInterpolator(new AccelerateDecelerateInterpolator());
             shine.startAnimation(animation);
+
+            // set listener for change in chart visibility
+            graphLayout.setTag(graphLayout.getVisibility());
         }
 
         @Override
         public void unbindView(GraphItem item) {
-            name.setText(null);
+            newcard.setVisibility(View.VISIBLE);
+            loading.setVisibility(View.GONE);
+            add.setVisibility(View.VISIBLE);
+            graphLayout.setVisibility(View.GONE);
+            state = GraphState.NEW;
         }
     }
 }

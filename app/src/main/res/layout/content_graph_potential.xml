@@ -14,38 +14,4 @@
         android:layout_height="match_parent"
         android:visibility="visible" />
 
-    <android.support.constraint.Guideline
-        android:id="@+id/breakline"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        app:layout_constraintGuide_percent="0.5" />
-
-    <android.support.constraint.Guideline
-        android:id="@+id/vert_divline"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:orientation="vertical"
-        app:layout_constraintGuide_percent="0.5" />
-
-    <android.support.constraint.Guideline
-        android:id="@+id/horz_divline"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        app:layout_constraintGuide_percent="0.75" />
-
-    <android.support.constraint.Guideline
-        android:id="@+id/ctrl_divline"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        app:layout_constraintGuide_percent="0.15" />
-
-    <GridLayout
-        android:layout_width="match_parent"
-        android:layout_height="match_parent">
-
-    </GridLayout>
-
 </android.support.constraint.ConstraintLayout>

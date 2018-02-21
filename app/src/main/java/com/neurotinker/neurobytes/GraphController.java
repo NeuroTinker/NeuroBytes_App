@@ -3,6 +3,7 @@ package com.neurotinker.neurobytes;
 import android.graphics.Color;
 import android.os.Handler;
 import android.util.Log;
+import android.view.View;
 
 import com.github.mikephil.charting.components.LimitLine;
 import com.github.mikephil.charting.components.YAxis;
@@ -133,7 +134,16 @@ public class GraphController {
         }
 
         count += 1;
-        chart.setVisibility(VISIBLE);
+    }
+
+    public void enable() {
+        this.enabled = true;
+        ((View) chart.getParent().getParent()).setVisibility(VISIBLE);
+    }
+
+    public void disable() {
+        this.enabled = false;
+        //((View) chart.getParent().getParent()).setVisibility(View.GONE);
     }
 
     public void clear() {

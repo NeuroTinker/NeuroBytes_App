@@ -2,7 +2,7 @@
 <FrameLayout android:id="@+id/graphitem_id"
     xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content"
+    android:layout_height="300dp"
     android:paddingLeft="15dp"
     android:paddingTop="15dp"
     android:paddingBottom="15dp"
@@ -11,6 +11,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
     <android.support.v7.widget.CardView
+        style="@style/GraphCardStyle"
         android:layout_width="match_parent"
         android:layout_height="match_parent" >
 
@@ -18,11 +19,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:descendantFocusability="afterDescendants"
-            android:orientation="vertical"
-            android:paddingBottom="15dp"
-            android:paddingLeft="15dp"
-            android:paddingRight="15dp"
-            android:paddingTop="15dp">
+            android:orientation="vertical">
 
             <TextView
                 android:id="@+id/name"
@@ -84,26 +81,63 @@
                     android:id="@+id/add_id"
                     android:layout_width="50dp"
                     android:layout_height="50dp"
-                    android:src="@drawable/plus"
                     android:layout_centerInParent="true"
-                    android:tint="@android:color/darker_gray"/>
+                    android:src="@drawable/plus"
+                    android:tint="@android:color/darker_gray" />
+
+                <TextView
+                    android:id="@+id/nousb_id"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:layout_centerInParent="true"
+                    android:text="NID is not connected!"
+                    android:visibility="gone" />
+
                 <ProgressBar
                     android:id="@+id/loading_id"
                     android:layout_width="50dp"
                     android:layout_height="50dp"
                     android:layout_centerInParent="true"
-                    android:visibility="gone"/>
+                    android:visibility="gone" />
+
                 <ImageView
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
-                    android:src="@drawable/add_item_border"/>
+                    android:src="@drawable/add_item_border" />
             </RelativeLayout>
 
-            <com.github.mikephil.charting.charts.LineChart
-                android:id="@+id/chart"
-                android:layout_width="match_parent"
-                android:layout_height="200dp"
-                android:visibility="gone"/>
+            <RelativeLayout
+                android:id="@+id/channel_id"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:visibility="gone">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent">
+
+                    <include
+                        android:id="@+id/channelinfo_id"
+                        layout="@layout/channel_info" />
+
+                    <com.github.mikephil.charting.charts.LineChart
+                        android:id="@+id/chart"
+                        android:layout_width="fill_parent"
+                        android:layout_height="200dp"
+                        android:visibility="visible" />
+
+                </LinearLayout>
+
+                <ImageView
+                    android:id="@+id/clear_id"
+                    android:layout_width="30dp"
+                    android:layout_height="30dp"
+                    android:layout_alignParentRight="true"
+                    android:layout_gravity="right"
+                    android:color="@android:color/darker_gray"
+                    app:srcCompat="@drawable/clear" />
+
+            </RelativeLayout>
 
         </LinearLayout>
     </android.support.v7.widget.CardView>
