@@ -25,27 +25,6 @@
         app:layout_anchor="@+id/fab"
         app:layout_anchorGravity="left|top" />
 
-    <android.support.design.widget.FloatingActionButton
-        android:id="@+id/fab1"
-        android:layout_width="68dp"
-        android:layout_height="67dp"
-        android:layout_gravity="top|end"
-        android:layout_margin="@dimen/fab_margin"
-        android:backgroundTint="@color/cardview_shadow_start_color"
-        app:srcCompat="@drawable/plus"
-        tools:layout_editor_absoluteX="300dp"
-        tools:layout_editor_absoluteY="484dp" />
-
-    <android.support.design.widget.FloatingActionButton
-        android:id="@+id/fab2"
-        android:layout_width="68dp"
-        android:layout_height="67dp"
-        android:layout_gravity="top|start"
-        android:layout_margin="@dimen/fab_margin"
-        app:srcCompat="@drawable/blink"
-        tools:layout_editor_absoluteX="300dp"
-        tools:layout_editor_absoluteY="484dp" />
-
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="60dp"
@@ -59,6 +38,13 @@
             android:layout_height="50dp"
             android:layout_gravity="center_horizontal"
             app:srcCompat="@android:drawable/ic_media_play" />
+
+        <ImageView
+            android:id="@+id/record_id"
+            android:layout_width="50dp"
+            android:layout_height="50dp"
+            android:layout_gravity="center_horizontal"
+            app:srcCompat="@android:drawable/ic_menu_save" />
     </LinearLayout>
 
 

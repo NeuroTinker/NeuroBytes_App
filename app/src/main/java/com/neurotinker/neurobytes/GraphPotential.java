@@ -8,10 +8,12 @@ import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.graphics.Color;
 import android.graphics.drawable.Drawable;
+import android.media.Image;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
+import android.provider.ContactsContract;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.design.widget.FloatingActionButton;
@@ -27,10 +29,14 @@ import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.EditText;
+import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import com.github.mikephil.charting.charts.LineChart;
+import com.google.android.gms.drive.DriveContents;
+import com.google.android.gms.drive.DriveFile;
+import com.google.android.gms.tasks.Task;
 import com.mikepenz.fastadapter.FastAdapter;
 import com.mikepenz.fastadapter.IItem;
 import com.mikepenz.fastadapter.adapters.ItemAdapter;
@@ -106,6 +112,13 @@ public class GraphPotential extends AppCompatActivity {
     private static final byte[] blinkMessage = new byte[] {
             (byte) 0b10010000,
             0x0,
+            0x0,
+            0x0
+    };
+
+    private static final byte[] pausePlayMessage = new byte[] {
+            (byte) 0b11000000,
+            (byte) 0b11000000,
             0x0,
             0x0
     };
@@ -186,6 +199,7 @@ public class GraphPotential extends AppCompatActivity {
 
             if (usbService != null) {
                 usbService.write(nidPing);
+
                 Log.d("Sent message", "NID ping");
                 //usbService.write(blink);
             }
@@ -239,7 +253,7 @@ public class GraphPotential extends AppCompatActivity {
             @Override
             public View onBind(@NonNull RecyclerView.ViewHolder viewHolder) {
                 if (viewHolder instanceof GraphItem.ViewHolder) {
-                    // bind click event to add icon
+                    // bind click event to 'add' icon
                     return viewHolder.itemView.findViewById(R.id.add_id);
                 }
                 return null;
@@ -269,6 +283,20 @@ public class GraphPotential extends AppCompatActivity {
         itemAdapter.add(firstItem);
         graphChannels.add(firstItem.graphController);
         usbService.write(makeIdentifyMessage(chCnt));
+
+        ImageView pausePlayView = (ImageView) findViewById(R.id.pauseplay_id);
+        pausePlayView.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                usbService.write(pausePlayMessage);
+            }
+        });
+
+        ImageView recordDataView = (ImageView) findViewById(R.id.record_id);
+        recordDataView.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {            }
+        });
     }
 
     public void addChannel(int ch) {
