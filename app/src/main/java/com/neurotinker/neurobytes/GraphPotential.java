@@ -69,6 +69,7 @@ public class GraphPotential extends AppCompatActivity {
                 case UsbService.ACTION_USB_PERMISSION_NOT_GRANTED: // USB PERMISSION NOT GRANTED
                     Toast.makeText(context, "USB Permission not granted", Toast.LENGTH_SHORT).show();
                     break;
+                    
                 case UsbService.ACTION_NO_USB: // NO USB CONNECTED
                     Toast.makeText(context, "No USB connected", Toast.LENGTH_SHORT).show();
                     break;
@@ -282,7 +283,7 @@ public class GraphPotential extends AppCompatActivity {
         GraphItem firstItem = new GraphItem(++chCnt);
         itemAdapter.add(firstItem);
         graphChannels.add(firstItem.graphController);
-        usbService.write(makeIdentifyMessage(chCnt));
+        //usbService.write(makeIdentifyMessage(chCnt));
 
         ImageView pausePlayView = (ImageView) findViewById(R.id.pauseplay_id);
         pausePlayView.setOnClickListener(new View.OnClickListener() {
