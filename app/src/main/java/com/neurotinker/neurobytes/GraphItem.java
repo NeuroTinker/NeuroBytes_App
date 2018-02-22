@@ -19,6 +19,7 @@ import android.widget.TextView;
 import com.github.mikephil.charting.charts.LineChart;
 import com.mikepenz.fastadapter.FastAdapter;
 import com.mikepenz.fastadapter.expandable.items.AbstractExpandableItem;
+import com.mikepenz.materialize.holder.StringHolder;
 
 import java.util.List;
 
@@ -33,6 +34,8 @@ import io.saeid.fabloading.LoadingView;
 // AbstractItem<GraphItem, GraphItem.ViewHolder>
 public class GraphItem extends AbstractExpandableItem<GraphItem, GraphItem.ViewHolder, GraphSubItem>{
     public String name;
+    public String boardType;
+    public double firingRate;
     public int channel;
     public GraphController graphController;
 
@@ -49,6 +52,8 @@ public class GraphItem extends AbstractExpandableItem<GraphItem, GraphItem.ViewH
     public GraphItem(int ch) {
         this.channel = ch;
         this.name = "Channel " + ch;
+        this.boardType = "New";
+        this.firingRate = 0;
         this.graphController = new GraphController();
         this.state = GraphState.NEW;
     }
@@ -93,6 +98,15 @@ public class GraphItem extends AbstractExpandableItem<GraphItem, GraphItem.ViewH
         @BindView(R.id.channel_id)
         RelativeLayout graphLayout;
 
+        @BindView(R.id.firingrate_id)
+        TextView firingRate;
+
+        @BindView(R.id.boardtype_id)
+        ImageView boardType;
+
+        @BindView(R.id.channelname_id)
+        TextView channelName;
+
         GraphState state;
 
         public ViewHolder(View view) {
@@ -102,12 +116,18 @@ public class GraphItem extends AbstractExpandableItem<GraphItem, GraphItem.ViewH
 
         @Override
         public void bindView(GraphItem item, List<Object> payloads) {
-            name.setText(item.name);
             state = GraphState.NEW;
 
             // initialize chart
             chart.setDrawGridBackground(false);
             item.graphController.PotentialGraph(chart);
+
+            // initialize channel info panel stuff
+            (new StringHolder(item.name)).applyTo(channelName);
+            (new StringHolder(
+                    "Firing Rate: " +
+                            Double.toString(item.graphController.firingRate) + " APs/ Sec")
+            ).applyTo(firingRate);
 
             // start loading animation
             loadingView.addAnimation(Color.BLUE, R.drawable.photoreceptor_square, LoadingView.FROM_BOTTOM);

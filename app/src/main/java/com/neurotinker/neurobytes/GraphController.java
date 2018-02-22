@@ -33,6 +33,9 @@ public class GraphController {
     private int nextPotential = 0;
     public int count = 0;
     public boolean enabled = false;
+    private boolean isFiring = true;
+    public int fireCount = 0;
+    public double firingRate = 0.0;
 
 
     Handler timerHandler = new Handler();
@@ -119,6 +122,16 @@ public class GraphController {
                 set = createSet();
                 data.addDataSet(set);
             }
+
+            if (set.getEntryForIndex(set.getEntryCount()-100).getY() >= 10000 &&
+                    set.getEntryForIndex(set.getEntryCount()-99).getY() < 0)
+                fireCount -= 1; // this looks hideous
+
+            if (set.getEntryForIndex(set.getEntryCount()-1).getY() >= 10000
+                    && potential < 0)
+                fireCount += 1;
+
+            firingRate = fireCount;
 
             data.addEntry(new Entry(set.getEntryCount(), potential), 0);
 

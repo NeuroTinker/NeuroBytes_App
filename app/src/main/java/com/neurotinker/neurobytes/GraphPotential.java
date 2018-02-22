@@ -95,7 +95,7 @@ public class GraphPotential extends AppCompatActivity {
                     // start sending nid pings
                     if (!pingRunning){
                         timerHandler.postDelayed(pingRunnable, 500);
-                        timerHandler.postDelayed(new DelaySendRunnable(makeIdentifyMessage(0)), 1100);
+                        timerHandler.postDelayed(new DelaySendRunnable(makeIdentifyMessage(0)), 3000);
                         pingRunning = true;
                     }
                     break;
@@ -186,12 +186,12 @@ public class GraphPotential extends AppCompatActivity {
     class DelaySendRunnable implements Runnable {
         private byte[] message;
         public DelaySendRunnable(byte[] msg) {
-            message = msg;
+            this.message = msg;
         }
         @Override
         public void run() {
             if (usbService != null)
-                usbService.write(message);
+                usbService.write(this.message);
         }
     }
 
@@ -212,24 +212,10 @@ public class GraphPotential extends AppCompatActivity {
             byte[] nidPing = new byte[] {(byte)0b11100000, 0x0, 0x0, 0x0};
             byte[] blink = new byte[] {(byte) 0b10010000, 0x0, 0x0, 0x0};
             int size = graphChannels.size();
-            for (int i = chCnt; i > 0; i--) {
-                if (graphChannels.get(i) != null ) {
-                    if (graphChannels.get(i).count != 0) {
-                        if (!graphChannels.get(i).enabled) {
-                            graphChannels.get(i).enable();
-                            Log.d("Enable channel", Integer.toString(i));
-                            graphChannels.get(i).count = 0;
-                        }
-                    } else if (graphChannels.get(i).enabled) {
-                        graphChannels.get(i).disable();
-                    }
-                }
-            }
 
             if (usbService != null) {
                 usbService.write(nidPing);
 
-                Log.d("Sent message", "NID ping");
                 //usbService.write(blink);
             }
 
@@ -242,7 +228,31 @@ public class GraphPotential extends AppCompatActivity {
         }
     };
 
+    Runnable channelUpdateRunnable = new Runnable() {
+        @Override
+        public void run() {
+            for (GraphItem item : (List<GraphItem>)itemAdapter.getAdapterItems()) {
+                // check channel status ... TODO: put this is a GraphController method
+                if (item.graphController.count > 0) {
+                    if (!item.graphController.enabled) {
+                        item.graphController.enable();
+                        Log.d("Enable channel", Integer.toString(item.channel));
+                    }
+                } else if (item.graphController.enabled) {
+                    item.graphController.disable();
+                }
+
+                //item.firingRate = item.graphController.firingRate; // count is cleared every 2 sec
+                //item.name = Integer.toString(item.firingRate);
+
+                item.graphController.count = 0;
+            }
+            timerHandler.postDelayed(channelUpdateRunnable, 1000);
+        }
+    };
+
     private int chCnt = 0;
+    private boolean isPaused = false;
     private Map<Integer, GraphController> graphChannels = new HashMap<>();
 
     private ItemAdapter itemAdapter = new ItemAdapter();
@@ -274,6 +284,7 @@ public class GraphPotential extends AppCompatActivity {
 
         if (usbService != null)
             usbService.write(makeIdentifyMessage(0));
+        timerHandler.postDelayed(new DelaySendRunnable(makeIdentifyMessage(0)), 1500);
 
         expandableExtension = new ExpandableExtension<>();
         fastAdapter.addExtension(expandableExtension);
@@ -375,6 +386,9 @@ public class GraphPotential extends AppCompatActivity {
 
         nidHandler = new NidHandler(this);
 
+        // start the channel management running process
+        timerHandler.postDelayed(channelUpdateRunnable, 2000);
+
         // add a new item to the adapter
         GraphItem firstItem = new GraphItem(++chCnt);
         itemAdapter.add(firstItem);
@@ -385,15 +399,27 @@ public class GraphPotential extends AppCompatActivity {
         pausePlayView.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                if (usbService != null)
+                if (usbService != null) {
                     usbService.write(pausePlayMessage);
+                    ((ImageView) findViewById(R.id.pauseplay_id)).setImageResource(
+                            getResources().getIdentifier(
+                                    isPaused ? "ic_media_pause" : "ic_media_play",
+                                    "drawable",
+                                    "android"
+                            )
+                    );
+                    isPaused = !isPaused;
+                }
             }
         });
 
         ImageView recordDataView = (ImageView) findViewById(R.id.record_id);
         recordDataView.setOnClickListener(new View.OnClickListener() {
             @Override
-            public void onClick(View view) {            }
+            public void onClick(View view) {
+                //timerHandler.postDelayed(new DelaySendRunnable(makeIdentifyMessage(0)), 1500);
+                fastAdapter.notifyAdapterDataSetChanged();
+            }
         });
     }
 
