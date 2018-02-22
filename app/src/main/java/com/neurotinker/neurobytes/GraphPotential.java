@@ -50,6 +50,7 @@ import com.mikepenz.fastadapter_extensions.drag.SimpleDragCallback;
 
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -232,19 +233,21 @@ public class GraphPotential extends AppCompatActivity {
         @Override
         public void run() {
             for (int i=0; i<itemAdapter.getAdapterItemCount(); i++) {
-                GraphItem item = (GraphItem) fastAdapter.getItem(i);
-                // check channel status ... TODO: put this is a GraphController method
-                if (item.graphController.count > 0) {
-                    if (!item.graphController.enabled) {
-                        item.graphController.enable();
-                        Log.d("Enable channel", Integer.toString(item.channel));
+                if (fastAdapter.getItemViewType(i) == R.id.graphitem_id) {
+                    GraphItem item = (GraphItem) fastAdapter.getItem(i);
+                    // check channel status ... TODO: put this is a GraphController method
+                    if (item.graphController.count > 0) {
+                        if (!item.graphController.enabled) {
+                            item.graphController.enable();
+                            Log.d("Enable channel", Integer.toString(item.channel));
+                        }
+                    } else if (item.graphController.enabled) {
+                        item.graphController.disable();
                     }
-                } else if (item.graphController.enabled) {
-                    item.graphController.disable();
-                }
 
-                item.graphController.count = 0;
-                fastAdapter.notifyAdapterItemChanged(i, GraphItem.UpdateType.CHINFO);
+                    item.graphController.count = 0;
+                    //fastAdapter.notifyAdapterItemChanged(i, GraphItem.UpdateType.CHINFO);
+                }
             }
             timerHandler.postDelayed(channelUpdateRunnable, 1000);
         }
@@ -391,6 +394,9 @@ public class GraphPotential extends AppCompatActivity {
 
         // add a new item to the adapter
         GraphItem firstItem = new GraphItem(++chCnt);
+        GraphSubItem firstSubItem = new GraphSubItem();
+        firstSubItem.withParent(firstItem);
+        firstItem.withSubItems(Arrays.asList(firstSubItem));
         itemAdapter.add(firstItem);
         graphChannels.put(firstItem.channel, firstItem.graphController);
         //usbService.write(makeIdentifyMessage(chCnt));
@@ -419,7 +425,16 @@ public class GraphPotential extends AppCompatActivity {
             public void onClick(View view) {
                 //timerHandler.postDelayed(new DelaySendRunnable(makeIdentifyMessage(0)), 1500);
                 //fastAdapter.notifyAdapterDataSetChanged();
-                fastAdapter.notifyAdapterItemChanged(0, GraphItem.UpdateType.CHINFO);
+                //fastAdapter.notifyAdapterItemChanged(0, GraphItem.UpdateType.CHINFO);
+                Log.d("test", Boolean.toString(((GraphItem) fastAdapter.getItem(0)).getSubItems().get(0).isExpanded()));
+                Log.d("test", Boolean.toString(((GraphItem) fastAdapter.getItem(0)).isExpanded()));
+                if (((GraphItem) fastAdapter.getItem(0)).isExpanded()){
+                    Log.d("test", "t");
+                    fastAdapter.notifyAdapterItemChanged(0, GraphItem.UpdateType.CHINFO);
+                    expandableExtension.expand(0, false);
+                } else{
+                    fastAdapter.notifyAdapterItemChanged(0, GraphItem.UpdateType.CHINFO);
+                }
             }
         });
     }

@@ -129,14 +129,8 @@ public class GraphItem extends AbstractExpandableItem<GraphItem, GraphItem.ViewH
         @Override
         public void bindView(GraphItem item, List<Object> payloads) {
 
-            if (payloads.contains(UpdateType.CHINFO)){
-
-            }
-
-            Log.d("bind channel", Integer.toString(item.channel));
-            Log.d("bind w/ payload", payloads.toString());
-
             if (payloads.isEmpty()) {
+                Log.d("bind w/ expanded", Boolean.toString(item.isExpanded()));
                 state = GraphState.NEW;
 
                 // initialize chart
@@ -169,6 +163,7 @@ public class GraphItem extends AbstractExpandableItem<GraphItem, GraphItem.ViewH
                 graphLayout.setTag(graphLayout.getVisibility());
             } else if (payloads.contains(UpdateType.CHINFO)) {
                 Log.d("bind just", "chinfo");
+                Log.d("bind w/ expanded", Boolean.toString(item.isExpanded()));
                 firingRate.setText("Firing Rate: " +
                         Double.toString(item.graphController.firingRate) + " APs/ Sec");
                 name.setText(item.name);

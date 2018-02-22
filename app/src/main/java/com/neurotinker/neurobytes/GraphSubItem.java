@@ -1,6 +1,7 @@
 package com.neurotinker.neurobytes;
 
 import android.support.annotation.NonNull;
+import android.util.Log;
 import android.view.View;
 
 import com.mikepenz.fastadapter.FastAdapter;
@@ -44,6 +45,7 @@ public class GraphSubItem<Parent extends ISubItem> extends AbstractExpandableIte
 
         @Override
         public void bindView(GraphSubItem item, List<Object> payloads) {
+            Log.d("bind w/ payload", payloads.toString());
 
         }
 
