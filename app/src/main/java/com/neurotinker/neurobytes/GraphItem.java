@@ -6,6 +6,7 @@ import android.graphics.drawable.ShapeDrawable;
 import android.graphics.drawable.shapes.Shape;
 import android.support.annotation.NonNull;
 import android.support.design.widget.FloatingActionButton;
+import android.util.Log;
 import android.view.View;
 import android.view.animation.AccelerateDecelerateInterpolator;
 import android.view.animation.Animation;
@@ -47,14 +48,23 @@ public class GraphItem extends AbstractExpandableItem<GraphItem, GraphItem.ViewH
         CLOSING
     }
 
+    public enum UpdateType {
+        CHINFO
+    }
+
     public GraphState state;
 
     public GraphItem(int ch) {
+        GraphController g = new GraphController();
+        GraphItem(ch, g);
+    }
+
+    public void GraphItem(int ch, GraphController g) {
         this.channel = ch;
         this.name = "Channel " + ch;
         this.boardType = "New";
         this.firingRate = 0;
-        this.graphController = new GraphController();
+        this.graphController = g;
         this.state = GraphState.NEW;
     }
 
@@ -109,6 +119,8 @@ public class GraphItem extends AbstractExpandableItem<GraphItem, GraphItem.ViewH
 
         GraphState state;
 
+        StringHolder rateHolder;
+
         public ViewHolder(View view) {
             super(view);
             ButterKnife.bind(this, view);
@@ -116,39 +128,56 @@ public class GraphItem extends AbstractExpandableItem<GraphItem, GraphItem.ViewH
 
         @Override
         public void bindView(GraphItem item, List<Object> payloads) {
-            state = GraphState.NEW;
 
-            // initialize chart
-            chart.setDrawGridBackground(false);
-            item.graphController.PotentialGraph(chart);
+            if (payloads.contains(UpdateType.CHINFO)){
 
-            // initialize channel info panel stuff
-            (new StringHolder(item.name)).applyTo(channelName);
-            (new StringHolder(
-                    "Firing Rate: " +
-                            Double.toString(item.graphController.firingRate) + " APs/ Sec")
-            ).applyTo(firingRate);
+            }
 
-            // start loading animation
-            loadingView.addAnimation(Color.BLUE, R.drawable.photoreceptor_square, LoadingView.FROM_BOTTOM);
-            loadingView.addAnimation(Color.RED, R.drawable.tonic_square, LoadingView.FROM_RIGHT);
-            loadingView.addAnimation(Color.CYAN, R.drawable.touch_square, LoadingView.FROM_TOP);
-            loadingView.addAnimation(Color.MAGENTA, R.drawable.interneuron_square, LoadingView.FROM_LEFT);
-            loadingView.startAnimation();
+            Log.d("bind channel", Integer.toString(item.channel));
+            Log.d("bind w/ payload", payloads.toString());
 
-            // test shine animation
-            Animation animation = new TranslateAnimation(0, 250,100, 0);
-            animation.setDuration(500);
-            animation.setFillAfter(false);
-            animation.setInterpolator(new AccelerateDecelerateInterpolator());
-            shine.startAnimation(animation);
+            if (payloads.isEmpty()) {
+                state = GraphState.NEW;
 
-            // set listener for change in chart visibility
-            graphLayout.setTag(graphLayout.getVisibility());
+                // initialize chart
+                chart.setDrawGridBackground(false);
+                item.graphController.PotentialGraph(chart);
+
+                // initialize channel info panel stuff
+                (new StringHolder(item.name)).applyTo(channelName);
+                rateHolder = new StringHolder(
+                        "Firing Rate: " +
+                                Double.toString(item.graphController.firingRate) + " APs/ Sec");
+                rateHolder.applyTo(firingRate);
+
+
+                // start loading animation
+                loadingView.addAnimation(Color.BLUE, R.drawable.photoreceptor_square, LoadingView.FROM_BOTTOM);
+                loadingView.addAnimation(Color.RED, R.drawable.tonic_square, LoadingView.FROM_RIGHT);
+                loadingView.addAnimation(Color.CYAN, R.drawable.touch_square, LoadingView.FROM_TOP);
+                loadingView.addAnimation(Color.MAGENTA, R.drawable.interneuron_square, LoadingView.FROM_LEFT);
+                loadingView.startAnimation();
+
+                // test shine animation
+                Animation animation = new TranslateAnimation(0, 250, 100, 0);
+                animation.setDuration(500);
+                animation.setFillAfter(false);
+                animation.setInterpolator(new AccelerateDecelerateInterpolator());
+                shine.startAnimation(animation);
+
+                // set listener for change in chart visibility
+                graphLayout.setTag(graphLayout.getVisibility());
+            } else if (payloads.contains(UpdateType.CHINFO)) {
+                Log.d("bind just", "chinfo");
+                firingRate.setText("Firing Rate: " +
+                        Double.toString(item.graphController.firingRate) + " APs/ Sec");
+                name.setText(item.name);
+            }
         }
 
         @Override
         public void unbindView(GraphItem item) {
+            Log.d("unbind channel", Integer.toString(item.channel));
             newcard.setVisibility(View.VISIBLE);
             loading.setVisibility(View.GONE);
             add.setVisibility(View.VISIBLE);

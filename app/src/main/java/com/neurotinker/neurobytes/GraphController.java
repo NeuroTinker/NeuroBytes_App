@@ -131,7 +131,7 @@ public class GraphController {
                     && potential < 0)
                 fireCount += 1;
 
-            firingRate = fireCount;
+            firingRate = fireCount / 5.0;
 
             data.addEntry(new Entry(set.getEntryCount(), potential), 0);
 

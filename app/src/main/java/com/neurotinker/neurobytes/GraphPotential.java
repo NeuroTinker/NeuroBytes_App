@@ -231,7 +231,8 @@ public class GraphPotential extends AppCompatActivity {
     Runnable channelUpdateRunnable = new Runnable() {
         @Override
         public void run() {
-            for (GraphItem item : (List<GraphItem>)itemAdapter.getAdapterItems()) {
+            for (int i=0; i<itemAdapter.getAdapterItemCount(); i++) {
+                GraphItem item = (GraphItem) fastAdapter.getItem(i);
                 // check channel status ... TODO: put this is a GraphController method
                 if (item.graphController.count > 0) {
                     if (!item.graphController.enabled) {
@@ -242,10 +243,8 @@ public class GraphPotential extends AppCompatActivity {
                     item.graphController.disable();
                 }
 
-                //item.firingRate = item.graphController.firingRate; // count is cleared every 2 sec
-                //item.name = Integer.toString(item.firingRate);
-
                 item.graphController.count = 0;
+                fastAdapter.notifyAdapterItemChanged(i, GraphItem.UpdateType.CHINFO);
             }
             timerHandler.postDelayed(channelUpdateRunnable, 1000);
         }
@@ -288,6 +287,7 @@ public class GraphPotential extends AppCompatActivity {
 
         expandableExtension = new ExpandableExtension<>();
         fastAdapter.addExtension(expandableExtension);
+        fastAdapter.setHasStableIds(true);
         //fastAdapter.withSelectable(true);
         //recyclerView.setItemAnimator(new SlideDownAlphaAnimator());
 
@@ -418,7 +418,8 @@ public class GraphPotential extends AppCompatActivity {
             @Override
             public void onClick(View view) {
                 //timerHandler.postDelayed(new DelaySendRunnable(makeIdentifyMessage(0)), 1500);
-                fastAdapter.notifyAdapterDataSetChanged();
+                //fastAdapter.notifyAdapterDataSetChanged();
+                fastAdapter.notifyAdapterItemChanged(0, GraphItem.UpdateType.CHINFO);
             }
         });
     }
