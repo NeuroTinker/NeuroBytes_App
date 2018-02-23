@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<android.support.constraint.ConstraintLayout
+<android.support.constraint.ConstraintLayout xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/subitem_id"
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
@@ -7,8 +7,55 @@
     android:layout_height="wrap_content">
 
     <ImageView
-        android:id="@+id/imageView"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+        android:id="@+id/boardgraphic_id"
+        android:layout_width="150dp"
+        android:layout_height="150dp"
+        android:layout_marginLeft="32dp"
+        app:layout_constraintLeft_toRightOf="@id/dendrite2_id"
+        app:layout_constraintTop_toBottomOf="@id/dendrite1_id"
         app:srcCompat="@drawable/interneuron2" />
+
+    <SeekBar
+        android:id="@+id/dendrite1_id"
+        android:layout_width="300dp"
+        android:layout_height="wrap_content"
+        app:layout_constraintBottom_toTopOf="@id/boardgraphic_id"
+        app:layout_constraintTop_toBottomOf="parent"
+        android:max="15000"
+        tools:layout_editor_absoluteX="56dp" />
+
+    <SeekBar
+        android:id="@+id/dendrite2_id"
+        android:layout_width="300dp"
+        android:layout_height="18dp"
+        android:layout_marginLeft="56dp"
+        android:layout_marginTop="36dp"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/dendrite1_id"
+        android:max="6000"
+        />
+
+    <SeekBar
+        android:id="@+id/dendrite3_id"
+        android:layout_width="300dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="32dp"
+        app:layout_constraintHorizontal_bias="0.636"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toLeftOf="@id/boardgraphic_id"
+        app:layout_constraintTop_toBottomOf="@id/dendrite2_id"
+        android:max="6000"
+        />
+
+    <SeekBar
+        android:id="@+id/dendrite4_id"
+        android:layout_width="300dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="28dp"
+        app:layout_constraintHorizontal_bias="0.636"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toLeftOf="@id/boardgraphic_id"
+        app:layout_constraintTop_toBottomOf="@id/dendrite3_id"
+        android:max="11000"
+        />
 </android.support.constraint.ConstraintLayout>

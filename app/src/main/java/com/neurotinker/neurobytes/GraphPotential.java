@@ -5,6 +5,7 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.IntentSender;
 import android.content.ServiceConnection;
 import android.graphics.Color;
 import android.graphics.drawable.Drawable;
@@ -31,12 +32,23 @@ import android.view.MenuItem;
 import android.view.ViewTreeObserver;
 import android.widget.EditText;
 import android.widget.ImageView;
+import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import com.github.mikephil.charting.charts.LineChart;
+import com.google.android.gms.auth.api.signin.GoogleSignIn;
+import com.google.android.gms.auth.api.signin.GoogleSignInClient;
+import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
+import com.google.android.gms.drive.CreateFileActivityOptions;
+import com.google.android.gms.drive.Drive;
 import com.google.android.gms.drive.DriveContents;
 import com.google.android.gms.drive.DriveFile;
+import com.google.android.gms.drive.DriveResourceClient;
+import com.google.android.gms.drive.MetadataChangeSet;
+import com.google.android.gms.tasks.Continuation;
+import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
 import com.mikepenz.fastadapter.FastAdapter;
 import com.mikepenz.fastadapter.IItem;
@@ -48,6 +60,9 @@ import com.mikepenz.fastadapter.listeners.EventHook;
 import com.mikepenz.fastadapter_extensions.drag.ItemTouchCallback;
 import com.mikepenz.fastadapter_extensions.drag.SimpleDragCallback;
 
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+import java.io.Writer;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -164,6 +179,15 @@ public class GraphPotential extends AppCompatActivity {
         };
     }
 
+    private Map<String, Integer> interneuronParams = new HashMap<String, Integer>() {{
+        put("current", 0b1);
+        put("dendrite1", 0b10);
+        put("dendrite2", 0b11);
+        put("dendrite3", 0b100);
+        put("dendrite4", 0b101);
+        put("delay", 0b111);
+    }};
+
     private UsbService usbService;
     private TextView display;
     private EditText editText;
@@ -183,6 +207,47 @@ public class GraphPotential extends AppCompatActivity {
             pingRunning = false;
         }
     };
+
+    class SeekBarHook extends CustomEventHook {
+
+        String name;
+
+        public SeekBarHook(String name) {
+            this.name = name;
+        }
+
+        @Nullable
+        @Override
+        public View onBind(RecyclerView.ViewHolder viewHolder) {
+            if (viewHolder instanceof GraphSubItem.ViewHolder) {
+                return ((GraphSubItem.ViewHolder) viewHolder).dendrite4;
+            }
+            return null;
+        }
+        @Override
+        public void attachEvent(View view, final RecyclerView.ViewHolder viewHolder) {
+            ((SeekBar) view).setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+                int progress;
+                int ch = 1;
+                @Override
+                public void onProgressChanged(SeekBar seekBar, int i, boolean b) {
+                    progress = i;
+                }
+
+                @Override
+                public void onStartTrackingTouch(SeekBar seekBar) {
+
+                }
+
+                @Override
+                public void onStopTrackingTouch(SeekBar seekBar) {
+                    if (expandableExtension.getExpandedItems().length > 0)
+                        ch = ((GraphItem) fastAdapter.getItem(expandableExtension.getExpandedItems()[0])).channel;
+                    usbService.write(makeDataMessage(ch, interneuronParams.get(name), progress));
+                }
+            });
+        }
+    }
 
     class DelaySendRunnable implements Runnable {
         private byte[] message;
@@ -246,7 +311,13 @@ public class GraphPotential extends AppCompatActivity {
                     }
 
                     item.graphController.count = 0;
-                    //fastAdapter.notifyAdapterItemChanged(i, GraphItem.UpdateType.CHINFO);
+                    if (((GraphItem) fastAdapter.getItem(i)).isExpanded()){
+                        Log.d("test", "t");
+                        fastAdapter.notifyAdapterItemChanged(i, GraphItem.UpdateType.CHINFO);
+                        expandableExtension.expand(i, false);
+                    } else{
+                        fastAdapter.notifyAdapterItemChanged(i, GraphItem.UpdateType.CHINFO);
+                    }
                 }
             }
             timerHandler.postDelayed(channelUpdateRunnable, 1000);
@@ -277,6 +348,14 @@ public class GraphPotential extends AppCompatActivity {
         }
     };
 
+    private GoogleSignInClient buildGoogleSignInClient() {
+        GoogleSignInOptions signInOptions =
+                new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+                        .requestScopes(Drive.SCOPE_FILE)
+                        .build();
+        return GoogleSignIn.getClient(this, signInOptions);
+    }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -289,10 +368,9 @@ public class GraphPotential extends AppCompatActivity {
         timerHandler.postDelayed(new DelaySendRunnable(makeIdentifyMessage(0)), 1500);
 
         expandableExtension = new ExpandableExtension<>();
+        expandableExtension.withOnlyOneExpandedItem(true);
         fastAdapter.addExtension(expandableExtension);
         fastAdapter.setHasStableIds(true);
-        //fastAdapter.withSelectable(true);
-        //recyclerView.setItemAnimator(new SlideDownAlphaAnimator());
 
         fastAdapter.withEventHook(new ClickEventHook<GraphItem>() {
             @Nullable
@@ -304,6 +382,7 @@ public class GraphPotential extends AppCompatActivity {
                 }
                 return null;
             }
+
             @Override
             public void onClick(View v, int position, FastAdapter fastAdapter, GraphItem item) {
                 v.setVisibility(View.GONE);
@@ -327,6 +406,7 @@ public class GraphPotential extends AppCompatActivity {
                 }
                 return null;
             }
+
             @Override
             public void onClick(View v, int position, FastAdapter fastAdapter, GraphItem item) {
                 if (usbService != null) {
@@ -340,6 +420,145 @@ public class GraphPotential extends AppCompatActivity {
                 }
             }
         });
+
+        fastAdapter.withEventHook(new CustomEventHook() {
+            @Nullable
+            @Override
+            public View onBind(RecyclerView.ViewHolder viewHolder) {
+                if (viewHolder instanceof GraphSubItem.ViewHolder) {
+                    return ((GraphSubItem.ViewHolder) viewHolder).dendrite1;
+                }
+                return null;
+            }
+            @Override
+            public void attachEvent(View view, final RecyclerView.ViewHolder viewHolder) {
+                ((SeekBar) view).setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+                    int progress;
+                    int ch = 1;
+                    GraphItem item;
+                    @Override
+                    public void onProgressChanged(SeekBar seekBar, int i, boolean b) {
+                        progress = i;
+                    }
+
+                    @Override
+                    public void onStartTrackingTouch(SeekBar seekBar) {
+
+                    }
+
+                    @Override
+                    public void onStopTrackingTouch(SeekBar seekBar) {
+                        if (expandableExtension.getExpandedItems().length > 0)
+                            ch = ((GraphItem) fastAdapter.getItem(expandableExtension.getExpandedItems()[0])).channel;
+                        usbService.write(makeDataMessage(ch, interneuronParams.get("dendrite1"), progress));
+                    }
+                });
+            }
+        });
+
+        fastAdapter.withEventHook(new CustomEventHook() {
+            @Nullable
+            @Override
+            public View onBind(RecyclerView.ViewHolder viewHolder) {
+                if (viewHolder instanceof GraphSubItem.ViewHolder) {
+                    return ((GraphSubItem.ViewHolder) viewHolder).dendrite2;
+                }
+                return null;
+            }
+            @Override
+            public void attachEvent(View view, final RecyclerView.ViewHolder viewHolder) {
+                ((SeekBar) view).setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+                    int progress;
+                    int ch = 1;
+                    @Override
+                    public void onProgressChanged(SeekBar seekBar, int i, boolean b) {
+                        progress = i;
+                    }
+
+                    @Override
+                    public void onStartTrackingTouch(SeekBar seekBar) {
+
+                    }
+
+                    @Override
+                    public void onStopTrackingTouch(SeekBar seekBar) {
+                        if (expandableExtension.getExpandedItems().length > 0)
+                            ch = ((GraphItem) fastAdapter.getItem(expandableExtension.getExpandedItems()[0])).channel;
+                        usbService.write(makeDataMessage(ch, interneuronParams.get("dendrite2"), progress));
+                    }
+                });
+            }
+        });
+
+        fastAdapter.withEventHook(new CustomEventHook() {
+            @Nullable
+            @Override
+            public View onBind(RecyclerView.ViewHolder viewHolder) {
+                if (viewHolder instanceof GraphSubItem.ViewHolder) {
+                    return ((GraphSubItem.ViewHolder) viewHolder).dendrite3;
+                }
+                return null;
+            }
+            @Override
+            public void attachEvent(View view, final RecyclerView.ViewHolder viewHolder) {
+                ((SeekBar) view).setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+                    int progress;
+                    int ch = 1;
+                    @Override
+                    public void onProgressChanged(SeekBar seekBar, int i, boolean b) {
+                        progress = i;
+                    }
+
+                    @Override
+                    public void onStartTrackingTouch(SeekBar seekBar) {
+
+                    }
+
+                    @Override
+                    public void onStopTrackingTouch(SeekBar seekBar) {
+                        if (expandableExtension.getExpandedItems().length > 0)
+                            ch = ((GraphItem) fastAdapter.getItem(expandableExtension.getExpandedItems()[0])).channel;
+                        usbService.write(makeDataMessage(ch, interneuronParams.get("dendrite3"), progress));
+                    }
+                });
+            }
+        });
+
+        fastAdapter.withEventHook(new CustomEventHook() {
+            @Nullable
+            @Override
+            public View onBind(RecyclerView.ViewHolder viewHolder) {
+                if (viewHolder instanceof GraphSubItem.ViewHolder) {
+                    return ((GraphSubItem.ViewHolder) viewHolder).dendrite4;
+                }
+                return null;
+            }
+            @Override
+            public void attachEvent(View view, final RecyclerView.ViewHolder viewHolder) {
+                ((SeekBar) view).setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+                    int progress;
+                    int ch = 1;
+                    @Override
+                    public void onProgressChanged(SeekBar seekBar, int i, boolean b) {
+                        progress = i;
+                    }
+
+                    @Override
+                    public void onStartTrackingTouch(SeekBar seekBar) {
+
+                    }
+
+                    @Override
+                    public void onStopTrackingTouch(SeekBar seekBar) {
+                        if (expandableExtension.getExpandedItems().length > 0)
+                            ch = ((GraphItem) fastAdapter.getItem(expandableExtension.getExpandedItems()[0])).channel;
+                        usbService.write(makeDataMessage(ch, interneuronParams.get("dendrite4"), progress));
+                    }
+                });
+            }
+        });
+
+
 
         fastAdapter.withEventHook(new CustomEventHook<GraphItem>() {
             @Nullable
@@ -366,6 +585,9 @@ public class GraphPotential extends AppCompatActivity {
                                 if (vHold.state == GraphItem.GraphState.NEW) {
                                     vHold.state = GraphItem.GraphState.ACQUIRED;
                                     GraphItem nextItem = new GraphItem(++chCnt);
+                                    GraphSubItem nextSubItem = new GraphSubItem();
+                                    nextSubItem.withParent(nextItem);
+                                    nextItem.withSubItems(Arrays.asList(nextSubItem));
                                     itemAdapter.add(nextItem);
                                     graphChannels.put(nextItem.channel, nextItem.graphController);
                                     //fastAdapter.notifyAdapterDataSetChanged();
@@ -426,15 +648,6 @@ public class GraphPotential extends AppCompatActivity {
                 //timerHandler.postDelayed(new DelaySendRunnable(makeIdentifyMessage(0)), 1500);
                 //fastAdapter.notifyAdapterDataSetChanged();
                 //fastAdapter.notifyAdapterItemChanged(0, GraphItem.UpdateType.CHINFO);
-                Log.d("test", Boolean.toString(((GraphItem) fastAdapter.getItem(0)).getSubItems().get(0).isExpanded()));
-                Log.d("test", Boolean.toString(((GraphItem) fastAdapter.getItem(0)).isExpanded()));
-                if (((GraphItem) fastAdapter.getItem(0)).isExpanded()){
-                    Log.d("test", "t");
-                    fastAdapter.notifyAdapterItemChanged(0, GraphItem.UpdateType.CHINFO);
-                    expandableExtension.expand(0, false);
-                } else{
-                    fastAdapter.notifyAdapterItemChanged(0, GraphItem.UpdateType.CHINFO);
-                }
             }
         });
     }

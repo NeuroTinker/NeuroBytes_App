@@ -3,6 +3,7 @@ package com.neurotinker.neurobytes;
 import android.support.annotation.NonNull;
 import android.util.Log;
 import android.view.View;
+import android.widget.SeekBar;
 
 import com.mikepenz.fastadapter.FastAdapter;
 import com.mikepenz.fastadapter.ISubItem;
@@ -11,6 +12,7 @@ import com.mikepenz.fastadapter.items.AbstractItem;
 
 import java.util.List;
 
+import butterknife.BindView;
 import butterknife.ButterKnife;
 
 /**
@@ -18,8 +20,6 @@ import butterknife.ButterKnife;
  */
 
 public class GraphSubItem<Parent extends ISubItem> extends AbstractExpandableItem<GraphItem, GraphSubItem.ViewHolder, GraphSubItem> {
-
-
 
     @Override
     public int getType() {
@@ -38,6 +38,18 @@ public class GraphSubItem<Parent extends ISubItem> extends AbstractExpandableIte
 
     protected static class ViewHolder extends FastAdapter.ViewHolder<GraphSubItem> {
 
+        @BindView(R.id.dendrite1_id)
+        SeekBar dendrite1;
+
+        @BindView(R.id.dendrite2_id)
+        SeekBar dendrite2;
+
+        @BindView(R.id.dendrite3_id)
+        SeekBar dendrite3;
+
+        @BindView(R.id.dendrite4_id)
+        SeekBar dendrite4;
+
         public ViewHolder(View view) {
             super(view);
             ButterKnife.bind(this, view);
@@ -46,7 +58,6 @@ public class GraphSubItem<Parent extends ISubItem> extends AbstractExpandableIte
         @Override
         public void bindView(GraphSubItem item, List<Object> payloads) {
             Log.d("bind w/ payload", payloads.toString());
-
         }
 
         @Override
