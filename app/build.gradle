@@ -17,6 +17,9 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }
+    configurations.all {
+        resolutionStrategy.force 'com.google.code.findbugs:jsr305:1.3.9'
+    }
 }
 
 dependencies {
@@ -35,7 +38,12 @@ dependencies {
     // google drive integration
     compile 'com.google.android.gms:play-services-auth:11.8.0'
     compile 'pub.devrel:easypermissions:0.3.0'
-    compile 'com.google.android.gms:play-services-drive:11.8.0'
+    compile('com.google.api-client:google-api-client-android:1.23.0') {
+        exclude group: 'org.apache.httpcomponents'
+    }
+    compile('com.google.apis:google-api-services-drive:v3-rev105-1.23.0') {
+        exclude group: 'org.apache.httpcomponents'
+    }
     //FAB loading thing
     compile 'com.github.SaeedMasoumi:FAB-Loading:0.6.0'
     // shining FAB thing

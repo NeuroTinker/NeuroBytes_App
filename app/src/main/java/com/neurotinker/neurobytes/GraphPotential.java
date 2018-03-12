@@ -7,6 +7,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.IntentSender;
 import android.content.ServiceConnection;
+import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.graphics.drawable.Drawable;
 import android.media.Image;
@@ -40,16 +41,12 @@ import com.github.mikephil.charting.charts.LineChart;
 import com.google.android.gms.auth.api.signin.GoogleSignIn;
 import com.google.android.gms.auth.api.signin.GoogleSignInClient;
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
-import com.google.android.gms.drive.CreateFileActivityOptions;
-import com.google.android.gms.drive.Drive;
-import com.google.android.gms.drive.DriveContents;
-import com.google.android.gms.drive.DriveFile;
-import com.google.android.gms.drive.DriveResourceClient;
-import com.google.android.gms.drive.MetadataChangeSet;
 import com.google.android.gms.tasks.Continuation;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
+import com.google.api.client.http.FileContent;
+import com.google.api.services.drive.model.File;
 import com.mikepenz.fastadapter.FastAdapter;
 import com.mikepenz.fastadapter.IItem;
 import com.mikepenz.fastadapter.adapters.ItemAdapter;
@@ -189,8 +186,6 @@ public class GraphPotential extends AppCompatActivity {
     }};
 
     private UsbService usbService;
-    private TextView display;
-    private EditText editText;
     public NidHandler nidHandler;
 
     private final ServiceConnection usbConnection = new ServiceConnection() {
@@ -211,9 +206,11 @@ public class GraphPotential extends AppCompatActivity {
     class SeekBarHook extends CustomEventHook {
 
         String name;
+        View bindView;
 
-        public SeekBarHook(String name) {
+        public SeekBarHook(String name, View bindView) {
             this.name = name;
+            this.bindView = bindView;
         }
 
         @Nullable
@@ -300,7 +297,7 @@ public class GraphPotential extends AppCompatActivity {
             for (int i=0; i<itemAdapter.getAdapterItemCount(); i++) {
                 if (fastAdapter.getItemViewType(i) == R.id.graphitem_id) {
                     GraphItem item = (GraphItem) fastAdapter.getItem(i);
-                    // check channel status ... TODO: put this is a GraphController method
+                    // check channel status ... TODO: put this in a GraphController method
                     if (item.graphController.count > 0) {
                         if (!item.graphController.enabled) {
                             item.graphController.enable();
@@ -323,6 +320,13 @@ public class GraphPotential extends AppCompatActivity {
             timerHandler.postDelayed(channelUpdateRunnable, 1000);
         }
     };
+
+    private UsbFlashService flashService = new UsbFlashService(this, 0x6018, 0x1d50);
+
+    private GoogleSignInClient mGoogleSignInClient;
+    private DriveClient mDriveClient;
+    private DriveResourceClient mDriveResourceClient;
+    private Bitmap mBitmapToSave;
 
     private int chCnt = 0;
     private boolean isPaused = false;
@@ -347,14 +351,6 @@ public class GraphPotential extends AppCompatActivity {
 
         }
     };
-
-    private GoogleSignInClient buildGoogleSignInClient() {
-        GoogleSignInOptions signInOptions =
-                new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
-                        .requestScopes(Drive.SCOPE_FILE)
-                        .build();
-        return GoogleSignIn.getClient(this, signInOptions);
-    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -614,7 +610,7 @@ public class GraphPotential extends AppCompatActivity {
         // start the channel management running process
         timerHandler.postDelayed(channelUpdateRunnable, 2000);
 
-        // add a new item to the adapter
+        // add the first item to the adapter
         GraphItem firstItem = new GraphItem(++chCnt);
         GraphSubItem firstSubItem = new GraphSubItem();
         firstSubItem.withParent(firstItem);
@@ -627,7 +623,7 @@ public class GraphPotential extends AppCompatActivity {
         pausePlayView.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                if (usbService != null) {
+                /*if (usbService != null) {
                     usbService.write(pausePlayMessage);
                     ((ImageView) findViewById(R.id.pauseplay_id)).setImageResource(
                             getResources().getIdentifier(
@@ -637,7 +633,11 @@ public class GraphPotential extends AppCompatActivity {
                             )
                     );
                     isPaused = !isPaused;
-                }
+                }*/
+                flashService.OpenDevice();
+                flashService.WriteData("vAttach;108X".getBytes());
+                Log.d("Read quque", Boolean.toString(flashService.IsThereAnyReceivedData()));
+                flashService.CloseTheDevice();
             }
         });
 
@@ -652,12 +652,18 @@ public class GraphPotential extends AppCompatActivity {
         });
     }
 
-    public void addChannel(int ch) {
-        // add a new graphing channel
-        GraphItem newItem = new GraphItem(ch);
-        itemAdapter.add(newItem);
-        // keep reference to channel for USB comms
-        //graphChannels.add(newItem.graphController);
+    public boolean exportData() {
+        File fileMetadata = new File();
+        fileMetadata.setName("My Report");
+        fileMetadata.setMimeType("application/vnd.google-apps.spreadsheet");
+
+        java.io.File filePath = new java.io.File("files/data.csv");
+        FileContent mediaContent = new FileContent("text/csv", filePath);
+        File file = driveService.files().create(fileMetadata, mediaContent)
+                .setFields("id")
+                .execute();
+        System.out.println("File ID: " + file.getId());
+
     }
 
     @Override

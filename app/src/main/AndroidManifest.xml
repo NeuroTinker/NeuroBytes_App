@@ -17,6 +17,7 @@
             android:name=".GraphPotential"
             android:label="@string/app_name"
             android:theme="@style/AppTheme.NoActionBar">
+            <meta-data android:name="com.neurotinker.neurobytes.APP_ID" android:value="id=196116"/>
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 

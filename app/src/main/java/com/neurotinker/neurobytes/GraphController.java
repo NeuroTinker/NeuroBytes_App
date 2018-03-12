@@ -1,7 +1,10 @@
 package com.neurotinker.neurobytes;
 
+import android.app.ProgressDialog;
 import android.graphics.Color;
+import android.os.Environment;
 import android.os.Handler;
+import android.os.Message;
 import android.util.Log;
 import android.view.View;
 
@@ -9,7 +12,10 @@ import com.github.mikephil.charting.components.LimitLine;
 import com.github.mikephil.charting.components.YAxis;
 import com.github.mikephil.charting.data.Entry;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
 
@@ -19,6 +25,9 @@ import com.github.mikephil.charting.data.LineData;
 import com.github.mikephil.charting.data.LineDataSet;
 import com.github.mikephil.charting.interfaces.datasets.ILineDataSet;
 import com.github.mikephil.charting.utils.ColorTemplate;
+import com.google.api.client.googleapis.extensions.android.gms.auth.GoogleAccountCredential;
+import com.google.api.client.http.FileContent;
+import com.google.api.client.util.ExponentialBackOff;
 
 import static android.view.View.VISIBLE;
 
@@ -178,21 +187,6 @@ public class GraphController {
         chart.invalidate();
     }
 
-    public void addPoint(int potential) {
-        nextPotential = potential;
-    }
-
-    public int checkForEvent() {
-        Random rand = new Random();
-        int impulse = rand.nextInt(120);
-        if (impulse > 110){
-            return -100 * impulse;
-        } else if (impulse > 95){
-            return impulse * 100;
-        }
-        return 0;
-    }
-
     private LineDataSet createSet() {
 
         LineDataSet set = new LineDataSet(null, "Dynamic Data");
@@ -209,5 +203,4 @@ public class GraphController {
         set.setDrawValues(false);
         return set;
     }
-
 }
