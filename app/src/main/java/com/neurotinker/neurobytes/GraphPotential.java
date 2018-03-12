@@ -73,8 +73,10 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Queue;
 import java.util.Set;
 
 import io.saeid.fabloading.LoadingView;
@@ -115,6 +117,7 @@ public class GraphPotential extends AppCompatActivity {
                     Toast.makeText(context, "USB communication established", Toast.LENGTH_SHORT).show();
                     // start sending nid pings
                     if (!pingRunning){
+                        Log.d("Message Sent", "NID Ping");
                         timerHandler.postDelayed(pingRunnable, 500);
                         timerHandler.postDelayed(new DelaySendRunnable(makeIdentifyMessage(0)), 3000);
                         pingRunning = true;
@@ -337,6 +340,7 @@ public class GraphPotential extends AppCompatActivity {
     private com.google.api.services.drive.Drive driveService = null;
 
     private int chCnt = 0;
+    private Queue<Integer> nextCh = new LinkedList<>();
     private boolean isPaused = false;
     private Map<Integer, GraphController> graphChannels = new HashMap<>();
 
@@ -393,7 +397,8 @@ public class GraphPotential extends AppCompatActivity {
                 if (usbService != null) {
                     ((View) v.getParent()).findViewById(R.id.loading_id).setVisibility(View.VISIBLE);
                     item.state = GraphItem.GraphState.WAITING;
-                    usbService.write(makeIdentifyMessage(chCnt));
+                    Log.d("Id message setn:", Integer.toString(item.channel));
+                    usbService.write(makeIdentifyMessage(item.channel));
                 } else {
                     ((View) v.getParent()).findViewById(R.id.nousb_id).setVisibility(View.VISIBLE);
                 }
@@ -415,6 +420,7 @@ public class GraphPotential extends AppCompatActivity {
             public void onClick(View v, int position, FastAdapter fastAdapter, GraphItem item) {
                 if (usbService != null) {
                     //itemAdapter.remove(position);
+                    nextCh.add(item.channel);
                     usbService.write(makeIdentifyMessage(item.channel));
                     //timerHandler.postDelayed(new DelaySendRunnable(makeIdentifyMessage(chCnt)), 500);
                     graphChannels.remove(item.graphController);
@@ -588,7 +594,9 @@ public class GraphPotential extends AppCompatActivity {
                                 ((View) view.getParent()).findViewById(R.id.newcard_id).setVisibility(View.GONE);
                                 if (vHold.state == GraphItem.GraphState.NEW) {
                                     vHold.state = GraphItem.GraphState.ACQUIRED;
-                                    GraphItem nextItem = new GraphItem(++chCnt);
+                                    GraphItem nextItem = new GraphItem(
+                                            nextCh.peek() != null ? nextCh.remove() : ++chCnt
+                                    );
                                     GraphSubItem nextSubItem = new GraphSubItem();
                                     nextSubItem.withParent(nextItem);
                                     nextItem.withSubItems(Arrays.asList(nextSubItem));
@@ -631,7 +639,7 @@ public class GraphPotential extends AppCompatActivity {
         pausePlayView.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                /*if (usbService != null) {
+                if (usbService != null) {
                     usbService.write(pausePlayMessage);
                     ((ImageView) findViewById(R.id.pauseplay_id)).setImageResource(
                             getResources().getIdentifier(
@@ -641,12 +649,12 @@ public class GraphPotential extends AppCompatActivity {
                             )
                     );
                     isPaused = !isPaused;
-                }*/
-                flashService.OpenDevice();
+                }
+                /*flashService.OpenDevice();
                 flashService.StartReadingThread();
                 flashService.WriteData("vAttach;108X".getBytes());
                 Log.d("Read queue", Boolean.toString(flashService.IsThereAnyReceivedData()));
-                flashService.CloseTheDevice();
+                flashService.CloseTheDevice();*/
             }
         });
 
