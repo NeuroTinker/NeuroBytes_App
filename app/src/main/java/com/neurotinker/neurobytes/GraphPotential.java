@@ -45,7 +45,14 @@ import com.google.android.gms.tasks.Continuation;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
+import com.google.api.client.extensions.android.http.AndroidHttp;
+import com.google.api.client.googleapis.extensions.android.gms.auth.GoogleAccountCredential;
 import com.google.api.client.http.FileContent;
+import com.google.api.client.http.HttpTransport;
+import com.google.api.client.json.JsonFactory;
+import com.google.api.client.json.jackson2.JacksonFactory;
+import com.google.api.client.util.ExponentialBackOff;
+import com.google.api.services.drive.DriveScopes;
 import com.google.api.services.drive.model.File;
 import com.mikepenz.fastadapter.FastAdapter;
 import com.mikepenz.fastadapter.IItem;
@@ -57,6 +64,7 @@ import com.mikepenz.fastadapter.listeners.EventHook;
 import com.mikepenz.fastadapter_extensions.drag.ItemTouchCallback;
 import com.mikepenz.fastadapter_extensions.drag.SimpleDragCallback;
 
+import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
@@ -323,10 +331,10 @@ public class GraphPotential extends AppCompatActivity {
 
     private UsbFlashService flashService = new UsbFlashService(this, 0x6018, 0x1d50);
 
+    private static final String[] SCOPES = { DriveScopes.DRIVE_METADATA_READONLY, DriveScopes.DRIVE_FILE };
     private GoogleSignInClient mGoogleSignInClient;
-    private DriveClient mDriveClient;
-    private DriveResourceClient mDriveResourceClient;
     private Bitmap mBitmapToSave;
+    private com.google.api.services.drive.Drive driveService = null;
 
     private int chCnt = 0;
     private boolean isPaused = false;
@@ -635,8 +643,9 @@ public class GraphPotential extends AppCompatActivity {
                     isPaused = !isPaused;
                 }*/
                 flashService.OpenDevice();
+                flashService.StartReadingThread();
                 flashService.WriteData("vAttach;108X".getBytes());
-                Log.d("Read quque", Boolean.toString(flashService.IsThereAnyReceivedData()));
+                Log.d("Read queue", Boolean.toString(flashService.IsThereAnyReceivedData()));
                 flashService.CloseTheDevice();
             }
         });
@@ -645,6 +654,11 @@ public class GraphPotential extends AppCompatActivity {
         recordDataView.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+                try {
+                    exportData();
+                } catch(IOException ie) {
+                    ie.printStackTrace();
+                }
                 //timerHandler.postDelayed(new DelaySendRunnable(makeIdentifyMessage(0)), 1500);
                 //fastAdapter.notifyAdapterDataSetChanged();
                 //fastAdapter.notifyAdapterItemChanged(0, GraphItem.UpdateType.CHINFO);
@@ -652,18 +666,31 @@ public class GraphPotential extends AppCompatActivity {
         });
     }
 
-    public boolean exportData() {
+    public boolean exportData() throws IOException {
+        // get google drive authentication
+        GoogleAccountCredential credential = GoogleAccountCredential.usingOAuth2(
+                getApplicationContext(), Arrays.asList(this.SCOPES))
+                .setBackOff(new ExponentialBackOff());
+
+        HttpTransport transport = AndroidHttp.newCompatibleTransport();
+        JsonFactory jsonFactory = JacksonFactory.getDefaultInstance();
+
+        driveService = new com.google.api.services.drive.Drive.Builder(
+                transport, jsonFactory, credential)
+                .setApplicationName("NeuroBytes Data Uploader")
+                .build();
+
         File fileMetadata = new File();
-        fileMetadata.setName("My Report");
+        fileMetadata.setName("data.csv");
         fileMetadata.setMimeType("application/vnd.google-apps.spreadsheet");
 
         java.io.File filePath = new java.io.File("files/data.csv");
         FileContent mediaContent = new FileContent("text/csv", filePath);
-        File file = driveService.files().create(fileMetadata, mediaContent)
-                .setFields("id")
-                .execute();
-        System.out.println("File ID: " + file.getId());
-
+       // File file = driveService.files().create(fileMetadata, mediaContent)
+       //         .setFields("id")
+       //         .execute();
+        //System.out.println("File ID: " + file.getId());
+        return true;
     }
 
     @Override

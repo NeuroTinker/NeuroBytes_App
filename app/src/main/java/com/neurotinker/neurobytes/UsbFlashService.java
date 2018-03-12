@@ -214,7 +214,7 @@ public class UsbFlashService {
                         }
 
                         readIntf = _usbDevice.getInterface(0);
-                        readEp = readIntf.getEndpoint(0);
+                        readEp = readIntf.getEndpoint(0); // is this 0x81??
                         if (!_usbManager.getDeviceList().containsKey(_deviceName)) {
                             Log("Failed to connect to the device. Retrying to acquire it.");
                             OpenDevice();
