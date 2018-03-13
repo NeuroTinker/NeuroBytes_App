@@ -45,6 +45,13 @@
             android:layout_height="50dp"
             android:layout_gravity="center_horizontal"
             app:srcCompat="@android:drawable/ic_menu_save" />
+
+        <ImageView
+            android:id="@+id/flash_id"
+            android:layout_width="50dp"
+            android:layout_height="50dp"
+            android:layout_gravity="center_horizontal"
+            app:srcCompat="@drawable/ic_sync_black_24dp" />
     </LinearLayout>
 
 

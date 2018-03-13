@@ -35,6 +35,7 @@ public class UsbFlashService {
     // Locker object that is responsible for locking read/write thread.
     private Object _locker = new Object();
     private Thread _readingThread = null;
+    private boolean isQuitting = false;
     private String _deviceName;
 
     private UsbManager _usbManager;
@@ -121,7 +122,7 @@ public class UsbFlashService {
     public void StopReadingThread() {
         if (_readingThread != null) {
             // Just kill the thread. It is better to do that fast if we need that asap.
-            _readingThread.stop();
+            isQuitting = true;
             _readingThread = null;
         } else {
             Log("No reading thread to stop");
@@ -143,7 +144,7 @@ public class UsbFlashService {
                 UsbDeviceConnection writeConnection = _usbManager.openDevice(_usbDevice);
 
                 // Lock the usb interface.
-                writeConnection.claimInterface(writeIntf, true);
+                writeConnection.claimInterface(writeIntf, false);
 
                 // Write the data as a bulk transfer with defined data length.
                 int r = writeConnection.bulkTransfer(writeEp, bytes, bytes.length, 0);
@@ -200,7 +201,7 @@ public class UsbFlashService {
             boolean readerStartedMsgWasShown = false;
 
             // We will continuously ask for the data from the device and store it in the queue.
-            while (true) {
+            while (!isQuitting) {
                 // Lock that is common for read/write methods.
                 synchronized (_locker) {
                     try
@@ -258,15 +259,15 @@ public class UsbFlashService {
                         byte[] bytes = new byte[packetSize];
                         int r = readConnection.bulkTransfer(readEp, bytes, packetSize, 50);
                         if (r >= 0) {
-                            byte[] trancatedBytes = new byte[r]; // Truncate bytes in the honor of r
+                            byte[] truncatedBytes = new byte[r]; // Truncate bytes in the honor of r
 
                             int i=0;
                             for (byte b : bytes) {
-                                trancatedBytes[i] = b;
+                                truncatedBytes[i] = b;
                                 i++;
                             }
 
-                            _receivedQueue.add(trancatedBytes); // Store received data
+                            _receivedQueue.add(truncatedBytes); // Store received data
                             Log(String.format("Message received of lengths %s and content: %s", r, composeString(bytes)));
                         }
 

@@ -90,7 +90,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
                     android:layout_centerInParent="true"
-                    android:text="NID is not connected!"
+                    android:text="NID is not connected yet!"
                     android:visibility="gone" />
 
                 <ProgressBar

@@ -86,6 +86,7 @@ import static android.view.View.VISIBLE;
 public class GraphPotential extends AppCompatActivity {
 
     private boolean pingRunning;
+    private boolean commsEstablished;
 
     private final BroadcastReceiver mUsbReceiver = new BroadcastReceiver() {
         @Override
@@ -116,6 +117,7 @@ public class GraphPotential extends AppCompatActivity {
                 case UsbService.ACTION_USB_READY:
                     Toast.makeText(context, "USB communication established", Toast.LENGTH_SHORT).show();
                     // start sending nid pings
+                    commsEstablished = true;
                     if (!pingRunning){
                         Log.d("Message Sent", "NID Ping");
                         timerHandler.postDelayed(pingRunnable, 500);
@@ -393,11 +395,11 @@ public class GraphPotential extends AppCompatActivity {
 
             @Override
             public void onClick(View v, int position, FastAdapter fastAdapter, GraphItem item) {
-                v.setVisibility(View.GONE);
-                if (usbService != null) {
+                if (usbService != null && commsEstablished) {
+                    v.setVisibility(View.GONE);
                     ((View) v.getParent()).findViewById(R.id.loading_id).setVisibility(View.VISIBLE);
                     item.state = GraphItem.GraphState.WAITING;
-                    Log.d("Id message setn:", Integer.toString(item.channel));
+                    Log.d("Id message sent:", Integer.toString(item.channel));
                     usbService.write(makeIdentifyMessage(item.channel));
                 } else {
                     ((View) v.getParent()).findViewById(R.id.nousb_id).setVisibility(View.VISIBLE);
@@ -635,7 +637,7 @@ public class GraphPotential extends AppCompatActivity {
         graphChannels.put(firstItem.channel, firstItem.graphController);
         //usbService.write(makeIdentifyMessage(chCnt));
 
-        final ImageView pausePlayView = (ImageView) findViewById(R.id.pauseplay_id);
+        ImageView pausePlayView = (ImageView) findViewById(R.id.pauseplay_id);
         pausePlayView.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -650,11 +652,6 @@ public class GraphPotential extends AppCompatActivity {
                     );
                     isPaused = !isPaused;
                 }
-                /*flashService.OpenDevice();
-                flashService.StartReadingThread();
-                flashService.WriteData("vAttach;108X".getBytes());
-                Log.d("Read queue", Boolean.toString(flashService.IsThereAnyReceivedData()));
-                flashService.CloseTheDevice();*/
             }
         });
 
@@ -670,6 +667,40 @@ public class GraphPotential extends AppCompatActivity {
                 //timerHandler.postDelayed(new DelaySendRunnable(makeIdentifyMessage(0)), 1500);
                 //fastAdapter.notifyAdapterDataSetChanged();
                 //fastAdapter.notifyAdapterItemChanged(0, GraphItem.UpdateType.CHINFO);
+            }
+        });
+
+        ImageView flashDataView = (ImageView) findViewById(R.id.flash_id);
+        flashDataView.setOnClickListener(new View.OnClickListener() {
+            class GdbCallbackRunnable implements Runnable {
+                private UsbFlashService flashService;
+                public GdbCallbackRunnable(UsbFlashService flashService) {
+                    this.flashService = flashService;
+                }
+                @Override
+                public void run() {
+                    Log.d("GDB Received", Boolean.toString(flashService.IsThereAnyReceivedData()));
+                    flashService.CloseTheDevice();
+                }
+            }
+            @Override
+            public void onClick(View view) {
+                flashService.OpenDevice();
+                flashService.StartReadingThread();
+                String packet = "$";
+                String packetContent = "qRcmd,6D6F6E206C6564";
+                byte csum = 0;
+                for (byte b : packetContent.getBytes()){
+                    csum += b;
+                }
+                packet += packetContent;
+                packet += '#';
+                packet += csum;
+                flashService.WriteData(packet.getBytes());
+                Log.d("GDB Received", Boolean.toString(flashService.IsThereAnyReceivedData()));
+                GdbCallbackRunnable callback = new GdbCallbackRunnable(flashService);
+                timerHandler.postDelayed(callback, 1000);
+                //flashService.CloseTheDevice();
             }
         });
     }
