@@ -5,23 +5,15 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.content.IntentSender;
 import android.content.ServiceConnection;
 import android.graphics.Bitmap;
-import android.graphics.Color;
-import android.graphics.drawable.Drawable;
-import android.media.Image;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
-import android.provider.ContactsContract;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
-import android.support.design.widget.FloatingActionButton;
-import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
@@ -31,20 +23,11 @@ import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.ViewTreeObserver;
-import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.SeekBar;
-import android.widget.TextView;
 import android.widget.Toast;
 
-import com.github.mikephil.charting.charts.LineChart;
-import com.google.android.gms.auth.api.signin.GoogleSignIn;
 import com.google.android.gms.auth.api.signin.GoogleSignInClient;
-import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
-import com.google.android.gms.tasks.Continuation;
-import com.google.android.gms.tasks.OnFailureListener;
-import com.google.android.gms.tasks.OnSuccessListener;
-import com.google.android.gms.tasks.Task;
 import com.google.api.client.extensions.android.http.AndroidHttp;
 import com.google.api.client.googleapis.extensions.android.gms.auth.GoogleAccountCredential;
 import com.google.api.client.http.FileContent;
@@ -55,40 +38,30 @@ import com.google.api.client.util.ExponentialBackOff;
 import com.google.api.services.drive.DriveScopes;
 import com.google.api.services.drive.model.File;
 import com.mikepenz.fastadapter.FastAdapter;
-import com.mikepenz.fastadapter.IItem;
 import com.mikepenz.fastadapter.adapters.ItemAdapter;
 import com.mikepenz.fastadapter.expandable.ExpandableExtension;
 import com.mikepenz.fastadapter.listeners.ClickEventHook;
 import com.mikepenz.fastadapter.listeners.CustomEventHook;
-import com.mikepenz.fastadapter.listeners.EventHook;
 import com.mikepenz.fastadapter_extensions.drag.ItemTouchCallback;
 import com.mikepenz.fastadapter_extensions.drag.SimpleDragCallback;
 
 import java.io.IOException;
-import java.io.OutputStream;
-import java.io.OutputStreamWriter;
-import java.io.Writer;
 import java.lang.ref.WeakReference;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
-import java.util.List;
 import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
 
-import io.saeid.fabloading.LoadingView;
-
-import static android.view.View.VISIBLE;
-
-public class GraphPotential extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity {
+    private static final String TAG = MainActivity.class.getSimpleName();
 
     private boolean pingRunning;
     private boolean commsEstablished;
 
-    private final BroadcastReceiver mUsbReceiver = new BroadcastReceiver() {
+    private final BroadcastReceiver usbReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
             switch (intent.getAction()) {
@@ -142,14 +115,18 @@ public class GraphPotential extends AppCompatActivity {
         }
     };
 
-    private static final byte[] blinkMessage = new byte[] {
+    private final byte[] pingMessage = new byte[] {
+            (byte)0b11100000, 0x0, 0x0, 0x0
+    };
+
+    private final byte[] blinkMessage = new byte[]{
             (byte) 0b10010000,
             0x0,
             0x0,
             0x0
     };
 
-    private static final byte[] pausePlayMessage = new byte[] {
+    private final byte[] pausePlayMessage = new byte[]{
             (byte) 0b11000000,
             (byte) 0b11000000,
             0x0,
@@ -159,9 +136,9 @@ public class GraphPotential extends AppCompatActivity {
     private byte[] makeIdentifyMessage(int ch) {
         //byte b = (byte) ch;
         byte chByte = (byte) ch;
-        return new byte[] {
+        return new byte[]{
                 (byte) 0b11000000,
-                (byte) (0b01000000 | (byte) ((byte)(chByte & 0b111) << 3)),
+                (byte) (0b01000000 | (byte) ((byte) (chByte & 0b111) << 3)),
                 0x0,
                 0x0
 
@@ -176,12 +153,12 @@ public class GraphPotential extends AppCompatActivity {
     16-bit value
      */
 
-    private byte[] makeDataMessage(int ch, int param, int val) {
+    public byte[] makeDataMessage(int ch, int param, int val) {
         byte chByte = (byte) ch;
         byte paramByte = (byte) param;
         byte valByte1 = (byte) (val & 0xFF);
         byte valByte2 = (byte) ((val >> 8) & 0xFF);
-        return new byte[] {
+        return new byte[]{
                 (byte) (0b11010000 | (byte) chByte << 1),
                 (byte) ((paramByte << 4) | ((valByte1 & 0b11110000) >> 4)),
                 (byte) (((valByte1 & 0b1111) << 4) | ((valByte2 & 0b11110000) >> 4)),
@@ -189,7 +166,7 @@ public class GraphPotential extends AppCompatActivity {
         };
     }
 
-    private Map<String, Integer> interneuronParams = new HashMap<String, Integer>() {{
+    private final Map<String, Integer> interneuronParams = new HashMap<String, Integer>() {{
         put("current", 0b1);
         put("dendrite1", 0b10);
         put("dendrite2", 0b11);
@@ -206,7 +183,7 @@ public class GraphPotential extends AppCompatActivity {
         public void onServiceConnected(ComponentName arg0, IBinder arg1) {
             usbService = ((UsbService.UsbBinder) arg1).getService();
             usbService.setHandler(nidHandler);
-            usbService.write(makeIdentifyMessage(0));
+            usbService.write(makeIdentifyMessage(0)); // clear all channels
         }
 
         @Override
@@ -271,31 +248,13 @@ public class GraphPotential extends AppCompatActivity {
         }
     }
 
-    Runnable clearRunnable = new Runnable() {
-        @Override
-        public void run() {
-            if (usbService != null) {
-                usbService.write(makeIdentifyMessage(0));
-            }
-        }
-    };
-
     Handler timerHandler = new Handler();
     Runnable pingRunnable = new Runnable() {
 
         @Override
         public void run() {
-            byte[] nidPing = new byte[] {(byte)0b11100000, 0x0, 0x0, 0x0};
-            byte[] blink = new byte[] {(byte) 0b10010000, 0x0, 0x0, 0x0};
-            int size = graphChannels.size();
-
-            if (usbService != null) {
-                usbService.write(nidPing);
-
-                //usbService.write(blink);
-            }
-
             if (usbService != null){
+                usbService.write(pingMessage);
                 timerHandler.postDelayed(this, 200);
             } else {
                 pingRunning = false;
@@ -698,9 +657,9 @@ public class GraphPotential extends AppCompatActivity {
                 packet += csum;
                 flashService.WriteData(packet.getBytes());
                 Log.d("GDB Received", Boolean.toString(flashService.IsThereAnyReceivedData()));
-                GdbCallbackRunnable callback = new GdbCallbackRunnable(flashService);
-                timerHandler.postDelayed(callback, 1000);
-                //flashService.CloseTheDevice();
+                //GdbCallbackRunnable callback = new GdbCallbackRunnable(flashService);
+                //timerHandler.postDelayed(callback, 1000);
+                flashService.CloseTheDevice();
             }
         });
     }
@@ -766,7 +725,7 @@ public class GraphPotential extends AppCompatActivity {
     @Override
     public void onPause() {
         super.onPause();
-        unregisterReceiver(mUsbReceiver);
+        unregisterReceiver(usbReceiver);
         unbindService(usbConnection);
     }
 
@@ -796,15 +755,15 @@ public class GraphPotential extends AppCompatActivity {
         filter.addAction(UsbService.ACTION_CDC_DRIVER_NOT_WORKING);
         filter.addAction(UsbService.ACTION_USB_DEVICE_NOT_WORKING);
         filter.addAction(UsbService.ACTION_USB_READY);
-        registerReceiver(mUsbReceiver, filter);
+        registerReceiver(usbReceiver, filter);
     }
 
     /*
      * This handler will be passed to UsbService. Data received from serial port is displayed through this handler
      */
     private static class NidHandler extends Handler {
-        private final WeakReference<GraphPotential> mActivity;
-        public NidHandler(GraphPotential activity) {
+        private final WeakReference<MainActivity> mActivity;
+        public NidHandler(MainActivity activity) {
             mActivity = new WeakReference<>(activity);
         }
 

@@ -139,7 +139,7 @@ public class UsbFlashService {
         {
             // Lock that is common for read/write methods.
             synchronized (_locker) {
-                UsbInterface writeIntf = _usbDevice.getInterface(0);
+                UsbInterface writeIntf = _usbDevice.getInterface(1);
                 UsbEndpoint writeEp = writeIntf.getEndpoint(0);
                 UsbDeviceConnection writeConnection = _usbManager.openDevice(_usbDevice);
 
@@ -214,8 +214,8 @@ public class UsbFlashService {
                             continue;
                         }
 
-                        readIntf = _usbDevice.getInterface(0);
-                        readEp = readIntf.getEndpoint(0); // is this 0x81??
+                        readIntf = _usbDevice.getInterface(1);
+                        readEp = readIntf.getEndpoint(1); // is this 0x81??
                         if (!_usbManager.getDeviceList().containsKey(_deviceName)) {
                             Log("Failed to connect to the device. Retrying to acquire it.");
                             OpenDevice();

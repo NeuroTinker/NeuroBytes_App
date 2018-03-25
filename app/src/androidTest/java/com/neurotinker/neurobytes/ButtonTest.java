@@ -27,7 +27,7 @@ import static org.hamcrest.Matchers.allOf;
 public class ButtonTest {
 
     @Rule
-    public ActivityTestRule<GraphPotential> mActivityTestRule = new ActivityTestRule<>(GraphPotential.class);
+    public ActivityTestRule<MainActivity> mActivityTestRule = new ActivityTestRule<>(MainActivity.class);
 
     @Test
     public void buttonTest() {

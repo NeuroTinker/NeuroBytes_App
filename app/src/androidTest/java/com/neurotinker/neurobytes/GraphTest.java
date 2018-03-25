@@ -1,6 +1,5 @@
 package com.neurotinker.neurobytes;
 
-import android.os.Handler;
 import android.support.test.filters.SmallTest;
 import android.support.test.rule.ActivityTestRule;
 import android.support.test.runner.AndroidJUnit4;
@@ -11,8 +10,6 @@ import org.junit.runner.RunWith;
 
 import static android.support.test.espresso.Espresso.onView;
 import static android.support.test.espresso.action.ViewActions.click;
-import static android.support.test.espresso.assertion.ViewAssertions.matches;
-import static android.support.test.espresso.matcher.ViewMatchers.isDisplayed;
 import static android.support.test.espresso.matcher.ViewMatchers.withId;
 
 /**
@@ -30,8 +27,8 @@ public class GraphTest {
     private static final short [] test_message = {0b1000000, 100}; // channel 1 data=100
 
     @Rule
-    public final ActivityTestRule<GraphPotential> mainActivityRule =
-            new ActivityTestRule<>(GraphPotential.class, true, false);
+    public final ActivityTestRule<MainActivity> mainActivityRule =
+            new ActivityTestRule<>(MainActivity.class, true, false);
 
     @Test(timeout=5000)
     public void graphTest() throws Exception {

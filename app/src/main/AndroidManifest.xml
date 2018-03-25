@@ -14,7 +14,7 @@
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
         <activity
-            android:name=".GraphPotential"
+            android:name=".MainActivity"
             android:label="@string/app_name"
             android:theme="@style/AppTheme.NoActionBar">
             <meta-data android:name="com.neurotinker.neurobytes.APP_ID" android:value="id=196116"/>
@@ -33,10 +33,10 @@
         <activity
             android:name=".SettingsActivity"
             android:label="@string/title_activity_settings"
-            android:parentActivityName=".GraphPotential">
+            android:parentActivityName=".MainActivity">
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
-                android:value="com.neurotinker.neurobytes.GraphPotential" />
+                android:value="com.neurotinker.neurobytes.MainActivity" />
         </activity>
     </application>
 
