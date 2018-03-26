@@ -102,6 +102,15 @@ public class MainActivity extends AppCompatActivity {
         }
     };
 
+    private final NidReceiver nidReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            switch (intent.getAction()) {
+
+            }
+        }
+    }
+
     public static final String ACTION_CHANNEL_ACQUIRED = "com.neurotinker.neurobytes.ACTION_CHANNEL_ACQUIRED";
 
     private final BroadcastReceiver uiReceiver = new BroadcastReceiver() {
@@ -178,20 +187,20 @@ public class MainActivity extends AppCompatActivity {
     private UsbService usbService;
     public NidHandler nidHandler;
 
-    private final ServiceConnection usbConnection = new ServiceConnection() {
-        @Override
-        public void onServiceConnected(ComponentName arg0, IBinder arg1) {
-            usbService = ((UsbService.UsbBinder) arg1).getService();
-            usbService.setHandler(nidHandler);
-            usbService.write(makeIdentifyMessage(0)); // clear all channels
-        }
-
-        @Override
-        public void onServiceDisconnected(ComponentName arg0) {
-            usbService = null;
-            pingRunning = false;
-        }
-    };
+//    private final ServiceConnection usbConnection = new ServiceConnection() {
+//        @Override
+//        public void onServiceConnected(ComponentName arg0, IBinder arg1) {
+//            usbService = ((UsbService.UsbBinder) arg1).getService();
+//            usbService.setHandler(nidHandler);
+//            usbService.write(makeIdentifyMessage(0)); // clear all channels
+//        }
+//
+//        @Override
+//        public void onServiceDisconnected(ComponentName arg0) {
+//            usbService = null;
+//            pingRunning = false;
+//        }
+//    };
 
     class SeekBarHook extends CustomEventHook {
 
