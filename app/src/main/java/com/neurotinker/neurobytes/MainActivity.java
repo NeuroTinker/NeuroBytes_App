@@ -102,24 +102,11 @@ public class MainActivity extends AppCompatActivity {
         }
     };
 
-    private final NidReceiver nidReceiver = new BroadcastReceiver() {
+    private final BroadcastReceiver nidReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
             switch (intent.getAction()) {
 
-            }
-        }
-    }
-
-    public static final String ACTION_CHANNEL_ACQUIRED = "com.neurotinker.neurobytes.ACTION_CHANNEL_ACQUIRED";
-
-    private final BroadcastReceiver uiReceiver = new BroadcastReceiver() {
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            switch (intent.getAction()) {
-                case ACTION_CHANNEL_ACQUIRED:
-                    //TODO: add channel acquisition logic
-                    break;
             }
         }
     };
