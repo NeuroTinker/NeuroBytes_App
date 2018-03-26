@@ -11,6 +11,24 @@ public class NbMessage {
     public static final int HEADER_OFFSET = 27;
     public static final int CHANNEL_OFFSET = 20;
     private final byte DATA_HEADER = 0b1010;
+
+    public enum Subheader {
+        POTENTIAL   ((byte) 0b000),
+        TYPE        ((byte) 0b001),
+        UNIQUE_ID   ((byte) 0b010),
+        MODE        ((byte) 0b011),
+        PARAMETER   ((byte) 0b100);
+
+        private final byte val;
+        Subheader(byte val) {
+            this.val = val;
+        }
+
+        Subheader(int val) {
+            this.val = (byte) val;
+        }
+    }
+
     private short[] packet;
     public boolean isValid;
     private int header;
@@ -37,6 +55,10 @@ public class NbMessage {
 
     public boolean checkIfValid() {
         return this.isValid;
+    }
+
+    public boolean checkSubheader(Subheader sub) {
+        return (sub.val == (byte) this.subheader);
     }
 
     private void parseUsingShorts(short [] msg) {

@@ -17,7 +17,9 @@ import android.widget.Toast;
 
 import java.lang.ref.WeakReference;
 import java.sql.DataTruncation;
+import java.util.HashMap;
 import java.util.LinkedList;
+import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
 
@@ -35,10 +37,12 @@ public class NidService extends Service {
     public static final String ACTION_NID_READY = "com.neurotinker.neurobytes.ACTION_NID_READY";
     public static final String ACTION_SEND_BLINK = "com.neurotinker.neurobytes.ACTION_SEND_BLINK";
     public static final String ACTION_ADD_CHANNEL = "com.neurotinker.neurobytes.ACTION_SEND_IDENTIFY";
+    public static final String ACTION_CHANNEL_ACQUIRED = "com.neurotinker.neurobytes.ACTION_CHANNEL_ACQUIRED";
     public static final String ACTION_REMOVE_CHANNEL = "com.neurotinker.neurobytes.ACTION_REMOVE_CHANNEL";
 
-    public static final String DATA = "com.neurotinker.neurobytes.DATA";
-    public static final String CHANNEL = "com.neurotinker.neurobytes.CHANNEL";
+    public static final String BUNDLE_DATA_POTENTIAL = "com.neurotinker.neurobytes.BUNDLE_DATA_POTENTIAL";
+    public static final String BUNDLE_DATA_TYPE = "com.neurotinker.neurobytes.BUNDLE_DATA_TYPE";
+    public static final String BUNDLE_CHANNEL = "com.neurotinker.neurobytes.BUNDLE_CHANNEL";
 
     /**
      * NidService States
@@ -66,6 +70,10 @@ public class NidService extends Service {
     public static NidService.State state;
     private Context context;
     private IBinder binder = new NidBinder();
+    SendMessageRunnable pingRunnable;
+    SendMessageRunnable identifyRunnable;
+    boolean isIdentifying;
+    int identifyingChannel;
 
     @Override
     public void onCreate() {
@@ -96,6 +104,7 @@ public class NidService extends Service {
     public void onDestroy() {
         super.onDestroy();
         state = State.QUITTING;
+        pingRunnable.stop();
         unregisterReceiver(usbReceiver);
         unregisterReceiver(commandReceiver);
         unbindService(usbConnection);
@@ -142,9 +151,23 @@ public class NidService extends Service {
                     NbMessage nbMsg = new NbMessage(packet);
                     if (nbMsg.isValid){
                         Intent intent = new Intent(ACTION_RECEIVED_DATA);
-                        intent.putExtra(CHANNEL, nbMsg.channel);
-                        intent.putExtra(DATA, nbMsg.data);
-                        sendBroadcast(intent);
+                        intent.putExtra(BUNDLE_CHANNEL, nbMsg.channel);
+                        if (nbMsg.checkSubheader(NbMessage.Subheader.POTENTIAL)) {
+                            intent.putExtra(BUNDLE_DATA_POTENTIAL, nbMsg.data);
+                            sendBroadcast(intent);
+                        } else if (nbMsg.checkSubheader(NbMessage.Subheader.TYPE)) {
+                            intent.putExtra(BUNDLE_DATA_TYPE, nbMsg.data);
+                            sendBroadcast(intent);
+                            if (isIdentifying) {
+                                // new channel has been acquired
+                                sendBroadcast(new Intent(ACTION_CHANNEL_ACQUIRED));
+                                identifyRunnable.stop();
+                                sendMessage(STOP_IDENTIFY);
+                                isIdentifying = false;
+                            } else {
+                                Log.e(TAG, "Duplicate channel acquired");
+                            }
+                        }
                     } else {
                         Log.d(TAG, "Received invalid message");
                     }
@@ -171,12 +194,14 @@ public class NidService extends Service {
      * sendPing is ran through a ping handler every 200 ms
      */
     public void sendPing() {
-
-    }
-
-    public void sendMessage(NidMessage msg) {
         if (usbService != null && state == State.RUNNING) {
             usbService.write(PING_MESSAGE);
+        }
+    }
+
+    public void sendMessage(byte[] msg) {
+        if (usbService != null && state == State.RUNNING) {
+            usbService.write(msg);
         }
     }
 
@@ -185,14 +210,19 @@ public class NidService extends Service {
         public void onReceive(Context context, Intent intent) {
             switch (intent.getAction()) {
                 case ACTION_SEND_BLINK:
-                    usbService.write(BLINK_MESSAGE);
+                    sendMessage(BLINK_MESSAGE);
                     break;
                 case ACTION_ADD_CHANNEL:
                     /**
                      * Send identify X command
                      * Re-send identify X command until channel has been identified
                      * Once identified, Send CHANNEL_ACQUIRED broadcast with board info
+                     * Finish by sending ID_DONE message to network so no more boards ID
                      */
+                    int ch = intent.getIntExtra(BUNDLE_CHANNEL, 0);
+                    identifyRunnable = new SendMessageRunnable(makeIdentifyMessage(ch), 500);
+                    timerHandler.postDelayed(identifyRunnable, 100);
+                    isIdentifying = true;
                     break;
             }
         }
@@ -218,14 +248,17 @@ public class NidService extends Service {
                 case UsbService.ACTION_USB_READY:
                     Toast.makeText(context, "USB communication established",
                             Toast.LENGTH_SHORT).show();
-                    // start sending nid pings
-                    commsEstablished = true;
-                    if (!pingRunning){
-                        Log.d("Message Sent", "NID Ping");
-                        timerHandler.postDelayed(pingRunnable, 500);
-                        timerHandler.postDelayed(new MainActivity.DelaySendRunnable(
-                                makeIdentifyMessage(0)), 3000);
-                        pingRunning = true;
+                    /**
+                     * Start initialization sequence:
+                     * 10 ms - start sending pings
+                     * 1000 ms - send clear channel command
+                     * 2000 ms - enable NID communications
+                     */
+                    if (state == State.NOT_CONNECTED) {
+                        pingRunnable = new SendMessageRunnable(PING_MESSAGE);
+                        timerHandler.postDelayed(pingRunnable, 10);
+                        timerHandler.postDelayed(new SendMessageRunnable(CLEAR_CHANNEL), 1000);
+                        timerHandler.postDelayed(new ChangeStateRunnable(State.RUNNING), 2000);
                     }
                     break;
             }
@@ -251,4 +284,116 @@ public class NidService extends Service {
         registerReceiver(usbReceiver, filter);
         registerReceiver(commandReceiver, filter);
     }
+
+    Handler timerHandler = new Handler();
+    class SendMessageRunnable implements Runnable {
+        private byte[] message;
+        boolean isRepeating;
+        int repeatTime;
+
+        public SendMessageRunnable(byte[] message) {
+            this.message = message;
+        }
+
+        public SendMessageRunnable(byte[] message, int repeatTime) {
+            this.message = message;
+            this.isRepeating = true;
+            this.repeatTime = repeatTime;
+        }
+
+        @Override
+        public void run() {
+            sendMessage(message);
+            if (isRepeating) timerHandler.postDelayed(this, repeatTime);
+        }
+
+        public void stop() {
+            this.isRepeating = false;
+        }
+    }
+
+    class ChangeStateRunnable implements Runnable {
+        private State newState;
+
+        public ChangeStateRunnable(State newState) {
+            this.newState = newState;
+        }
+
+        @Override
+        public void run() {
+            state = newState;
+            if (newState == State.RUNNING) {
+                Intent intent = new Intent(ACTION_NID_READY);
+                sendBroadcast(intent);
+            }
+        }
+    }
+
+    /**
+     * Temporarily use these command builers instead of NidMessage
+     * TODO: Use NidMessage to build messages
+     */
+
+    private final byte[] PING_MESSAGE = new byte[] {
+            (byte)0b11100000, 0x0, 0x0, 0x0
+    };
+
+    private final byte[] BLINK_MESSAGE = new byte[]{
+            (byte) 0b10010000,
+            0x0,
+            0x0,
+            0x0
+    };
+
+    private final byte[] pausePlayMessage = new byte[]{
+            (byte) 0b11000000,
+            (byte) 0b11000000,
+            0x0,
+            0x0
+    };
+
+    private byte[] makeIdentifyMessage(int ch) {
+        //byte b = (byte) ch;
+        byte chByte = (byte) ch;
+        return new byte[]{
+                (byte) 0b11000000,
+                (byte) (0b01000000 | (byte) ((byte) (chByte & 0b111) << 3)),
+                0x0,
+                0x0
+
+        };
+    }
+
+    private final byte[] CLEAR_CHANNEL = makeIdentifyMessage(0);
+    private final byte[] STOP_IDENTIFY = makeIdentifyMessage(7);
+
+    /*
+    Data message to a channel.
+    4-bit header
+    3-bit channel
+    5-bit parameter id
+    16-bit value
+     */
+
+    public byte[] makeDataMessage(int ch, int param, int val) {
+        byte chByte = (byte) ch;
+        byte paramByte = (byte) param;
+        byte valByte1 = (byte) (val & 0xFF);
+        byte valByte2 = (byte) ((val >> 8) & 0xFF);
+        return new byte[]{
+                (byte) (0b11010000 | (byte) chByte << 1),
+                (byte) ((paramByte << 4) | ((valByte1 & 0b11110000) >> 4)),
+                (byte) (((valByte1 & 0b1111) << 4) | ((valByte2 & 0b11110000) >> 4)),
+                (byte) ((valByte2 & 0b1111) << 4)
+        };
+    }
+
+    private final Map<String, Integer> interneuronParams = new HashMap<String, Integer>() {{
+        put("current", 0b1);
+        put("dendrite1", 0b10);
+        put("dendrite2", 0b11);
+        put("dendrite3", 0b100);
+        put("dendrite4", 0b101);
+        put("delay", 0b111);
+    }};
 }
