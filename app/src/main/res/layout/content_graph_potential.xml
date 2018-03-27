@@ -8,10 +8,9 @@
     tools:context="com.neurotinker.neurobytes.MainActivity"
     tools:showIn="@layout/activity_graph_potential">
 
-    <android.support.v7.widget.RecyclerView
-        android:id="@+id/recview"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:visibility="visible" />
+    <fragment class="com.neurotinker.neurobytes.ChannelDisplayFragment"
+        android:id="@+id/channelfragmen_id"
+        android:layout_width="match_parent" android:layout_height="match_parent" />
+
 
 </android.support.constraint.ConstraintLayout>

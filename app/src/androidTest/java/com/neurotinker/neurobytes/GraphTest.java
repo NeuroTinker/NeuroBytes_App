@@ -35,7 +35,7 @@ public class GraphTest {
         // start activity
         mainActivityRule.launchActivity(null);
         // click create channel button
-        onView(withId(R.id.fab1)).perform(click());
+        //onView(withId(R.id.fab1)).perform(click());
 
         // send dummy data
         //((Handler)mainActivityRule.getActivity().mHandler)

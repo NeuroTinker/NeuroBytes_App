@@ -31,15 +31,7 @@ public class ButtonTest {
 
     @Test
     public void buttonTest() {
-        ViewInteraction floatingActionButton = onView(
-                allOf(withId(R.id.fab1),
-                        childAtPosition(
-                                childAtPosition(
-                                        withId(android.R.id.content),
-                                        0),
-                                2),
-                        isDisplayed()));
-        floatingActionButton.perform(click());
+
 
     }
 

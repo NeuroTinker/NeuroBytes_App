@@ -248,12 +248,14 @@ public class NidService extends Service {
                 case UsbService.ACTION_USB_READY:
                     Toast.makeText(context, "USB communication established",
                             Toast.LENGTH_SHORT).show();
+
                     /**
                      * Start initialization sequence:
                      * 10 ms - start sending pings
                      * 1000 ms - send clear channel command
                      * 2000 ms - enable NID communications
                      */
+
                     if (state == State.NOT_CONNECTED) {
                         pingRunnable = new SendMessageRunnable(PING_MESSAGE);
                         timerHandler.postDelayed(pingRunnable, 10);

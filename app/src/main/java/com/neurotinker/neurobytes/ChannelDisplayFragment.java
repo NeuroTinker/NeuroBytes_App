@@ -1,11 +1,14 @@
 package com.neurotinker.neurobytes;
 
 import android.content.BroadcastReceiver;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.ServiceConnection;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.IBinder;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
@@ -24,14 +27,17 @@ import com.mikepenz.fastadapter.listeners.ClickEventHook;
 import com.mikepenz.fastadapter_extensions.drag.ItemTouchCallback;
 import com.mikepenz.fastadapter_extensions.drag.SimpleDragCallback;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.Queue;
+import java.util.Set;
 
 import static com.neurotinker.neurobytes.NidService.ACTION_ADD_CHANNEL;
 import static com.neurotinker.neurobytes.NidService.ACTION_RECEIVED_DATA;
+import static com.neurotinker.neurobytes.NidService.ACTION_REMOVE_CHANNEL;
 import static com.neurotinker.neurobytes.NidService.BUNDLE_CHANNEL;
 import static com.neurotinker.neurobytes.NidService.BUNDLE_DATA_POTENTIAL;
 import static com.neurotinker.neurobytes.NidService.BUNDLE_DATA_TYPE;
@@ -99,6 +105,7 @@ public class ChannelDisplayFragment extends Fragment {
         /**
          * Initialize the RecyclerView
          */
+
         expandableExtension = new ExpandableExtension<>();
         expandableExtension.withOnlyOneExpandedItem(true);
         fastAdapter.addExtension(expandableExtension);
@@ -108,21 +115,22 @@ public class ChannelDisplayFragment extends Fragment {
         fastAdapter.withEventHook(new AddChannelEventHook());
         fastAdapter.withEventHook(new ClearChannelEventHook());
 
-
-        recyclerView = (RecyclerView) this.findViewById(R.id.recview);
-        recyclerView.setLayoutManager(new LinearLayoutManager(this));
+        recyclerView = (RecyclerView) getActivity().findViewById(R.id.recview);
+        recyclerView.setLayoutManager(new LinearLayoutManager(getActivity()));
         recyclerView.setAdapter(fastAdapter);
 
         dragCallback = new SimpleDragCallback();
         ItemTouchHelper touchHelper = new ItemTouchHelper(dragCallback);
         touchHelper.attachToRecyclerView(recyclerView);
 
+
         /**
          * Make the first item
          */
-        GraphItem firstItem = new GraphItem(++chCnt);
-        itemAdapter.add(firstItem);
-        channels.put(firstItem.channel, firstItem);
+//        GraphItem firstItem = new GraphItem(++chCnt);
+//        itemAdapter.add(firstItem);
+//        channels.put(firstItem.channel, firstItem);
+        addItem();
     }
 
     @Override
@@ -157,6 +165,21 @@ public class ChannelDisplayFragment extends Fragment {
         mListener = null;
     }
 
+    private GraphItem addItem() {
+        GraphItem newItem = new GraphItem(
+                nextCh.peek() != null ? nextCh.remove() : ++chCnt
+        );
+        itemAdapter.add(newItem);
+        channels.put(newItem.channel, newItem);
+        return newItem;
+    }
+
+    private GraphSubItem addSubItem(GraphItem item) {
+        GraphSubItem newSubItem = new GraphSubItem();
+        newSubItem.withParent(item);
+        return newSubItem;
+    }
+
     private final BroadcastReceiver nidReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
@@ -180,7 +203,16 @@ public class ChannelDisplayFragment extends Fragment {
                             int type = intent.getIntExtra(BUNDLE_DATA_TYPE, 0);
 
                             if (channels.get(ch).state == GraphItem.GraphState.NEW) {
-
+                                /**
+                                 * Enable GraphItem
+                                 * Make appropriate subitem and attach it to channel
+                                 * TODO: Make subitem specific to board type
+                                 */
+                                channels.get(ch).channelController.setAcquired();
+                                channels.get(ch).withSubItems(Arrays.asList(
+                                        addSubItem(channels.get(ch))
+                                ));
+                                addItem();
                             } else {
                                 Log.e(TAG, "Channel re-initialized");
                             }
@@ -265,20 +297,19 @@ public class ChannelDisplayFragment extends Fragment {
 
         @Override
         public void onClick(View v, int position, FastAdapter fastAdapter, GraphItem item) {
-            if (usbService != null) {
-                //itemAdapter.remove(position);
-                nextCh.add(item.channel);
-                usbService.write(makeIdentifyMessage(item.channel));
-                //timerHandler.postDelayed(new DelaySendRunnable(makeIdentifyMessage(chCnt)), 500);
-                channels.remove(item.graphController);
-                itemAdapter.remove(position);
-                //fastAdapter.notifyAdapterDataSetChanged();
-                //fastAdapter.notifyAdapterItemRemoved(position);
-            }
+            //itemAdapter.remove(position);
+            nextCh.add(item.channel);
+            Intent intent = new Intent(ACTION_REMOVE_CHANNEL);
+            intent.putExtra(BUNDLE_CHANNEL, item.channel);
+            _context.sendBroadcast(intent);
+            channels.remove(item);
+            itemAdapter.remove(position);
+            //fastAdapter.notifyAdapterDataSetChanged();
+            //fastAdapter.notifyAdapterItemRemoved(position);
         }
     }
 
-        /**
+    /**
      * This interface must be implemented by activities that contain this
      * fragment to allow an interaction in this fragment to be communicated
      * to the activity and potentially other fragments contained in that

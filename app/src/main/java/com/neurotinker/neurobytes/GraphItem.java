@@ -11,6 +11,7 @@ import android.view.View;
 import android.view.animation.AccelerateDecelerateInterpolator;
 import android.view.animation.Animation;
 import android.view.animation.TranslateAnimation;
+import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
@@ -39,6 +40,8 @@ public class GraphItem extends AbstractExpandableItem<GraphItem, GraphItem.ViewH
     public double firingRate;
     public int channel;
     public GraphController graphController;
+    public ChannelController channelController;
+    public FrameLayout channelLayout;
 
     public enum GraphState {
         NEW,
@@ -117,6 +120,9 @@ public class GraphItem extends AbstractExpandableItem<GraphItem, GraphItem.ViewH
         @BindView(R.id.channelname_id)
         TextView channelName;
 
+        @BindView(R.id.graphitem_id)
+        FrameLayout channelLayout;
+
         GraphState state;
 
         StringHolder rateHolder;
@@ -132,6 +138,9 @@ public class GraphItem extends AbstractExpandableItem<GraphItem, GraphItem.ViewH
             if (payloads.isEmpty()) {
                 Log.d("bind w/ expanded", Boolean.toString(item.isExpanded()));
                 state = GraphState.NEW;
+
+                // initialize channelController
+                item.channelController = new ChannelController(channelLayout);
 
                 // initialize chart
                 chart.setDrawGridBackground(false);
