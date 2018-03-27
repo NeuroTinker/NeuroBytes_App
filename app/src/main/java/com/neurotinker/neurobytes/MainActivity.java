@@ -7,6 +7,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.graphics.Bitmap;
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
@@ -36,6 +37,7 @@ import com.google.api.client.json.JsonFactory;
 import com.google.api.client.json.jackson2.JacksonFactory;
 import com.google.api.client.util.ExponentialBackOff;
 import com.google.api.services.drive.DriveScopes;
+import com.google.api.services.drive.model.Channel;
 import com.google.api.services.drive.model.File;
 import com.mikepenz.fastadapter.FastAdapter;
 import com.mikepenz.fastadapter.adapters.ItemAdapter;
@@ -55,7 +57,11 @@ import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
 
-public class MainActivity extends AppCompatActivity {
+import static com.neurotinker.neurobytes.NidService.ACTION_NID_DISCONNECTED;
+import static com.neurotinker.neurobytes.NidService.ACTION_NID_READY;
+
+public class MainActivity extends AppCompatActivity
+        implements ChannelDisplayFragment.OnFragmentInteractionListener{
     private static final String TAG = MainActivity.class.getSimpleName();
 
 
@@ -66,12 +72,20 @@ public class MainActivity extends AppCompatActivity {
     private GoogleSignInClient mGoogleSignInClient;
     private Bitmap mBitmapToSave;
     private com.google.api.services.drive.Drive driveService = null;
+    private static boolean nidRunning;
 
     private final BroadcastReceiver nidReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
             switch (intent.getAction()) {
-
+                case ACTION_NID_READY:
+                    nidRunning = true;
+                    break;
+                case ACTION_NID_DISCONNECTED:
+                    nidRunning = false;
+                    break;
+                default:
+                    break;
             }
         }
     };
@@ -139,6 +153,10 @@ public class MainActivity extends AppCompatActivity {
                 flashService.CloseTheDevice();
             }
         });
+    }
+
+    public void onFragmentInteraction(Uri uri) {
+        // Test ChannelDisplayFragment interface
     }
 
     public boolean exportData() throws IOException {

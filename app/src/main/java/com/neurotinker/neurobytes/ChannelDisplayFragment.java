@@ -11,6 +11,7 @@ import android.os.Bundle;
 import android.os.IBinder;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.constraint.ConstraintLayout;
 import android.support.v4.app.Fragment;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
@@ -102,6 +103,46 @@ public class ChannelDisplayFragment extends Fragment {
             mParam1 = getArguments().getString(ARG_PARAM1);
         }
 
+//
+//        /**
+//         * Initialize the RecyclerView
+//         */
+//
+//        expandableExtension = new ExpandableExtension<>();
+//        expandableExtension.withOnlyOneExpandedItem(true);
+//        fastAdapter.addExtension(expandableExtension);
+//        fastAdapter.setHasStableIds(true);
+//
+//        itemTouchCallback = new ChannelTouchCallback();
+//        fastAdapter.withEventHook(new AddChannelEventHook());
+//        fastAdapter.withEventHook(new ClearChannelEventHook());
+//
+//        recyclerView = (RecyclerView) getActivity().findViewById(R.id.recview);
+//        recyclerView.setLayoutManager(new LinearLayoutManager(_context));
+//        recyclerView.setAdapter(fastAdapter);
+//
+//        dragCallback = new SimpleDragCallback();
+//        ItemTouchHelper touchHelper = new ItemTouchHelper(dragCallback);
+//        touchHelper.attachToRecyclerView(recyclerView);
+//
+//
+//        /**
+//         * Make the first item
+//         */
+////        GraphItem firstItem = new GraphItem(++chCnt);
+////        itemAdapter.add(firstItem);
+////        channels.put(firstItem.channel, firstItem);
+//        addItem();
+    }
+
+    @Override
+    public View onCreateView(LayoutInflater inflater, ViewGroup container,
+                             Bundle savedInstanceState) {
+        // Inflate the layout for this fragment
+
+        ConstraintLayout layout = (ConstraintLayout) inflater.inflate(
+                R.layout.fragment_channel_display, container, false);
+
         /**
          * Initialize the RecyclerView
          */
@@ -115,8 +156,8 @@ public class ChannelDisplayFragment extends Fragment {
         fastAdapter.withEventHook(new AddChannelEventHook());
         fastAdapter.withEventHook(new ClearChannelEventHook());
 
-        recyclerView = (RecyclerView) getActivity().findViewById(R.id.recview);
-        recyclerView.setLayoutManager(new LinearLayoutManager(getActivity()));
+        recyclerView = (RecyclerView) layout.findViewById(R.id.recview);
+        recyclerView.setLayoutManager(new LinearLayoutManager(_context));
         recyclerView.setAdapter(fastAdapter);
 
         dragCallback = new SimpleDragCallback();
@@ -130,14 +171,9 @@ public class ChannelDisplayFragment extends Fragment {
 //        GraphItem firstItem = new GraphItem(++chCnt);
 //        itemAdapter.add(firstItem);
 //        channels.put(firstItem.channel, firstItem);
-        addItem();
-    }
+//        addItem();
 
-    @Override
-    public View onCreateView(LayoutInflater inflater, ViewGroup container,
-                             Bundle savedInstanceState) {
-        // Inflate the layout for this fragment
-        return inflater.inflate(R.layout.fragment_channel_display, container, false);
+        return layout;
     }
 
     // TODO: Rename method, update argument and hook method into UI event
@@ -220,6 +256,8 @@ public class ChannelDisplayFragment extends Fragment {
                     } else {
                         Log.e(TAG, "Invalid channel");
                     }
+                    break;
+                default:
                     break;
             }
         }
