@@ -102,37 +102,6 @@ public class ChannelDisplayFragment extends Fragment {
         if (getArguments() != null) {
             mParam1 = getArguments().getString(ARG_PARAM1);
         }
-
-//
-//        /**
-//         * Initialize the RecyclerView
-//         */
-//
-//        expandableExtension = new ExpandableExtension<>();
-//        expandableExtension.withOnlyOneExpandedItem(true);
-//        fastAdapter.addExtension(expandableExtension);
-//        fastAdapter.setHasStableIds(true);
-//
-//        itemTouchCallback = new ChannelTouchCallback();
-//        fastAdapter.withEventHook(new AddChannelEventHook());
-//        fastAdapter.withEventHook(new ClearChannelEventHook());
-//
-//        recyclerView = (RecyclerView) getActivity().findViewById(R.id.recview);
-//        recyclerView.setLayoutManager(new LinearLayoutManager(_context));
-//        recyclerView.setAdapter(fastAdapter);
-//
-//        dragCallback = new SimpleDragCallback();
-//        ItemTouchHelper touchHelper = new ItemTouchHelper(dragCallback);
-//        touchHelper.attachToRecyclerView(recyclerView);
-//
-//
-//        /**
-//         * Make the first item
-//         */
-////        GraphItem firstItem = new GraphItem(++chCnt);
-////        itemAdapter.add(firstItem);
-////        channels.put(firstItem.channel, firstItem);
-//        addItem();
     }
 
     @Override
@@ -171,7 +140,7 @@ public class ChannelDisplayFragment extends Fragment {
 //        GraphItem firstItem = new GraphItem(++chCnt);
 //        itemAdapter.add(firstItem);
 //        channels.put(firstItem.channel, firstItem);
-//        addItem();
+        addItem();
 
         return layout;
     }
