@@ -102,37 +102,6 @@ public class ChannelDisplayFragment extends Fragment {
         if (getArguments() != null) {
             mParam1 = getArguments().getString(ARG_PARAM1);
         }
-
-//
-//        /**
-//         * Initialize the RecyclerView
-//         */
-//
-//        expandableExtension = new ExpandableExtension<>();
-//        expandableExtension.withOnlyOneExpandedItem(true);
-//        fastAdapter.addExtension(expandableExtension);
-//        fastAdapter.setHasStableIds(true);
-//
-//        itemTouchCallback = new ChannelTouchCallback();
-//        fastAdapter.withEventHook(new AddChannelEventHook());
-//        fastAdapter.withEventHook(new ClearChannelEventHook());
-//
-//        recyclerView = (RecyclerView) getActivity().findViewById(R.id.recview);
-//        recyclerView.setLayoutManager(new LinearLayoutManager(_context));
-//        recyclerView.setAdapter(fastAdapter);
-//
-//        dragCallback = new SimpleDragCallback();
-//        ItemTouchHelper touchHelper = new ItemTouchHelper(dragCallback);
-//        touchHelper.attachToRecyclerView(recyclerView);
-//
-//
-//        /**
-//         * Make the first item
-//         */
-////        GraphItem firstItem = new GraphItem(++chCnt);
-////        itemAdapter.add(firstItem);
-////        channels.put(firstItem.channel, firstItem);
-//        addItem();
     }
 
     @Override
@@ -152,9 +121,9 @@ public class ChannelDisplayFragment extends Fragment {
         fastAdapter.addExtension(expandableExtension);
         fastAdapter.setHasStableIds(true);
 
-        itemTouchCallback = new ChannelTouchCallback();
-        fastAdapter.withEventHook(new AddChannelEventHook());
-        fastAdapter.withEventHook(new ClearChannelEventHook());
+//        itemTouchCallback = new ChannelTouchCallback();
+//        fastAdapter.withEventHook(new AddChannelEventHook());
+//        fastAdapter.withEventHook(new ClearChannelEventHook());
 
         recyclerView = (RecyclerView) layout.findViewById(R.id.recview);
         recyclerView.setLayoutManager(new LinearLayoutManager(_context));
@@ -168,8 +137,9 @@ public class ChannelDisplayFragment extends Fragment {
         /**
          * Make the first item
          */
-//        GraphItem firstItem = new GraphItem(++chCnt);
-//        itemAdapter.add(firstItem);
+        GraphItem firstItem = new GraphItem(++chCnt);
+        itemAdapter.add(firstItem);
+//        fastAdapter.notifyAdapterItemChanged(0, firstItem);
 //        channels.put(firstItem.channel, firstItem);
 //        addItem();
 
@@ -193,6 +163,10 @@ public class ChannelDisplayFragment extends Fragment {
             throw new RuntimeException(context.toString()
                     + " must implement OnFragmentInteractionListener");
         }
+
+        // make the first item
+//        GraphItem firstItem = new GraphItem(++chCnt);
+//        itemAdapter.add(firstItem);
     }
 
     @Override
@@ -228,7 +202,7 @@ public class ChannelDisplayFragment extends Fragment {
                             int data = intent.getIntExtra(BUNDLE_DATA_POTENTIAL, 0);
                             channels.get(ch).graphController.update(data);
                         } else if (intent.hasExtra(BUNDLE_DATA_TYPE)) {
-                            /**
+                            /**h
                              * Initialize newly acquired channel:
                              * 1. Check type and make channel visible
                              * 2. Make the subitem for the specific board

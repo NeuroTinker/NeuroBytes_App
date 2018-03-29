@@ -214,7 +214,10 @@ public class MainActivity extends AppCompatActivity
     public void onResume() {
         super.onResume();
         setFilters();  // Start listening notifications from UsbService
-        startService(NidService.class, nidConnection, null);
+//        startService(NidService.class, nidConnection, null);
+        Log.d(TAG, "trying to start NidService");
+        Intent bindingIntent = new Intent(this, NidService.class);
+        bindService(bindingIntent, nidConnection, Context.BIND_AUTO_CREATE);
     }
 
     @Override

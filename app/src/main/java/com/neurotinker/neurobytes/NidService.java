@@ -75,6 +75,11 @@ public class NidService extends Service {
     boolean isIdentifying;
     int identifyingChannel;
 
+    public class LocalBinder extends Binder {
+        NidService getService() {
+            return NidService.this;
+        }
+    }
     @Override
     public void onCreate() {
         this.context = this;
@@ -96,6 +101,7 @@ public class NidService extends Service {
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         setFilters();
+        Log.d(TAG, "NidService started");
         startService(UsbService.class, usbConnection, null);
         return Service.START_NOT_STICKY;
     }
@@ -116,6 +122,7 @@ public class NidService extends Service {
             usbService = ((UsbService.UsbBinder) iBinder).getService();
             usbService.setHandler(new Handler(usbCallback));
             state = NidService.State.WAITING;
+            Log.d(TAG, "UsbService connected");
         }
 
         @Override
@@ -239,13 +246,13 @@ public class NidService extends Service {
                             Toast.LENGTH_SHORT).show();
                     break;
                 case UsbService.ACTION_NO_USB: // NO USB CONNECTED
-
                     break;
                 case UsbService.ACTION_USB_DISCONNECTED: // USB DISCONNECTED
                     Toast.makeText(context, "USB disconnected", Toast.LENGTH_SHORT).show();
                     state = State.NOT_CONNECTED;
                     break;
                 case UsbService.ACTION_USB_READY:
+                    Log.d(TAG, "USB_READY");
                     Toast.makeText(context, "USB communication established",
                             Toast.LENGTH_SHORT).show();
 

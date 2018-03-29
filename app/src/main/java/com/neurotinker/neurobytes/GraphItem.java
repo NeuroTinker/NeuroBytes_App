@@ -135,6 +135,12 @@ public class GraphItem extends AbstractExpandableItem<GraphItem, GraphItem.ViewH
         @Override
         public void bindView(GraphItem item, List<Object> payloads) {
 
+            /**
+             * Upon binding:
+             * Initialize channel controller
+             * Initialize chart. Board-specific panel info and submenu stuff gets initialized later
+             */
+
             if (payloads.isEmpty()) {
                 Log.d("bind w/ expanded", Boolean.toString(item.isExpanded()));
                 state = GraphState.NEW;
