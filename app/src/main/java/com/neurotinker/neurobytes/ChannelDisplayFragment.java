@@ -141,7 +141,7 @@ public class ChannelDisplayFragment extends Fragment {
         itemAdapter.add(firstItem);
 //        fastAdapter.notifyAdapterItemChanged(0, firstItem);
 //        channels.put(firstItem.channel, firstItem);
-//        addItem();
+        addItem();
 
         return layout;
     }
