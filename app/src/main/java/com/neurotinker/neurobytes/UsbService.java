@@ -91,6 +91,7 @@ public class UsbService extends Service {
             }
         }
     };
+
     /*
      * Different notifications from OS will be received here (USB attached, detached, permission responses...)
      * About BroadcastReceiver: http://developer.android.com/reference/android/content/BroadcastReceiver.html

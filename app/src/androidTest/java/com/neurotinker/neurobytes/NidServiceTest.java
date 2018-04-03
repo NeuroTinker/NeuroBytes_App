@@ -1,5 +1,6 @@
 package com.neurotinker.neurobytes;
 
+import android.content.Context;
 import android.content.Intent;
 import android.os.IBinder;
 import android.support.test.InstrumentationRegistry;
@@ -12,6 +13,8 @@ import org.junit.runner.RunWith;
 
 import java.util.concurrent.TimeoutException;
 
+import static junit.framework.Assert.assertEquals;
+
 /**
  * Created by jarod on 3/29/18.
  */
@@ -22,12 +25,22 @@ public class NidServiceTest {
     public final ServiceTestRule serviceTestRule = new ServiceTestRule();
 
     @Test
+    public void testWithStartedService() throws TimeoutException{
+        Intent startIntent =
+                new Intent(InstrumentationRegistry.getTargetContext(), NidService.class);
+        serviceTestRule.startService(startIntent);
+    }
+
+    @Test
     public void testWithBoundService() throws TimeoutException {
         Intent startIntent =
-                new Intent(InstrumentationRegistry.getTargetContext(),
-                        NidService.class);
+                new Intent(InstrumentationRegistry.getTargetContext(), NidService.class);
+        serviceTestRule.startService(startIntent);
         IBinder binder = serviceTestRule.bindService(startIntent);
 
-        NidService service = ((NidService.LocalBinder) binder).getService();
+
+        NidService service = ((NidService.NidBinder) binder).getService();
+
+        assertEquals(NidService.State.NOT_CONNECTED, service.state);
     }
 }

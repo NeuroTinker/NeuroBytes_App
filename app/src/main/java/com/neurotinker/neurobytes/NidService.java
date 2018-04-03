@@ -65,26 +65,26 @@ public class NidService extends Service {
         QUITTING
     }
 
+    private IBinder binder = new NidBinder();
+
     private UsbService usbService;
     private UsbCallback usbCallback;
-    public static NidService.State state;
+    public NidService.State state;
     private Context context;
-    private IBinder binder = new NidBinder();
     SendMessageRunnable pingRunnable;
     SendMessageRunnable identifyRunnable;
     boolean isIdentifying;
     int identifyingChannel;
 
-    public class LocalBinder extends Binder {
-        NidService getService() {
-            return NidService.this;
-        }
-    }
     @Override
     public void onCreate() {
+//        Log.d(TAG, "NidService.onCreate");
         this.context = this;
-        this.state = State.NOT_CONNECTED;
-        usbCallback = new UsbCallback();
+//        this.state = State.NOT_CONNECTED;
+//        usbCallback = new UsbCallback();
+//        setFilters();
+//        Log.d(TAG, "NidService started");
+//        startService(UsbService.class, usbConnection, null);
     }
 
     /**
@@ -95,25 +95,23 @@ public class NidService extends Service {
      */
     @Override
     public IBinder onBind(Intent intent) {
-        return binder;
+       return binder;
     }
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        setFilters();
-        Log.d(TAG, "NidService started");
-        startService(UsbService.class, usbConnection, null);
-        return Service.START_NOT_STICKY;
+//        return Service.START_NOT_STICKY;
+        return Service.START_STICKY;
     }
 
     @Override
     public void onDestroy() {
         super.onDestroy();
-        state = State.QUITTING;
-        pingRunnable.stop();
-        unregisterReceiver(usbReceiver);
-        unregisterReceiver(commandReceiver);
-        unbindService(usbConnection);
+//        state = State.QUITTING;
+//        pingRunnable.stop();
+//        unregisterReceiver(usbReceiver);
+//        unregisterReceiver(commandReceiver);
+//        unbindService(usbConnection);
     }
 
     private final ServiceConnection usbConnection = new ServiceConnection() {
@@ -184,7 +182,7 @@ public class NidService extends Service {
         }
     }
 
-    private class NidBinder extends Binder {
+    public class NidBinder extends Binder {
         public NidService getService() {
             return NidService.this;
         }
@@ -280,6 +278,8 @@ public class NidService extends Service {
         filter.addAction(NidService.ACTION_ADD_CHANNEL);
         filter.addAction(NidService.ACTION_REMOVE_CHANNEL);
         filter.addAction(NidService.ACTION_SEND_BLINK);
+        filter.addAction(NidService.ACTION_NID_DISCONNECTED);
+        filter.addAction(NidService.ACTION_NID_CONNECTED);
 
         filter.addAction(UsbService.ACTION_USB_PERMISSION_GRANTED);
         filter.addAction(UsbService.ACTION_NO_USB);
@@ -339,7 +339,7 @@ public class NidService extends Service {
     }
 
     /**
-     * Temporarily use these command builers instead of NidMessage
+     * Temporarily use these command builders instead of NidMessage
      * TODO: Use NidMessage to build messages
      */
 
