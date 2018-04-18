@@ -16,6 +16,7 @@ import org.junit.runner.RunWith;
 import java.util.concurrent.TimeoutException;
 
 import static junit.framework.Assert.assertEquals;
+import static junit.framework.Assert.assertFalse;
 import static junit.framework.Assert.assertNotNull;
 import static junit.framework.Assert.assertNull;
 import static junit.framework.Assert.assertTrue;
@@ -48,6 +49,27 @@ public class NidServiceTest {
         context.startService(new Intent(context, NidService.class));
 
         assertEquals(Service.START_STICKY, service.onStartCommand(new Intent(), 0, 0));
+    }
+
+    @Test
+    public void onCreate() throws Exception {
+        final NidService service = new NidService();
+
+        context.startService(new Intent(context, NidService.class));
+
+        //service.onStartCommand(new Intent(), 0, 0);
+        service.onCreate();
+        assertTrue(NidService.isServiceStarted());
+        assertEquals(NidService.State.NOT_CONNECTED, service.state);
+    }
+
+    @Test
+    public void onDestroy() throws Exception {
+        final NidService service = new NidService();
+        context.startService(new Intent(context, NidService.class));
+
+        service.onDestroy();
+        assertFalse(NidService.isServiceStarted());
     }
 /*
     @Test (timeout=1000)

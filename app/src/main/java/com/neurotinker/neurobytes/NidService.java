@@ -14,6 +14,7 @@ import android.os.IBinder;
 import android.os.Looper;
 import android.os.Message;
 import android.support.annotation.RestrictTo;
+import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 import android.widget.Toast;
 
@@ -75,7 +76,7 @@ public class NidService extends Service {
     private UsbService usbService;
     private UsbCallback usbCallback;
     public NidService.State state;
-    //private Context context;
+    private Context context;
     SendMessageRunnable pingRunnable;
     SendMessageRunnable identifyRunnable;
     boolean isIdentifying;
@@ -83,13 +84,22 @@ public class NidService extends Service {
 
     @Override
     public void onCreate() {
+        this.context = this;
         Log.d(TAG, "NidService.onCreate");
         super.onCreate();
         isStarted = true;
-//        this.context = this;
         this.state = State.NOT_CONNECTED;
-       usbCallback = new UsbCallback();
-        setFilters();
+        usbCallback = new UsbCallback();
+
+        registerReceiver(new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+
+            }
+        }, new IntentFilter());
+
+
+        //setFilters();
         Log.d(TAG, "NidService started");
 //        startService(UsbService.class, usbConnection, null);
     }
@@ -109,7 +119,9 @@ public class NidService extends Service {
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
 //        return Service.START_NOT_STICKY;
+
         Log.d(TAG, "NidService started");
+        //context = getApplicationContext();
         return Service.START_STICKY;
     }
 
