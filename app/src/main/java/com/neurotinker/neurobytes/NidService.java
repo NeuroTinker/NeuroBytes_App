@@ -11,7 +11,9 @@ import android.os.Binder;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
+import android.os.Looper;
 import android.os.Message;
+import android.support.annotation.RestrictTo;
 import android.util.Log;
 import android.widget.Toast;
 
@@ -65,12 +67,15 @@ public class NidService extends Service {
         QUITTING
     }
 
-    private IBinder binder = new NidBinder();
+    private final IBinder binder = new NidBinder();
+
+    @RestrictTo(RestrictTo.Scope.TESTS)
+    public static boolean isStarted;
 
     private UsbService usbService;
     private UsbCallback usbCallback;
     public NidService.State state;
-    private Context context;
+    //private Context context;
     SendMessageRunnable pingRunnable;
     SendMessageRunnable identifyRunnable;
     boolean isIdentifying;
@@ -78,12 +83,14 @@ public class NidService extends Service {
 
     @Override
     public void onCreate() {
-//        Log.d(TAG, "NidService.onCreate");
-        this.context = this;
-//        this.state = State.NOT_CONNECTED;
-//        usbCallback = new UsbCallback();
-//        setFilters();
-//        Log.d(TAG, "NidService started");
+        Log.d(TAG, "NidService.onCreate");
+        super.onCreate();
+        isStarted = true;
+//        this.context = this;
+        this.state = State.NOT_CONNECTED;
+       usbCallback = new UsbCallback();
+        setFilters();
+        Log.d(TAG, "NidService started");
 //        startService(UsbService.class, usbConnection, null);
     }
 
@@ -95,13 +102,19 @@ public class NidService extends Service {
      */
     @Override
     public IBinder onBind(Intent intent) {
-       return binder;
+        throw null;
+      // return binder;
     }
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
 //        return Service.START_NOT_STICKY;
+        Log.d(TAG, "NidService started");
         return Service.START_STICKY;
+    }
+
+    public static boolean isServiceStarted() {
+        return isStarted;
     }
 
     @Override
@@ -183,7 +196,7 @@ public class NidService extends Service {
     }
 
     public class NidBinder extends Binder {
-        public NidService getService() {
+        NidService getService() {
             return NidService.this;
         }
     }
@@ -294,7 +307,7 @@ public class NidService extends Service {
         registerReceiver(commandReceiver, filter);
     }
 
-    Handler timerHandler = new Handler();
+    Handler timerHandler = new Handler(Looper.getMainLooper());
     class SendMessageRunnable implements Runnable {
         private byte[] message;
         boolean isRepeating;
