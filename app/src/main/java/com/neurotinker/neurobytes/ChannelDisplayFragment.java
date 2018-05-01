@@ -13,6 +13,7 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.constraint.ConstraintLayout;
 import android.support.v4.app.Fragment;
+import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.helper.ItemTouchHelper;
@@ -59,7 +60,7 @@ public class ChannelDisplayFragment extends Fragment {
     private int chCnt = 0;
     private Queue<Integer> nextCh = new LinkedList<>();
     private boolean isPaused = false;
-    private boolean nidIsRunning;
+    private boolean nidIsRunning = true;
     private Map<Integer, GraphItem> channels = new HashMap<>();
 
     private ItemAdapter itemAdapter = new ItemAdapter();
@@ -122,7 +123,7 @@ public class ChannelDisplayFragment extends Fragment {
         fastAdapter.setHasStableIds(true);
 
 //        itemTouchCallback = new ChannelTouchCallback();
-//        fastAdapter.withEventHook(new AddChannelEventHook());
+        fastAdapter.withEventHook(new AddChannelEventHook());
 //        fastAdapter.withEventHook(new ClearChannelEventHook());
 
         recyclerView = (RecyclerView) layout.findViewById(R.id.recview);
@@ -244,7 +245,10 @@ public class ChannelDisplayFragment extends Fragment {
         filter.addAction(NidService.ACTION_NID_DISCONNECTED);
         filter.addAction(ACTION_RECEIVED_DATA);
 
-        _context.registerReceiver(nidReceiver, filter);
+//        _context.registerReceiver(nidReceiver, filter);
+
+        LocalBroadcastManager.getInstance(getActivity()).registerReceiver(nidReceiver,
+                new IntentFilter(filter));
     }
 
     /**
@@ -284,9 +288,10 @@ public class ChannelDisplayFragment extends Fragment {
                 v.setVisibility(View.GONE);
                 ((View) v.getParent()).findViewById(R.id.loading_id).setVisibility(View.VISIBLE);
                 item.state = GraphItem.GraphState.WAITING;
-                Intent intent = new Intent(ACTION_ADD_CHANNEL);
+                Intent intent = new Intent(NidService.ACTION_NID_READY);
                 intent.putExtra(BUNDLE_CHANNEL, item.channel);
-                _context.sendBroadcast(intent);
+//                _context.sendBroadcast(intent);
+                LocalBroadcastManager.getInstance(getActivity()).sendBroadcast(intent);
             } else {
                 ((View) v.getParent()).findViewById(R.id.nousb_id).setVisibility(View.VISIBLE);
             }

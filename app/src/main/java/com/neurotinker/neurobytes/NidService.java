@@ -222,6 +222,7 @@ public class NidService extends Service {
 
     /**
      * sendPing is ran through a ping handler every 200 ms
+     * this should be done by the main activity
      */
     public void sendPing() {
         if (usbService != null && state == State.RUNNING) {
@@ -263,6 +264,7 @@ public class NidService extends Service {
         public void onReceive(Context context, Intent intent) {
             switch (intent.getAction()) {
                 case UsbService.ACTION_USB_PERMISSION_GRANTED: // USB PERMISSION GRANTED
+                    state = State.WAITING;
                     break;
                 case UsbService.ACTION_USB_PERMISSION_NOT_GRANTED: // USB PERMISSION NOT GRANTED
                     Toast.makeText(context, "USB Permission not granted",
@@ -286,7 +288,7 @@ public class NidService extends Service {
                      * 2000 ms - enable NID communications
                      */
 
-                    if (state == State.NOT_CONNECTED) {
+                    if (state == State.NOT_CONNECTED || state == State.WAITING) {
                         pingRunnable = new SendMessageRunnable(PING_MESSAGE);
                         timerHandler.postDelayed(pingRunnable, 10);
                         timerHandler.postDelayed(new SendMessageRunnable(CLEAR_CHANNEL), 1000);

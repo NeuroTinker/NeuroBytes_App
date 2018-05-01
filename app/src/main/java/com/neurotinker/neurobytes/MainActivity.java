@@ -14,6 +14,7 @@ import android.os.IBinder;
 import android.os.Message;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
@@ -65,7 +66,6 @@ public class MainActivity extends AppCompatActivity
     private static final String TAG = MainActivity.class.getSimpleName();
 
 
-
     private UsbFlashService flashService = new UsbFlashService(this, 0x6018, 0x1d50);
 
     private static final String[] SCOPES = { DriveScopes.DRIVE_METADATA_READONLY, DriveScopes.DRIVE_FILE };
@@ -92,6 +92,7 @@ public class MainActivity extends AppCompatActivity
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_graph_potential);
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
@@ -153,6 +154,13 @@ public class MainActivity extends AppCompatActivity
                 flashService.CloseTheDevice();
             }
         });
+
+//        final DummyNidService service = new DummyNidService();
+//        startService(new Intent(this, DummyNidService.class));
+//
+//        service.onStartCommand(new Intent(), 0, 0);
+//        service.onCreate();
+
     }
 
     public void onFragmentInteraction(Uri uri) {
@@ -214,10 +222,14 @@ public class MainActivity extends AppCompatActivity
     public void onResume() {
         super.onResume();
         setFilters();  // Start listening notifications from UsbService
-//        startService(NidService.class, nidConnection, null);
+         startService(new Intent(this, DummyNidService.class));
         Log.d(TAG, "trying to start NidService");
-        Intent bindingIntent = new Intent(this, NidService.class);
-        bindService(bindingIntent, nidConnection, Context.BIND_AUTO_CREATE);
+        Intent bindingIntent = new Intent(this, DummyNidService.class);
+//        bindService(bindingIntent, nidConnection, Context.BIND_AUTO_CREATE);
+        Intent intent = new Intent(DummyNidService.ACTION_SEND_BLINK);
+//        startService(bindingIntent);
+        this.sendBroadcast(intent);
+        sendBroadcast(intent);
     }
 
     @Override
@@ -225,7 +237,9 @@ public class MainActivity extends AppCompatActivity
         super.onPause();
         unregisterReceiver(nidReceiver);
         unbindService(nidConnection);
+        stopService(new Intent(this, DummyNidService.class));
     }
+
 
     private final ServiceConnection nidConnection = new ServiceConnection() {
         @Override
@@ -238,27 +252,30 @@ public class MainActivity extends AppCompatActivity
 
         }
     };
-
-    private void startService(Class<?> service, ServiceConnection serviceConnection, Bundle extras) {
-        if (!UsbService.SERVICE_CONNECTED) {
-            Intent startService = new Intent(this, service);
-            if (extras != null && !extras.isEmpty()) {
-                Set<String> keys = extras.keySet();
-                for (String key : keys) {
-                    String extra = extras.getString(key);
-                    startService.putExtra(key, extra);
-                }
-            }
-            startService(startService);
-        }
-        Intent bindingIntent = new Intent(this, service);
-        bindService(bindingIntent, serviceConnection, Context.BIND_AUTO_CREATE);
-    }
+//
+//    private void startService(Class<?> service, ServiceConnection serviceConnection, Bundle extras) {
+//        if (!UsbService.SERVICE_CONNECTED) {
+//            Intent startService = new Intent(this, service);
+//            if (extras != null && !extras.isEmpty()) {
+//                Set<String> keys = extras.keySet();
+//                for (String key : keys) {
+//                    String extra = extras.getString(key);
+//                    startService.putExtra(key, extra);
+//                }
+//            }
+//            startService(startService);
+//        }
+//        Intent bindingIntent = new Intent(this, service);
+//        bindService(bindingIntent, serviceConnection, Context.BIND_AUTO_CREATE);
+//    }
 
     private void setFilters() {
         IntentFilter filter = new IntentFilter();
 
+        filter.addAction(DummyNidService.ACTION_NID_READY);
+
         registerReceiver(nidReceiver, filter);
+        LocalBroadcastManager.getInstance(this).registerReceiver(nidReceiver, filter);
     }
 
 

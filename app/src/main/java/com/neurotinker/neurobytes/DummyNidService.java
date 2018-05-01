@@ -67,7 +67,7 @@ public class DummyNidService extends Service {
 
     private final Map<Integer, ReceiveDataRunnable> channels = new HashMap<Integer, ReceiveDataRunnable>();
 
-    @RestrictTo(RestrictTo.Scope.TESTS)
+//    @RestrictTo(RestrictTo.Scope.TESTS)
     public static boolean isStarted;
 
     public DummyNidService.State state;
@@ -91,7 +91,7 @@ public class DummyNidService extends Service {
         }, new IntentFilter());
 
 
-        //setFilters();
+        setFilters();
         Log.d(TAG, "NidService started");
     }
 
@@ -166,8 +166,8 @@ public class DummyNidService extends Service {
         filter.addAction(DummyNidService.ACTION_SEND_BLINK);
         filter.addAction(DummyNidService.ACTION_NID_DISCONNECTED);
         filter.addAction(DummyNidService.ACTION_NID_CONNECTED);
-
-        registerReceiver(commandReceiver, filter);
+        context.registerReceiver(commandReceiver, filter);
+        context.getApplicationContext().registerReceiver(commandReceiver, filter);
     }
 
     Handler timerHandler = new Handler(Looper.getMainLooper());
