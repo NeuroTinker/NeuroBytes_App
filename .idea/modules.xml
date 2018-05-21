@@ -4,7 +4,7 @@
     <modules>
       <module fileurl="file://$PROJECT_DIR$/NeuroBytes.iml" filepath="$PROJECT_DIR$/NeuroBytes.iml" />
       <module fileurl="file://$PROJECT_DIR$/app/app.iml" filepath="$PROJECT_DIR$/app/app.iml" />
-      <module fileurl="file://$PROJECT_DIR$/neurobytes.iml" filepath="$PROJECT_DIR$/neurobytes.iml" />
+      <module fileurl="file://$PROJECT_DIR$/nplot/nplot.iml" filepath="$PROJECT_DIR$/nplot/nplot.iml" />
     </modules>
   </component>
 </project>

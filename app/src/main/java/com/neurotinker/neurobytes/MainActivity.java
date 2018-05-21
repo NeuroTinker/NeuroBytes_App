@@ -62,16 +62,15 @@ import static com.neurotinker.neurobytes.NidService.ACTION_NID_READY;
 
 public class MainActivity extends AppCompatActivity
         implements ChannelDisplayFragment.OnFragmentInteractionListener{
+
     private static final String TAG = MainActivity.class.getSimpleName();
 
+//    private UsbFlashService flashService = new UsbFlashService(this, 0x6018, 0x1d50);
 
-
-    private UsbFlashService flashService = new UsbFlashService(this, 0x6018, 0x1d50);
-
-    private static final String[] SCOPES = { DriveScopes.DRIVE_METADATA_READONLY, DriveScopes.DRIVE_FILE };
-    private GoogleSignInClient mGoogleSignInClient;
-    private Bitmap mBitmapToSave;
-    private com.google.api.services.drive.Drive driveService = null;
+//    private static final String[] SCOPES = { DriveScopes.DRIVE_METADATA_READONLY, DriveScopes.DRIVE_FILE };
+//    private GoogleSignInClient mGoogleSignInClient;
+//    private Bitmap mBitmapToSave;
+//    private com.google.api.services.drive.Drive driveService = null;
     private static boolean nidRunning;
 
     private final BroadcastReceiver nidReceiver = new BroadcastReceiver() {
@@ -109,82 +108,82 @@ public class MainActivity extends AppCompatActivity
         recordDataView.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                try {
-                    exportData();
-                } catch(IOException ie) {
-                    ie.printStackTrace();
-                }
+//                try {
+//                    exportData();
+//                } catch(IOException ie) {
+//                    ie.printStackTrace();
+//                }
                 //timerHandler.postDelayed(new DelaySendRunnable(makeIdentifyMessage(0)), 1500);
                 //fastAdapter.notifyAdapterDataSetChanged();
                 //fastAdapter.notifyAdapterItemChanged(0, GraphItem.UpdateType.CHINFO);
             }
         });
 
-        ImageView flashDataView = (ImageView) findViewById(R.id.flash_id);
-        flashDataView.setOnClickListener(new View.OnClickListener() {
-            class GdbCallbackRunnable implements Runnable {
-                private UsbFlashService flashService;
-                public GdbCallbackRunnable(UsbFlashService flashService) {
-                    this.flashService = flashService;
-                }
-                @Override
-                public void run() {
-                    Log.d("GDB Received", Boolean.toString(flashService.IsThereAnyReceivedData()));
-                    flashService.CloseTheDevice();
-                }
-            }
-            @Override
-            public void onClick(View view) {
-                flashService.OpenDevice();
-                flashService.StartReadingThread();
-                String packet = "$";
-                String packetContent = "qRcmd,6D6F6E206C6564";
-                byte csum = 0;
-                for (byte b : packetContent.getBytes()){
-                    csum += b;
-                }
-                packet += packetContent;
-                packet += '#';
-                packet += csum;
-                flashService.WriteData(packet.getBytes());
-                Log.d("GDB Received", Boolean.toString(flashService.IsThereAnyReceivedData()));
-                //GdbCallbackRunnable callback = new GdbCallbackRunnable(flashService);
-                //timerHandler.postDelayed(callback, 1000);
-                flashService.CloseTheDevice();
-            }
-        });
+//        ImageView flashDataView = (ImageView) findViewById(R.id.flash_id);
+//        flashDataView.setOnClickListener(new View.OnClickListener() {
+//            class GdbCallbackRunnable implements Runnable {
+//                private UsbFlashService flashService;
+//                public GdbCallbackRunnable(UsbFlashService flashService) {
+//                    this.flashService = flashService;
+//                }
+//                @Override
+//                public void run() {
+//                    Log.d("GDB Received", Boolean.toString(flashService.IsThereAnyReceivedData()));
+//                    flashService.CloseTheDevice();
+//                }
+//            }
+//            @Override
+//            public void onClick(View view) {
+//                flashService.OpenDevice();
+//                flashService.StartReadingThread();
+//                String packet = "$";
+//                String packetContent = "qRcmd,6D6F6E206C6564";
+//                byte csum = 0;
+//                for (byte b : packetContent.getBytes()){
+//                    csum += b;
+//                }
+//                packet += packetContent;
+//                packet += '#';
+//                packet += csum;
+//                flashService.WriteData(packet.getBytes());
+//                Log.d("GDB Received", Boolean.toString(flashService.IsThereAnyReceivedData()));
+//                //GdbCallbackRunnable callback = new GdbCallbackRunnable(flashService);
+//                //timerHandler.postDelayed(callback, 1000);
+//                flashService.CloseTheDevice();
+//            }
+//        });
     }
 
     public void onFragmentInteraction(Uri uri) {
         // Test ChannelDisplayFragment interface
     }
 
-    public boolean exportData() throws IOException {
-        // get google drive authentication
-        GoogleAccountCredential credential = GoogleAccountCredential.usingOAuth2(
-                getApplicationContext(), Arrays.asList(this.SCOPES))
-                .setBackOff(new ExponentialBackOff());
-
-        HttpTransport transport = AndroidHttp.newCompatibleTransport();
-        JsonFactory jsonFactory = JacksonFactory.getDefaultInstance();
-
-        driveService = new com.google.api.services.drive.Drive.Builder(
-                transport, jsonFactory, credential)
-                .setApplicationName("NeuroBytes Data Uploader")
-                .build();
-
-        File fileMetadata = new File();
-        fileMetadata.setName("data.csv");
-        fileMetadata.setMimeType("application/vnd.google-apps.spreadsheet");
-
-        java.io.File filePath = new java.io.File("files/data.csv");
-        FileContent mediaContent = new FileContent("text/csv", filePath);
-       // File file = driveService.files().create(fileMetadata, mediaContent)
-       //         .setFields("id")
-       //         .execute();
-        //System.out.println("File ID: " + file.getId());
-        return true;
-    }
+//    public boolean exportData() throws IOException {
+//        // get google drive authentication
+//        GoogleAccountCredential credential = GoogleAccountCredential.usingOAuth2(
+//                getApplicationContext(), Arrays.asList(this.SCOPES))
+//                .setBackOff(new ExponentialBackOff());
+//
+//        HttpTransport transport = AndroidHttp.newCompatibleTransport();
+//        JsonFactory jsonFactory = JacksonFactory.getDefaultInstance();
+//
+//        driveService = new com.google.api.services.drive.Drive.Builder(
+//                transport, jsonFactory, credential)
+//                .setApplicationName("NeuroBytes Data Uploader")
+//                .build();
+//
+//        File fileMetadata = new File();
+//        fileMetadata.setName("data.csv");
+//        fileMetadata.setMimeType("application/vnd.google-apps.spreadsheet");
+//
+//        java.io.File filePath = new java.io.File("files/data.csv");
+//        FileContent mediaContent = new FileContent("text/csv", filePath);
+//       // File file = driveService.files().create(fileMetadata, mediaContent)
+//       //         .setFields("id")
+//       //         .execute();
+//        //System.out.println("File ID: " + file.getId());
+//        return true;
+//    }
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {

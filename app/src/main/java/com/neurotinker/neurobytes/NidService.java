@@ -98,7 +98,6 @@ public class NidService extends Service {
             }
         }, new IntentFilter());
 
-
         //setFilters();
         Log.d(TAG, "NidService started");
 //        startService(UsbService.class, usbConnection, null);
@@ -118,7 +117,6 @@ public class NidService extends Service {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-//        return Service.START_NOT_STICKY;
 
         Log.d(TAG, "NidService started");
         //context = getApplicationContext();
