@@ -142,7 +142,6 @@ public class NidService extends Service {
         public void onServiceConnected(ComponentName componentName, IBinder iBinder) {
             usbService = ((UsbService.UsbBinder) iBinder).getService();
             usbService.setHandler(new Handler(usbCallback));
-            state = NidService.State.WAITING;
             Log.d(TAG, "UsbService connected");
         }
 
@@ -286,7 +285,7 @@ public class NidService extends Service {
                      */
 
                     if (state == State.NOT_CONNECTED) {
-                        pingRunnable = new SendMessageRunnable(PING_MESSAGE);
+                        pingRunnable = new SendMessageRunnable(PING_MESSAGE, 300);
                         timerHandler.postDelayed(pingRunnable, 10);
                         timerHandler.postDelayed(new SendMessageRunnable(CLEAR_CHANNEL), 1000);
                         timerHandler.postDelayed(new ChangeStateRunnable(State.RUNNING), 2000);
@@ -336,6 +335,7 @@ public class NidService extends Service {
 
         @Override
         public void run() {
+            Log.d(TAG, "sending message");
             sendMessage(message);
             if (isRepeating) timerHandler.postDelayed(this, repeatTime);
         }
