@@ -247,6 +247,7 @@ public class NidService extends Service {
                      * Once identified, Send CHANNEL_ACQUIRED broadcast with board info
                      * Finish by sending ID_DONE message to network so no more boards ID
                      */
+                    Log.d(TAG, "sending identify");
                     int ch = intent.getIntExtra(BUNDLE_CHANNEL, 0);
                     identifyRunnable = new SendMessageRunnable(makeIdentifyMessage(ch), 500);
                     timerHandler.postDelayed(identifyRunnable, 100);
@@ -285,7 +286,7 @@ public class NidService extends Service {
                      */
 
                     if (state == State.NOT_CONNECTED) {
-                        pingRunnable = new SendMessageRunnable(PING_MESSAGE, 300);
+                        pingRunnable = new SendMessageRunnable(PING_MESSAGE, 200);
                         timerHandler.postDelayed(pingRunnable, 10);
                         timerHandler.postDelayed(new SendMessageRunnable(CLEAR_CHANNEL), 1000);
                         timerHandler.postDelayed(new ChangeStateRunnable(State.RUNNING), 2000);
@@ -335,7 +336,6 @@ public class NidService extends Service {
 
         @Override
         public void run() {
-            Log.d(TAG, "sending message");
             sendMessage(message);
             if (isRepeating) timerHandler.postDelayed(this, repeatTime);
         }
@@ -356,6 +356,8 @@ public class NidService extends Service {
         public void run() {
             state = newState;
             if (newState == State.RUNNING) {
+                Log.d(TAG, "NID running");
+                sendMessage(BLINK_MESSAGE);
                 Intent intent = new Intent(ACTION_NID_READY);
                 sendBroadcast(intent);
             }
