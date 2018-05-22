@@ -234,7 +234,7 @@ public class ChannelDisplayFragment extends Fragment {
                              */
                             int type = intent.getIntExtra(BUNDLE_DATA_TYPE, 0);
 
-                            if (channels.get(ch).state == GraphItem.GraphState.NEW) {
+                            if (channels.get(ch).state == GraphItem.GraphState.WAITING) {
                                 /**
                                  * Enable GraphItem
                                  * Make appropriate subitem and attach it to channel
@@ -247,7 +247,7 @@ public class ChannelDisplayFragment extends Fragment {
                                 ));
                                 addItem();
                             } else {
-                                Log.e(TAG, "Channel re-initialized");
+                                Log.e(TAG, "invalid channel acquisition");
                             }
                         }
                     } else {
@@ -327,7 +327,7 @@ public class ChannelDisplayFragment extends Fragment {
                 intent.putExtra(BUNDLE_CHANNEL, item.channel);
                 _context.sendBroadcast(intent);
             } else {
-                Log.d(TAG, "onClick()- NID not running");
+                Log.d(TAG, "onClick() NID not running");
                 Toast.makeText(_context, "NID not Running", Toast.LENGTH_SHORT).show();
                 ((View) v.getParent()).findViewById(R.id.nousb_id).setVisibility(View.VISIBLE);
             }
