@@ -98,9 +98,10 @@ public class NidService extends Service {
             }
         }, new IntentFilter());
 
-        //setFilters();
+        setFilters();
         Log.d(TAG, "NidService started");
-//        startService(UsbService.class, usbConnection, null);
+
+        startService(UsbService.class, usbConnection, null);
     }
 
     /**
@@ -111,14 +112,13 @@ public class NidService extends Service {
      */
     @Override
     public IBinder onBind(Intent intent) {
-        throw null;
-      // return binder;
+        return binder;
     }
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
 
-        Log.d(TAG, "NidService started");
+        Log.d(TAG, "NidService onStartCommand");
         //context = getApplicationContext();
         return Service.START_STICKY;
     }
@@ -238,6 +238,7 @@ public class NidService extends Service {
         public void onReceive(Context context, Intent intent) {
             switch (intent.getAction()) {
                 case ACTION_SEND_BLINK:
+                    Log.d(TAG, "sending blink");
                     sendMessage(BLINK_MESSAGE);
                     break;
                 case ACTION_ADD_CHANNEL:

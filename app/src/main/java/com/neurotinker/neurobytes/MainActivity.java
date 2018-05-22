@@ -65,13 +65,15 @@ public class MainActivity extends AppCompatActivity
 
     private static final String TAG = MainActivity.class.getSimpleName();
 
-//    private UsbFlashService flashService = new UsbFlashService(this, 0x6018, 0x1d50);
+    private UsbFlashService flashService = new UsbFlashService(this, 0x6018, 0x1d50);
 
-//    private static final String[] SCOPES = { DriveScopes.DRIVE_METADATA_READONLY, DriveScopes.DRIVE_FILE };
-//    private GoogleSignInClient mGoogleSignInClient;
-//    private Bitmap mBitmapToSave;
-//    private com.google.api.services.drive.Drive driveService = null;
+    private static final String[] SCOPES = { DriveScopes.DRIVE_METADATA_READONLY, DriveScopes.DRIVE_FILE };
+    private GoogleSignInClient mGoogleSignInClient;
+    private Bitmap mBitmapToSave;
+    private com.google.api.services.drive.Drive driveService = null;
     private static boolean nidRunning;
+    NidService nidService;
+    private static boolean nidBound = false;
 
     private final BroadcastReceiver nidReceiver = new BroadcastReceiver() {
         @Override
@@ -213,10 +215,11 @@ public class MainActivity extends AppCompatActivity
     public void onResume() {
         super.onResume();
         setFilters();  // Start listening notifications from UsbService
-//        startService(NidService.class, nidConnection, null);
-        Log.d(TAG, "trying to start NidService");
+        Log.d(TAG, "trying to bind to NidService");
         Intent bindingIntent = new Intent(this, NidService.class);
         bindService(bindingIntent, nidConnection, Context.BIND_AUTO_CREATE);
+
+
     }
 
     @Override
@@ -229,30 +232,32 @@ public class MainActivity extends AppCompatActivity
     private final ServiceConnection nidConnection = new ServiceConnection() {
         @Override
         public void onServiceConnected(ComponentName componentName, IBinder iBinder) {
-
+            NidService.NidBinder binder = (NidService.NidBinder) iBinder;
+            nidService = binder.getService();
+            nidBound = true;
         }
 
         @Override
         public void onServiceDisconnected(ComponentName componentName) {
-
+            nidBound = false;
         }
     };
 
-    private void startService(Class<?> service, ServiceConnection serviceConnection, Bundle extras) {
-        if (!UsbService.SERVICE_CONNECTED) {
-            Intent startService = new Intent(this, service);
-            if (extras != null && !extras.isEmpty()) {
-                Set<String> keys = extras.keySet();
-                for (String key : keys) {
-                    String extra = extras.getString(key);
-                    startService.putExtra(key, extra);
-                }
-            }
-            startService(startService);
-        }
-        Intent bindingIntent = new Intent(this, service);
-        bindService(bindingIntent, serviceConnection, Context.BIND_AUTO_CREATE);
-    }
+//    private void startService(Class<?> service, ServiceConnection serviceConnection, Bundle extras) {
+//        if (!UsbService.SERVICE_CONNECTED) {
+//            Intent startService = new Intent(this, service);
+//            if (extras != null && !extras.isEmpty()) {
+//                Set<String> keys = extras.keySet();
+//                for (String key : keys) {
+//                    String extra = extras.getString(key);
+//                    startService.putExtra(key, extra);
+//                }
+//            }
+//            startService(startService);
+//        }
+//        Intent bindingIntent = new Intent(this, service);
+//        bindService(bindingIntent, serviceConnection, Context.BIND_AUTO_CREATE);
+//    }
 
     private void setFilters() {
         IntentFilter filter = new IntentFilter();
