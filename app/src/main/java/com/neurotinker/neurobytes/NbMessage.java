@@ -31,7 +31,7 @@ public class NbMessage {
 
     private short[] packet;
     public boolean isValid;
-    private int header;
+    public int header;
     public int subheader;
     public int parameter;
     public int channel;
@@ -46,10 +46,10 @@ public class NbMessage {
          * Parse using shorts
          */
         this.packet = packet;
-        byte header =  (byte) ((packet[0] & 0b1111100000000000) >> 11);
+        byte header =  (byte) ((packet[0] & 0b1111000000000000) >> 12);
         this.isValid = (header == DATA_HEADER);
         this.channel = (packet[0] & 0b0000011111100000) >> 5;
-        this.header =  (packet[0] & 0b1111000000000000) >> 11;
+        this.header =  (packet[0] & 0b1111000000000000) >> 12;
         this.data = packet[1];
     }
 

@@ -176,6 +176,8 @@ public class NidService extends Service {
                 case UsbService.MESSAGE_FROM_SERIAL_PORT:
                     short [] packet = (short []) msg.obj;
                     NbMessage nbMsg = new NbMessage(packet);
+                    Log.d(TAG, String.format("received %s", Integer.toBinaryString(packet[0])));
+
                     if (nbMsg.isValid){
                         Intent intent = new Intent(ACTION_RECEIVED_DATA);
                         intent.putExtra(BUNDLE_CHANNEL, nbMsg.channel);
@@ -196,7 +198,8 @@ public class NidService extends Service {
                             }
                         }
                     } else {
-                        Log.d(TAG, "Received invalid message");
+                        Log.d(TAG, String.format("Received invalid message %s",
+                                Integer.toBinaryString(nbMsg.header)));
                     }
                     break;
             }

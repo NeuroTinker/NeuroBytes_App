@@ -240,6 +240,7 @@ public class ChannelDisplayFragment extends Fragment {
                                  * Make appropriate subitem and attach it to channel
                                  * TODO: Make subitem specific to board type
                                  */
+                                Log.d(TAG, String.format("Channel acquired %d", ch));
                                 channels.get(ch).state = GraphItem.GraphState.ACQUIRED;
                                 channels.get(ch).channelController.setAcquired();
                                 channels.get(ch).withSubItems(Arrays.asList(
