@@ -74,7 +74,7 @@ public class UsbService extends Service {
                 //Log.d("Read data", Short.toString(data));
                 sub = Arrays.copyOfRange(nidStream.toByteArray(), offset + 0, offset + 2);
                 short headers = ByteBuffer.wrap(sub).getShort();
-                int channel = (headers & 0b0000011111100000) >> 5;
+                int channel = (headers & 0b0000000111000000) >> 6;
                 //Log.d("Read header", Short.toString(headers));
                 nidStream.reset();
                 count = 0;

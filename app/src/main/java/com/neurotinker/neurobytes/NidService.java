@@ -185,6 +185,7 @@ public class NidService extends Service {
                             intent.putExtra(BUNDLE_DATA_POTENTIAL, nbMsg.data);
                             sendBroadcast(intent);
                         } else if (nbMsg.checkSubheader(NbMessage.Subheader.TYPE)) {
+                            Log.d(TAG, "received type message");
                             intent.putExtra(BUNDLE_DATA_TYPE, nbMsg.data);
                             sendBroadcast(intent);
                             if (isIdentifying) {
@@ -194,7 +195,7 @@ public class NidService extends Service {
                                 sendMessage(STOP_IDENTIFY);
                                 isIdentifying = false;
                             } else {
-                                Log.e(TAG, "Duplicate channel acquired");
+                                Log.d(TAG, "Duplicate channel acquired");
                             }
                         }
                     } else {

@@ -31,12 +31,8 @@ public class ChannelController {
     }
 
     public void setAcquired() {
-        if (state == State.WAITING) {
-            view.findViewById(R.id.channel_id).setVisibility(View.VISIBLE);
-            this.state = State.ACQUIRED;
-            view.findViewById(R.id.newcard_id).setVisibility(View.GONE);
-        } else {
-            Log.e(TAG, "Channel already acquired");
-        }
+        view.findViewById(R.id.channel_id).setVisibility(View.VISIBLE);
+        this.state = State.ACQUIRED;
+        view.findViewById(R.id.newcard_id).setVisibility(View.GONE);
     }
 }

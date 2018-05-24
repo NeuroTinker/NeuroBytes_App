@@ -48,7 +48,8 @@ public class NbMessage {
         this.packet = packet;
         byte header =  (byte) ((packet[0] & 0b1111000000000000) >> 12);
         this.isValid = (header == DATA_HEADER);
-        this.channel = (packet[0] & 0b0000011111100000) >> 5;
+        this.subheader = (packet[0] & 0b0000111000000000) >> 9;
+        this.channel = (packet[0] & 0b0000000111000000) >> 6;
         this.header =  (packet[0] & 0b1111000000000000) >> 12;
         this.data = packet[1];
     }

@@ -248,11 +248,11 @@ public class ChannelDisplayFragment extends Fragment {
                                 ));
                                 addItem();
                             } else {
-                                Log.e(TAG, "invalid channel acquisition");
+                                Log.d(TAG, "invalid channel acquisition");
                             }
                         }
                     } else {
-                        Log.e(TAG, "Invalid channel");
+                        Log.e(TAG, String.format("invalid channel %d", ch));
                     }
                     break;
                 default:
