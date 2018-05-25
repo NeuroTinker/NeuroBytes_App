@@ -212,26 +212,26 @@ void renderFrame() {
 }
 
 extern "C" {
-JNIEXPORT void JNICALL Java_com_neurotinker_graphtest_NativeLib_init(JNIEnv *env, jobject obj, jint width,
+JNIEXPORT void JNICALL Java_com_neurotinker_neurobytes_NativeLib_init(JNIEnv *env, jobject obj, jint width,
                                                        jint height);
-JNIEXPORT void JNICALL Java_com_neurotinker_graphtest_NativeLib_step(JNIEnv *env, jobject obj);
-JNIEXPORT void JNICALL Java_com_neurotinker_graphtest_NativeLib_addPoint(JNIEnv *env, jobject obj,
+JNIEXPORT void JNICALL Java_com_neurotinker_neurobytes_NativeLib_step(JNIEnv *env, jobject obj);
+JNIEXPORT void JNICALL Java_com_neurotinker_neurobytes_NativeLib_addPoint(JNIEnv *env, jobject obj,
                                                         jfloat point);
 };
 
-JNIEXPORT void JNICALL Java_com_neurotinker_graphtest_NativeLib_init(JNIEnv *env, jobject obj, jint width,
+JNIEXPORT void JNICALL Java_com_neurotinker_neurobytes_NativeLib_init(JNIEnv *env, jobject obj, jint width,
                                                        jint height)
 {
     lineInit();
     setupGraphics(width, height);
 }
 
-JNIEXPORT void JNICALL Java_com_neurotinker_graphtest_NativeLib_step(JNIEnv *env, jobject obj)
+JNIEXPORT void JNICALL Java_com_neurotinker_neurobytes_NativeLib_step(JNIEnv *env, jobject obj)
 {
     renderFrame();
 }
 
-JNIEXPORT void JNICALL Java_com_neurotinker_graphtest_NativeLib_addPoint(JNIEnv *env, jobject obj,
+JNIEXPORT void JNICALL Java_com_neurotinker_neurobytes_NativeLib_addPoint(JNIEnv *env, jobject obj,
                                                                          jfloat point)
 {
     addPoint(point);

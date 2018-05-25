@@ -16,7 +16,7 @@ import javax.microedition.khronos.egl.EGLContext;
 import javax.microedition.khronos.egl.EGLDisplay;
 import javax.microedition.khronos.opengles.GL10;
 
-import static com.neurotinker.graphtest.NativeLib.addPoint;
+import static com.neurotinker.neurobytes.RtPlot.addPoint;
 
 public class Gl2View extends GLSurfaceView {
     private static String TAG = "Gl2View";
@@ -283,11 +283,11 @@ public class Gl2View extends GLSurfaceView {
 
     private static class Renderer implements GLSurfaceView.Renderer {
         public void onDrawFrame(GL10 gl) {
-            NativeLib.step();
+            RtPlot.step();
         }
 
         public void onSurfaceChanged(GL10 gl, int width, int height) {
-            NativeLib.init(width, height);
+            RtPlot.init(width, height);
         }
 
         public void onSurfaceCreated(GL10 gl, EGLConfig config) {
