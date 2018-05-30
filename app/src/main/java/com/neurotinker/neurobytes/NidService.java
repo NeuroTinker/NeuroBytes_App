@@ -42,6 +42,9 @@ public class NidService extends Service {
     public static final String ACTION_ADD_CHANNEL = "com.neurotinker.neurobytes.ACTION_SEND_IDENTIFY";
     public static final String ACTION_CHANNEL_ACQUIRED = "com.neurotinker.neurobytes.ACTION_CHANNEL_ACQUIRED";
     public static final String ACTION_REMOVE_CHANNEL = "com.neurotinker.neurobytes.ACTION_REMOVE_CHANNEL";
+    public static final String ACTION_SEND_PAUSE = "com.neurotinker.neurobytes.ACTION_SEND_PAUSE";
+    public static final String ACTION_PAUSE_COMMS = "com.neurotinker.neurobytes.ACTION_PAUSE_COMMS";
+    public static final String ACTION_RESUME_COMMS = "com.neurotinker.neurobytes.ACTION_RESUME_COMMS";
 
     public static final String BUNDLE_DATA_POTENTIAL = "com.neurotinker.neurobytes.BUNDLE_DATA_POTENTIAL";
     public static final String BUNDLE_DATA_TYPE = "com.neurotinker.neurobytes.BUNDLE_DATA_TYPE";
@@ -130,11 +133,11 @@ public class NidService extends Service {
     @Override
     public void onDestroy() {
         super.onDestroy();
-//        state = State.QUITTING;
-//        pingRunnable.stop();
-//        unregisterReceiver(usbReceiver);
-//        unregisterReceiver(commandReceiver);
-//        unbindService(usbConnection);
+        state = State.QUITTING;
+        pingRunnable.stop();
+        unregisterReceiver(usbReceiver);
+        unregisterReceiver(commandReceiver);
+        unbindService(usbConnection);
     }
 
     private final ServiceConnection usbConnection = new ServiceConnection() {

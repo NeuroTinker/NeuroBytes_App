@@ -23,6 +23,7 @@ import java.util.Queue;
  */
 
 public class UsbFlashService {
+    private String TAG = UsbFlashService.class.getSimpleName();
     private Context _context;
     private int _productId;
     private int _vendorId;
@@ -242,7 +243,7 @@ public class UsbFlashService {
                             readConnection.claimInterface(readIntf, true);
                         }
                         catch (SecurityException e) {
-                            Log("Cannot start reader because the user didn't gave me permissions. Retrying in 2 sec...");
+                            Log("Cannot start reader because the user didn't give me permissions. Retrying in 2 sec...");
 
                             Sleep(2000);
                             continue;
@@ -263,12 +264,14 @@ public class UsbFlashService {
 
                             int i=0;
                             for (byte b : bytes) {
+                                if (i >= r) break; // debug
                                 truncatedBytes[i] = b;
                                 i++;
                             }
 
                             _receivedQueue.add(truncatedBytes); // Store received data
                             Log(String.format("Message received of lengths %s and content: %s", r, composeString(bytes)));
+
                         }
 
                         // Release the interface lock.
