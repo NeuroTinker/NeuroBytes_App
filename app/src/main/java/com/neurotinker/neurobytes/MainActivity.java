@@ -11,6 +11,7 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
+import android.os.Looper;
 import android.os.Message;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
@@ -69,6 +70,8 @@ public class MainActivity extends AppCompatActivity
 
     private UsbFlashService flashService = new UsbFlashService(this, 0x6018, 0x1d50);
 
+    Handler timerHandler = new Handler(Looper.getMainLooper());
+
     private static final String[] SCOPES = { DriveScopes.DRIVE_METADATA_READONLY, DriveScopes.DRIVE_FILE };
     private GoogleSignInClient mGoogleSignInClient;
     private Bitmap mBitmapToSave;
@@ -125,6 +128,7 @@ public class MainActivity extends AppCompatActivity
 
         ImageView flashDataView = (ImageView) findViewById(R.id.flash_id);
         flashDataView.setOnClickListener(new View.OnClickListener() {
+            private byte[] ACK = {'+'};
             class GdbCallbackRunnable implements Runnable {
                 private UsbFlashService flashService;
                 public GdbCallbackRunnable(UsbFlashService flashService) {
@@ -133,32 +137,42 @@ public class MainActivity extends AppCompatActivity
                 @Override
                 public void run() {
                     Log.d("GDB Received", Boolean.toString(flashService.IsThereAnyReceivedData()));
-                    flashService.CloseTheDevice();
+
+                    if (!flashService.IsThereAnyReceivedData()){
+                        flashService.StopReadingThread();
+                    } else {
+                        byte[] data = flashService.GetReceivedDataFromQueue();
+                        Log.d(TAG, data.toString());
+                        byte firstChar = data[0];
+                        if (firstChar == '$') flashService.WriteData(ACK);
+                        timerHandler.postDelayed(this, 100);
+                    }
                 }
             }
             @Override
             public void onClick(View view) {
+                /**
+                 * Flash the connected NeuroBytes board with correct firmware
+                 */
                 flashService.OpenDevice();
                 flashService.StartReadingThread();
                 String packet = "$";
-                String packetContent = "qTStatus";
+                String packetContent = "qRcmd,s";
                 Integer csum = 0;
                 for (byte b : packetContent.getBytes()){
                     csum += b;
                 }
                 packet += packetContent;
                 packet += '#';
-//                packet += Byte.toString(csum);
-//                packet += new String(csum, "ASCII");
                 csum %= 256;
                 Log.d(TAG, csum.toString());
                 packet += Integer.toHexString(csum);
-//                packet = "$qTStatus#49";
                 flashService.WriteData(packet.getBytes());
                 Log.d("GDB Received", Boolean.toString(flashService.IsThereAnyReceivedData()));
-                //GdbCallbackRunnable callback = new GdbCallbackRunnable(flashService);
-                //timerHandler.postDelayed(callback, 1000);
-                flashService.CloseTheDevice();
+                GdbCallbackRunnable callback = new GdbCallbackRunnable(flashService);
+//                flashService.StartReadingThread();
+                timerHandler.postDelayed(callback, 100);
+//                flashService.CloseTheDevice();
             }
         });
     }
