@@ -29,9 +29,11 @@ import android.widget.ImageView;
 import android.widget.SeekBar;
 import android.widget.Toast;
 
+import com.felhr.utils.HexData;
 import com.google.android.gms.auth.api.signin.GoogleSignInClient;
 import com.google.api.client.extensions.android.http.AndroidHttp;
 import com.google.api.client.googleapis.extensions.android.gms.auth.GoogleAccountCredential;
+import com.google.api.client.http.ByteArrayContent;
 import com.google.api.client.http.FileContent;
 import com.google.api.client.http.HttpTransport;
 import com.google.api.client.json.JsonFactory;
@@ -40,6 +42,7 @@ import com.google.api.client.util.ExponentialBackOff;
 import com.google.api.services.drive.DriveScopes;
 import com.google.api.services.drive.model.Channel;
 import com.google.api.services.drive.model.File;
+import com.google.common.primitives.Bytes;
 import com.google.common.primitives.UnsignedInteger;
 import com.mikepenz.fastadapter.FastAdapter;
 import com.mikepenz.fastadapter.adapters.ItemAdapter;
@@ -51,6 +54,8 @@ import com.mikepenz.fastadapter_extensions.drag.SimpleDragCallback;
 
 import java.io.IOException;
 import java.lang.ref.WeakReference;
+import java.nio.ByteBuffer;
+import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -58,6 +63,7 @@ import java.util.LinkedList;
 import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
+import java.util.StringTokenizer;
 
 import static com.neurotinker.neurobytes.NidService.ACTION_NID_DISCONNECTED;
 import static com.neurotinker.neurobytes.NidService.ACTION_NID_READY;
@@ -142,7 +148,16 @@ public class MainActivity extends AppCompatActivity
                         flashService.StopReadingThread();
                     } else {
                         byte[] data = flashService.GetReceivedDataFromQueue();
-                        Log.d(TAG, data.toString());
+//                        Log.d(TAG, HexData.hexToString(data));
+                        String asciiData = new String(data, Charset.forName("UTF-8"));
+                        if (asciiData.contains("$")) {
+                            String messageEncoded = asciiData.split("[$#]")[1];
+                            Log.d(TAG, messageEncoded);
+//                            Log.d(TAG, ByteBuffer.wrap(Byte.decode(messageEncoded)).toString());
+//                            String messageUnencoded = new String(HexData.stringTobytes(messageEncoded), Charset.forName("UTF-8"));
+//                            Log.d(TAG, messageUnencoded);
+                        }
+//                        Log.d(TAG, asciiData);
                         byte firstChar = data[0];
                         if (firstChar == '$') flashService.WriteData(ACK);
                         timerHandler.postDelayed(this, 100);
@@ -165,7 +180,6 @@ public class MainActivity extends AppCompatActivity
                 packet += packetContent;
                 packet += '#';
                 csum %= 256;
-                Log.d(TAG, csum.toString());
                 packet += Integer.toHexString(csum);
                 flashService.WriteData(packet.getBytes());
                 Log.d("GDB Received", Boolean.toString(flashService.IsThereAnyReceivedData()));
