@@ -146,37 +146,66 @@ public class MainActivity extends AppCompatActivity
         ImageView flashDataView = (ImageView) findViewById(R.id.flash_id);
         flashDataView.setOnClickListener(new View.OnClickListener() {
 
-            private final String[] gdbInitSequence = {"qRcmd,s", "vAttach;1"};
-            private Queue<String> messageQueue = new LinkedList<>();
+            private final String[] gdbInitSequence = {"!", "qRcmd,747020656e", "qRcmd,v", "qRcmd,73", "vAttach;1", "vFlashErase:08000000,00004000"};
+            private String[] gdbFlashSequence;
+            private Queue<byte[]> messageQueue = new LinkedList<>();
             private byte[] ACK = {'+'};
 
             private final String elfFilename = "main.elf";
             private final Integer blocksize = 0x80;
             private final Integer textOffset = 0x10000;
             private final Integer fingerprintOffset = 0x23e00;
+            private final Integer fingerprintAddress = 0x08003e00;
+            private Integer timeout = 0;
+            private final Integer TIMEOUT = 50;
+            private boolean quitFlag = false;
 
-            private void downloadElf() {
+            private byte[] concat(byte[] arr1, byte[] arr2) {
+                byte[] bytes = new byte[arr1.length + arr2.length];
+                System.arraycopy(arr1, 0, bytes, 0, arr1.length);
+                System.arraycopy(arr2, 0, bytes, arr1.length, arr2.length);
+                return bytes;
+            }
+
+            private byte[] buildFlashCommand(int address, byte[] data) {
+                StringBuilder cmd = new StringBuilder("vFlashWrite:");
+                cmd.append(Integer.toHexString(address));
+                cmd.append(":");
+                byte[] bytes = concat(cmd.toString().getBytes(), data);
+                return bytes;
+            }
+
+            private LinkedList<byte[]> downloadElf() {
                 try {
-                    URL url = new URL("https://github.com/NeuroTinker/NeuroBytes_Interneuron/raw/master/FIRMWARE/bin/main.elf");
+                    URL url = new URL("https://github.com/NeuroTinker/NeuroBytes_Touch_Sensor/raw/master/FIRMWARE/bin/main.elf");
 //                    InputStream inStream = url.openStream();
                     InputStream inStream = new BufferedInputStream(url.openStream(), 0x2400);
                     DataInputStream dataInStream = new DataInputStream(inStream);
 
-                    int textSize = 0x23af;
+                    int textSize = 0x1ddc;
+                    int numBlocks = (textSize / blocksize);
+                    int extraBlockSize = textSize % blocksize;
                     int fingerprintSize = 0xc;
-                    int length;
+                    int length = 0;
                     int fLoc = 0;
 
                     length = dataInStream.skipBytes(textOffset);
                     if (length != textOffset) Log.d(TAG, "only skipped " + Integer.toString(length) + " bytes");
                     fLoc += textOffset;
 
-                    byte[] text = new byte[textSize];
-                    Log.d(TAG, "text length " + Integer.toString(text.length) + " bytes");
-                    length = dataInStream.read(text, 0, 8000);
-                    if (textSize != length) {
-                        Log.d(TAG, ".text load failed");
-                        Log.d(TAG, "only read " + Integer.toString(length) + " bytes");
+                    byte[][] textBlocks = new byte[numBlocks][blocksize];
+                    byte[] extraBlock = new byte[extraBlockSize];
+                    for (int i = 0; i < numBlocks; i++) {
+                        length = dataInStream.read(textBlocks[i], 0, blocksize);
+                        Log.d(TAG, textBlocks[i].toString());
+                        if (length != blocksize) {
+                            Log.d(TAG, "only read " + i + "th block " + Integer.toString(length) + " bytes");
+                        }
+                        fLoc += length;
+                    }
+                    length = dataInStream.read(extraBlock, 0, extraBlockSize);
+                    if (length != extraBlockSize) {
+                        Log.d(TAG, "only read extra block " + Integer.toString(length) + " bytes");
                     }
                     fLoc += length;
 
@@ -190,6 +219,22 @@ public class MainActivity extends AppCompatActivity
                     }
 
                     Log.d(TAG, "fingerprint: " + HexData.hexToString(fingerprint));
+
+                    /**
+                     * Build flash command sequence
+                     */
+                    LinkedList<byte[]> flashSequence = new LinkedList<>();
+                    int address = 0x08000000;
+                    for (int i = 0; i < numBlocks; i++) {
+                        Log.d(TAG, Integer.toString(textBlocks[i].length));
+                        flashSequence.add(buildFlashCommand(address, textBlocks[i]));
+                        address += blocksize;
+                    }
+                    flashSequence.add(buildFlashCommand(address, extraBlock));
+                    address += extraBlockSize;
+                    flashSequence.add(buildFlashCommand(fingerprintAddress, fingerprint));
+
+                    return flashSequence;
 
                 } catch (IOException e) {
                     throw new RuntimeException(e);
@@ -212,15 +257,8 @@ public class MainActivity extends AppCompatActivity
                         byte[] data = flashService.GetReceivedDataFromQueue();
                         String asciiData = new String(data, Charset.forName("UTF-8"));
 
-                        /**
-                         * Process packet's message content and continue message sequence
-                         */
-                        if (asciiData.contains("$")) {
-                            String messageEncoded = asciiData.split("[$#]")[1];
-                            Log.d(TAG, "GDB message received " + messageEncoded);
-                            if (messageEncoded.contains("OK")) {
-                                sendNextMessage();
-                            }
+                        if (asciiData.contains("-")) {
+                            Log.d(TAG, "message failed");
                         }
 
                         /**
@@ -231,24 +269,49 @@ public class MainActivity extends AppCompatActivity
                             flashService.WriteData(ACK);
                         }
 
-                        timerHandler.postDelayed(this, 100);
+                        /**
+                         * Process packet's message content and continue message sequence
+                         */
+                        if (asciiData.contains("$")) {
+                            String messageEncoded = asciiData.split("[$#]")[1];
+                            Log.d(TAG, "GDB message received " + messageEncoded);
+                            if (messageEncoded.contains("OK")) {
+                                quitFlag = sendNextMessage();
+                            } else if (messageEncoded.contains("T05")) {
+                                // attach successful
+                                quitFlag = sendNextMessage();
+                            }
+                        }
+                        timeout = 0;
 
                     } else {
-                        flashService.StopReadingThread();
+                        if (timeout++ >= TIMEOUT) {
+                            flashService.StopReadingThread();
+                            flashService.CloseTheDevice();
+                            Log.d(TAG, "timeout");
+                            quitFlag = true;
+                        }
                     }
+                    if (!quitFlag)
+                    timerHandler.postDelayed(this, 10);
                 }
             }
 
-            private void sendNextMessage() {
+            private boolean sendNextMessage() {
                 if (messageQueue.isEmpty()) {
+                    flashService.WriteData(buildPacket("vFlashDone".getBytes()));
                     flashService.CloseTheDevice();
                     Log.d(TAG, "flash sequence completed");
+                    return true;
                 } else {
-                    flashService.WriteData(buildPacket(messageQueue.remove()));
+                    byte[] msg = messageQueue.remove();
+                    Log.d(TAG, "sending message: " + msg);
+                    flashService.WriteData(buildPacket(msg));
+                    return false;
                 }
             }
 
-            private byte[] buildPacket(String msg) {
+            private byte[] buildPacket(byte[] msg) {
                 final String startTok = "$";
                 final String csumTok = "#";
                 StringBuilder packet =  new StringBuilder();
@@ -257,7 +320,7 @@ public class MainActivity extends AppCompatActivity
                  * Calculate checksum
                  */
                 Integer csum = 0;
-                for (byte b : msg.getBytes()) {
+                for (byte b : msg) {
                     csum += b;
                 }
                 csum %= 256;
@@ -275,8 +338,10 @@ public class MainActivity extends AppCompatActivity
 
             @Override
             public void onClick(View view) {
-                messageQueue.addAll(Arrays.asList(gdbInitSequence));
-                downloadElf();
+                for (String s : gdbInitSequence) {
+                    messageQueue.add(s.getBytes());
+                }
+                messageQueue.addAll(downloadElf());
                 /**
                  * Flash the connected NeuroBytes board with correct firmware
                  */
@@ -286,7 +351,7 @@ public class MainActivity extends AppCompatActivity
                 Log.d("GDB Received", Boolean.toString(flashService.IsThereAnyReceivedData()));
                 GdbCallbackRunnable callback = new GdbCallbackRunnable(flashService);
 //                flashService.StartReadingThread();
-                timerHandler.postDelayed(callback, 100);
+                timerHandler.postDelayed(callback, 10);
 //                flashService.CloseTheDevice();
             }
         });

@@ -11,6 +11,9 @@ import android.hardware.usb.UsbEndpoint;
 import android.hardware.usb.UsbInterface;
 import android.hardware.usb.UsbManager;
 import android.util.Log;
+
+import com.felhr.utils.HexData;
+
 import java.util.logging.Handler;
 
 import java.util.HashMap;
@@ -150,7 +153,7 @@ public class UsbFlashService {
                 // Write the data as a bulk transfer with defined data length.
                 int r = writeConnection.bulkTransfer(writeEp, bytes, bytes.length, 0);
                 if (r != -1) {
-                    Log(String.format("Written %s bytes to the dongle. Data written: %s", r, composeString(bytes)));
+                    Log(String.format("Written %s bytes to the dongle. Data written: %s", r, HexData.hexToString(bytes)));
                 } else {
                     Log("Error happened while writing data. No ACK");
                 }
@@ -270,7 +273,7 @@ public class UsbFlashService {
                             }
 
                             _receivedQueue.add(truncatedBytes); // Store received data
-                            Log(String.format("Message received of lengths %s and content: %s", r, composeString(bytes)));
+                            Log(String.format("Message received of lengths %s and content: %s", r, HexData.hexToString(bytes)));
 
                         }
 
