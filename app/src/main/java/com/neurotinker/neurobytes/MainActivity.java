@@ -13,6 +13,7 @@ import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
 import android.os.Message;
+import android.os.StrictMode;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
@@ -52,6 +53,7 @@ import com.mikepenz.fastadapter.listeners.CustomEventHook;
 import com.mikepenz.fastadapter_extensions.drag.ItemTouchCallback;
 import com.mikepenz.fastadapter_extensions.drag.SimpleDragCallback;
 
+import java.io.BufferedInputStream;
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -112,6 +114,12 @@ public class MainActivity extends AppCompatActivity
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
+        /**
+         * Allow main thread network connection // TODO: remove this!
+         */
+        StrictMode.ThreadPolicy policy = new StrictMode.ThreadPolicy.Builder().permitAll().build();
+        StrictMode.setThreadPolicy(policy);
+
         ImageView pausePlayView = (ImageView) findViewById(R.id.pauseplay_id);
         pausePlayView.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -149,31 +157,36 @@ public class MainActivity extends AppCompatActivity
 
             private void downloadElf() {
                 try {
-                    URL url = new URL("http://www.github.com/NeuroTinker/NeuroBytes_Interneuron/raw/master/FIRMWARE/bin/main.elf");
-                    InputStream inStream = url.openStream();
+                    URL url = new URL("https://github.com/NeuroTinker/NeuroBytes_Interneuron/raw/master/FIRMWARE/bin/main.elf");
+//                    InputStream inStream = url.openStream();
+                    InputStream inStream = new BufferedInputStream(url.openStream(), 0x2400);
                     DataInputStream dataInStream = new DataInputStream(inStream);
 
-                    byte[] buffer = new byte[1024];
                     int textSize = 0x23af;
                     int fingerprintSize = 0xc;
                     int length;
                     int fLoc = 0;
 
-                    dataInStream.skipBytes(textOffset);
+                    length = dataInStream.skipBytes(textOffset);
+                    if (length != textOffset) Log.d(TAG, "only skipped " + Integer.toString(length) + " bytes");
                     fLoc += textOffset;
 
                     byte[] text = new byte[textSize];
-                    if (textSize != dataInStream.read(text)) {
+                    Log.d(TAG, "text length " + Integer.toString(text.length) + " bytes");
+                    length = dataInStream.read(text, 0, 8000);
+                    if (textSize != length) {
                         Log.d(TAG, ".text load failed");
-                    } else {
-                        fLoc += textSize;
+                        Log.d(TAG, "only read " + Integer.toString(length) + " bytes");
                     }
+                    fLoc += length;
 
                     dataInStream.skipBytes(fingerprintOffset - fLoc);
 
                     byte[] fingerprint = new byte[fingerprintSize];
-                    if (fingerprintSize != dataInStream.read(fingerprint)) {
+                    length = dataInStream.read(fingerprint, 0, fingerprintSize);
+                    if (fingerprintSize != length) {
                         Log.d(TAG, ".fingerprint load failed");
+                        Log.d(TAG, "only read " + Integer.toString(length) + " bytes");
                     }
 
                     Log.d(TAG, "fingerprint: " + HexData.hexToString(fingerprint));
@@ -263,6 +276,7 @@ public class MainActivity extends AppCompatActivity
             @Override
             public void onClick(View view) {
                 messageQueue.addAll(Arrays.asList(gdbInitSequence));
+                downloadElf();
                 /**
                  * Flash the connected NeuroBytes board with correct firmware
                  */
