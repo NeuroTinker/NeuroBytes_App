@@ -172,8 +172,31 @@ public class MainActivity extends AppCompatActivity
                 StringBuilder cmd = new StringBuilder("vFlashWrite:");
                 cmd.append(Integer.toHexString(address));
                 cmd.append(":");
-                byte[] bytes = concat(cmd.toString().getBytes(), data);
+                byte[] bytes = concat(cmd.toString().getBytes(), escapeChars(data));
                 return bytes;
+            }
+
+            private boolean isBadChar(byte bb) {
+                return (bb == 0x23 || bb == 0x24 || bb == 0x7d);
+            }
+
+            private byte[] escapeChars(byte[] bytes) {
+
+                int numBadChars = 0;
+                for (byte b : bytes) {
+                    if (isBadChar(b)) {
+                        numBadChars += 1;
+                    }
+                }
+
+                byte[] escapedBytes = new byte[bytes.length + numBadChars];
+                for (int i = 0,j = 0; i < bytes.length; i++, j++) {
+                    if (isBadChar(bytes[i])) {
+                        escapedBytes[j] = 0x7d;
+                        escapedBytes[++j] = (byte) ((byte) ((byte) bytes[i]) ^ ((byte) 0x20)); // what the actual fuck... why do i need so many typecasts?
+                    }
+                }
+                return escapedBytes;
             }
 
             private LinkedList<byte[]> downloadElf() {
@@ -234,6 +257,10 @@ public class MainActivity extends AppCompatActivity
                     flashSequence.add(buildFlashCommand(address, extraBlock));
                     address += extraBlockSize;
                     flashSequence.add(buildFlashCommand(fingerprintAddress, fingerprint));
+
+                    flashSequence.add("vFlashDone".getBytes());
+                    flashSequence.add("vRun;".getBytes());
+//                    flashSequence.add("R".getBytes());
 
                     return flashSequence;
 
@@ -303,7 +330,6 @@ public class MainActivity extends AppCompatActivity
 
             private boolean sendNextMessage() {
                 if (messageQueue.isEmpty()) {
-                    flashService.WriteData(buildPacket("vFlashDone".getBytes()));
                     flashService.CloseTheDevice();
                     Log.d(TAG, "flash sequence completed");
                     return true;
