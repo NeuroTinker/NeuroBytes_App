@@ -52,8 +52,11 @@ import com.mikepenz.fastadapter.listeners.CustomEventHook;
 import com.mikepenz.fastadapter_extensions.drag.ItemTouchCallback;
 import com.mikepenz.fastadapter_extensions.drag.SimpleDragCallback;
 
+import java.io.DataInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.lang.ref.WeakReference;
+import java.net.URL;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.util.Arrays;
@@ -134,7 +137,52 @@ public class MainActivity extends AppCompatActivity
 
         ImageView flashDataView = (ImageView) findViewById(R.id.flash_id);
         flashDataView.setOnClickListener(new View.OnClickListener() {
+
+            private final String[] gdbInitSequence = {"qRcmd,s", "vAttach;1"};
+            private Queue<String> messageQueue = new LinkedList<>();
             private byte[] ACK = {'+'};
+
+            private final String elfFilename = "main.elf";
+            private final Integer blocksize = 0x80;
+            private final Integer textOffset = 0x10000;
+            private final Integer fingerprintOffset = 0x23e00;
+
+            private void downloadElf() {
+                try {
+                    URL url = new URL("http://www.github.com/NeuroTinker/NeuroBytes_Interneuron/raw/master/FIRMWARE/bin/main.elf");
+                    InputStream inStream = url.openStream();
+                    DataInputStream dataInStream = new DataInputStream(inStream);
+
+                    byte[] buffer = new byte[1024];
+                    int textSize = 0x23af;
+                    int fingerprintSize = 0xc;
+                    int length;
+                    int fLoc = 0;
+
+                    dataInStream.skipBytes(textOffset);
+                    fLoc += textOffset;
+
+                    byte[] text = new byte[textSize];
+                    if (textSize != dataInStream.read(text)) {
+                        Log.d(TAG, ".text load failed");
+                    } else {
+                        fLoc += textSize;
+                    }
+
+                    dataInStream.skipBytes(fingerprintOffset - fLoc);
+
+                    byte[] fingerprint = new byte[fingerprintSize];
+                    if (fingerprintSize != dataInStream.read(fingerprint)) {
+                        Log.d(TAG, ".fingerprint load failed");
+                    }
+
+                    Log.d(TAG, "fingerprint: " + HexData.hexToString(fingerprint));
+
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+
             class GdbCallbackRunnable implements Runnable {
                 private UsbFlashService flashService;
                 public GdbCallbackRunnable(UsbFlashService flashService) {
@@ -144,44 +192,83 @@ public class MainActivity extends AppCompatActivity
                 public void run() {
                     Log.d("GDB Received", Boolean.toString(flashService.IsThereAnyReceivedData()));
 
-                    if (!flashService.IsThereAnyReceivedData()){
-                        flashService.StopReadingThread();
-                    } else {
+                    /**
+                     * Check for received packets
+                     */
+                    if (flashService.IsThereAnyReceivedData()) {
                         byte[] data = flashService.GetReceivedDataFromQueue();
-//                        Log.d(TAG, HexData.hexToString(data));
                         String asciiData = new String(data, Charset.forName("UTF-8"));
+
+                        /**
+                         * Process packet's message content and continue message sequence
+                         */
                         if (asciiData.contains("$")) {
                             String messageEncoded = asciiData.split("[$#]")[1];
-                            Log.d(TAG, messageEncoded);
-//                            Log.d(TAG, ByteBuffer.wrap(Byte.decode(messageEncoded)).toString());
-//                            String messageUnencoded = new String(HexData.stringTobytes(messageEncoded), Charset.forName("UTF-8"));
-//                            Log.d(TAG, messageUnencoded);
+                            Log.d(TAG, "GDB message received " + messageEncoded);
+                            if (messageEncoded.contains("OK")) {
+                                sendNextMessage();
+                            }
                         }
-//                        Log.d(TAG, asciiData);
-                        byte firstChar = data[0];
-                        if (firstChar == '$') flashService.WriteData(ACK);
+
+                        /**
+                         * Send ACK if packet fully received.
+                         * Not bothering to even check csum or anything...
+                         */
+                        if (asciiData.contains("#")) {
+                            flashService.WriteData(ACK);
+                        }
+
                         timerHandler.postDelayed(this, 100);
+
+                    } else {
+                        flashService.StopReadingThread();
                     }
                 }
             }
+
+            private void sendNextMessage() {
+                if (messageQueue.isEmpty()) {
+                    flashService.CloseTheDevice();
+                    Log.d(TAG, "flash sequence completed");
+                } else {
+                    flashService.WriteData(buildPacket(messageQueue.remove()));
+                }
+            }
+
+            private byte[] buildPacket(String msg) {
+                final String startTok = "$";
+                final String csumTok = "#";
+                StringBuilder packet =  new StringBuilder();
+
+                /**
+                 * Calculate checksum
+                 */
+                Integer csum = 0;
+                for (byte b : msg.getBytes()) {
+                    csum += b;
+                }
+                csum %= 256;
+
+                /**
+                 * Build packet
+                 */
+                packet.append(startTok);
+                packet.append(msg);
+                packet.append(csumTok);
+                packet.append(Integer.toHexString(csum));
+
+                return packet.toString().getBytes();
+            }
+
             @Override
             public void onClick(View view) {
+                messageQueue.addAll(Arrays.asList(gdbInitSequence));
                 /**
                  * Flash the connected NeuroBytes board with correct firmware
                  */
                 flashService.OpenDevice();
                 flashService.StartReadingThread();
-                String packet = "$";
-                String packetContent = "qRcmd,s";
-                Integer csum = 0;
-                for (byte b : packetContent.getBytes()){
-                    csum += b;
-                }
-                packet += packetContent;
-                packet += '#';
-                csum %= 256;
-                packet += Integer.toHexString(csum);
-                flashService.WriteData(packet.getBytes());
+                sendNextMessage();
                 Log.d("GDB Received", Boolean.toString(flashService.IsThereAnyReceivedData()));
                 GdbCallbackRunnable callback = new GdbCallbackRunnable(flashService);
 //                flashService.StartReadingThread();
