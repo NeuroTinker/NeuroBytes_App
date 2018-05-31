@@ -149,6 +149,7 @@ public class MainActivity extends AppCompatActivity
             private final String[] gdbInitSequence = {"!", "qRcmd,747020656e", "qRcmd,v", "qRcmd,73", "vAttach;1", "vFlashErase:08000000,00004000"};
             private String[] gdbFlashSequence;
             private Queue<byte[]> messageQueue = new LinkedList<>();
+            private byte[] prevMessage;
             private byte[] ACK = {'+'};
 
             private final String elfFilename = "main.elf";
@@ -259,6 +260,10 @@ public class MainActivity extends AppCompatActivity
 
                         if (asciiData.contains("-")) {
                             Log.d(TAG, "message failed");
+                            sendPrevMessage();
+                            timeout += 1;
+                        } else {
+                            timeout = 0;
                         }
 
                         /**
@@ -282,7 +287,6 @@ public class MainActivity extends AppCompatActivity
                                 quitFlag = sendNextMessage();
                             }
                         }
-                        timeout = 0;
 
                     } else {
                         if (timeout++ >= TIMEOUT) {
@@ -305,10 +309,15 @@ public class MainActivity extends AppCompatActivity
                     return true;
                 } else {
                     byte[] msg = messageQueue.remove();
-                    Log.d(TAG, "sending message: " + msg);
+                    Log.d(TAG, "sending message: " + HexData.hexToString(msg));
+                    prevMessage = msg;
                     flashService.WriteData(buildPacket(msg));
                     return false;
                 }
+            }
+
+            private void sendPrevMessage() {
+                flashService.WriteData(buildPacket(prevMessage));
             }
 
             private byte[] buildPacket(byte[] msg) {
@@ -333,7 +342,11 @@ public class MainActivity extends AppCompatActivity
                 packet.append(csumTok);
                 packet.append(Integer.toHexString(csum));
 
-                return packet.toString().getBytes();
+                byte[] bytes = new byte[8+msg.length];
+                bytes = concat(concat(concat(startTok.getBytes(), msg), csumTok.getBytes()), Integer.toHexString(csum).getBytes());
+
+//                return packet.toString().getBytes();
+                return bytes;
             }
 
             @Override
