@@ -147,7 +147,6 @@ public class MainActivity extends AppCompatActivity
         flashDataView.setOnClickListener(new View.OnClickListener() {
 
             private final String[] gdbInitSequence = {"!", "qRcmd,747020656e", "qRcmd,v", "qRcmd,73", "vAttach;1", "vFlashErase:08000000,00004000"};
-            private String[] gdbFlashSequence;
             private Queue<byte[]> messageQueue = new LinkedList<>();
             private byte[] prevMessage;
             private byte[] ACK = {'+'};
@@ -166,6 +165,10 @@ public class MainActivity extends AppCompatActivity
                 System.arraycopy(arr1, 0, bytes, 0, arr1.length);
                 System.arraycopy(arr2, 0, bytes, arr1.length, arr2.length);
                 return bytes;
+            }
+
+            private byte[] concat(byte[] arr1, byte[] arr2, byte[] arr3, byte[] arr4) {
+                return concat(concat(concat(arr1, arr2), arr3), arr4);
             }
 
             private byte[] buildFlashCommand(int address, byte[] data) {
@@ -193,7 +196,7 @@ public class MainActivity extends AppCompatActivity
                 for (int i = 0,j = 0; i < bytes.length; i++, j++) {
                     if (isBadChar(bytes[i])) {
                         escapedBytes[j] = 0x7d;
-                        escapedBytes[++j] = (byte) ((byte) ((byte) bytes[i]) ^ ((byte) 0x20)); // what the actual fuck... why do i need so many typecasts?
+                        escapedBytes[++j] = (byte) ((bytes[i]) ^ ((byte) 0x20));
                     }
                 }
                 return escapedBytes;
@@ -202,7 +205,6 @@ public class MainActivity extends AppCompatActivity
             private LinkedList<byte[]> downloadElf() {
                 try {
                     URL url = new URL("https://github.com/NeuroTinker/NeuroBytes_Touch_Sensor/raw/master/FIRMWARE/bin/main.elf");
-//                    InputStream inStream = url.openStream();
                     InputStream inStream = new BufferedInputStream(url.openStream(), 0x2400);
                     DataInputStream dataInStream = new DataInputStream(inStream);
 
@@ -349,7 +351,6 @@ public class MainActivity extends AppCompatActivity
             private byte[] buildPacket(byte[] msg) {
                 final String startTok = "$";
                 final String csumTok = "#";
-                StringBuilder packet =  new StringBuilder();
 
                 /**
                  * Calculate checksum
@@ -363,16 +364,7 @@ public class MainActivity extends AppCompatActivity
                 /**
                  * Build packet
                  */
-                packet.append(startTok);
-                packet.append(msg);
-                packet.append(csumTok);
-                packet.append(Integer.toHexString(csum));
-
-                byte[] bytes = new byte[8+msg.length];
-                bytes = concat(concat(concat(startTok.getBytes(), msg), csumTok.getBytes()), Integer.toHexString(csum).getBytes());
-
-//                return packet.toString().getBytes();
-                return bytes;
+                return concat(startTok.getBytes(), msg, csumTok.getBytes(), Integer.toHexString(csum).getBytes());
             }
 
             @Override
