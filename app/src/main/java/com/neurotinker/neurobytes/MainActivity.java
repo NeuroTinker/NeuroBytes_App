@@ -382,8 +382,6 @@ public class MainActivity extends AppCompatActivity
                 for (byte b : msg) {
                     csum += b;
                     byte[] tmp = {b};
-
-                    if (csum == -66) Log.d(TAG, HexData.hexToString(tmp));
                 }
                 csum %= 256;
                 csum &= 0xFF;
