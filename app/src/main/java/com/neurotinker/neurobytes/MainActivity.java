@@ -191,12 +191,17 @@ public class MainActivity extends AppCompatActivity
                         numBadChars += 1;
                     }
                 }
+                Log.d(TAG, "num bad chars: " + Integer.toString(numBadChars));
 
                 byte[] escapedBytes = new byte[bytes.length + numBadChars];
                 for (int i = 0,j = 0; i < bytes.length; i++, j++) {
+//                    if (bytes[i] > 126) Log.d("Greater", Integer.toString(i));
                     if (isBadChar(bytes[i])) {
-                        escapedBytes[j] = 0x7d;
+                        escapedBytes[j] = 0x7d; // escape char
                         escapedBytes[++j] = (byte) ((bytes[i]) ^ ((byte) 0x20));
+                    } else {
+                        escapedBytes[j] = bytes[i];
+//                        escapedBytes[j] = 0xF;
                     }
                 }
                 return escapedBytes;
@@ -215,28 +220,47 @@ public class MainActivity extends AppCompatActivity
                     int length = 0;
                     int fLoc = 0;
 
+                    /**
+                     * Skip to the start of the .text section
+                     */
                     length = dataInStream.skipBytes(textOffset);
                     if (length != textOffset) Log.d(TAG, "only skipped " + Integer.toString(length) + " bytes");
-                    fLoc += textOffset;
+                    fLoc += length;
 
+                    /**
+                     * Read .text content into blocks of size [blocksize]
+                     */
                     byte[][] textBlocks = new byte[numBlocks][blocksize];
-                    byte[] extraBlock = new byte[extraBlockSize];
                     for (int i = 0; i < numBlocks; i++) {
                         length = dataInStream.read(textBlocks[i], 0, blocksize);
-                        Log.d(TAG, textBlocks[i].toString());
+                        Log.d(TAG, HexData.hexToString(textBlocks[i]));
                         if (length != blocksize) {
                             Log.d(TAG, "only read " + i + "th block " + Integer.toString(length) + " bytes");
                         }
                         fLoc += length;
                     }
-                    length = dataInStream.read(extraBlock, 0, extraBlockSize);
-                    if (length != extraBlockSize) {
-                        Log.d(TAG, "only read extra block " + Integer.toString(length) + " bytes");
+                    /**
+                     * If there is extra .text content with size not >= [blocksize],
+                     * put it into [extrablock]
+                     */
+                    byte[] extraBlock = new byte[extraBlockSize];
+                    if (extraBlockSize > 0) {
+                        length = dataInStream.read(extraBlock, 0, extraBlockSize);
+                        if (length != extraBlockSize) {
+                            Log.d(TAG, "only read extra block " + Integer.toString(length) + " bytes");
+                        }
+                        fLoc += length;
                     }
-                    fLoc += length;
 
+                    /**
+                     * Skip to the .fingerprint section
+                     */
                     dataInStream.skipBytes(fingerprintOffset - fLoc);
 
+                    /**
+                     * Read the .fingerprint section.
+                     * Note: the fingerprint size is always less than [blocksize]
+                     */
                     byte[] fingerprint = new byte[fingerprintSize];
                     length = dataInStream.read(fingerprint, 0, fingerprintSize);
                     if (fingerprintSize != length) {
@@ -250,14 +274,14 @@ public class MainActivity extends AppCompatActivity
                      * Build flash command sequence
                      */
                     LinkedList<byte[]> flashSequence = new LinkedList<>();
-                    int address = 0x08000000;
+                    int address = 0x8000000;
                     for (int i = 0; i < numBlocks; i++) {
-                        Log.d(TAG, Integer.toString(textBlocks[i].length));
+                        Log.d(TAG, Integer.toString(i));
+                        Log.d(TAG, "address " + Integer.toHexString(address));
                         flashSequence.add(buildFlashCommand(address, textBlocks[i]));
                         address += blocksize;
                     }
-                    flashSequence.add(buildFlashCommand(address, extraBlock));
-                    address += extraBlockSize;
+                    if (extraBlockSize > 0) flashSequence.add(buildFlashCommand(address, extraBlock));
                     flashSequence.add(buildFlashCommand(fingerprintAddress, fingerprint));
 
                     flashSequence.add("vFlashDone".getBytes());
@@ -290,7 +314,7 @@ public class MainActivity extends AppCompatActivity
                         if (asciiData.contains("-")) {
                             Log.d(TAG, "message failed");
                             sendPrevMessage();
-                            timeout += 1;
+                            timeout += 25;
                         } else {
                             timeout = 0;
                         }
@@ -325,8 +349,7 @@ public class MainActivity extends AppCompatActivity
                             quitFlag = true;
                         }
                     }
-                    if (!quitFlag)
-                    timerHandler.postDelayed(this, 10);
+                    if (!quitFlag) timerHandler.postDelayed(this, 10);
                 }
             }
 
@@ -358,8 +381,12 @@ public class MainActivity extends AppCompatActivity
                 Integer csum = 0;
                 for (byte b : msg) {
                     csum += b;
+                    byte[] tmp = {b};
+
+                    if (csum == -66) Log.d(TAG, HexData.hexToString(tmp));
                 }
                 csum %= 256;
+                csum &= 0xFF;
 
                 /**
                  * Build packet
