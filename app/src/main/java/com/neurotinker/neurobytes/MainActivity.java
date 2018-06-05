@@ -239,6 +239,7 @@ public class MainActivity extends AppCompatActivity
                         }
                         fLoc += length;
                     }
+
                     /**
                      * If there is extra .text content with size not >= [blocksize],
                      * put it into [extrablock]
