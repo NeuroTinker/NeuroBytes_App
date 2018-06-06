@@ -84,7 +84,7 @@ public class MainActivity extends AppCompatActivity
     private static final String TAG = MainActivity.class.getSimpleName();
 
     private UsbFlashService flashService = new UsbFlashService(this, 0x6018, 0x1d50);
-    private GdbController gdbController = new GdbController(this, flashService);
+    private GdbController gdbController;
     private PopupWindow popupWindow;
 
     Handler timerHandler = new Handler(Looper.getMainLooper());
@@ -146,6 +146,7 @@ public class MainActivity extends AppCompatActivity
             }
         });
 
+        gdbController = new GdbController(this, flashService);
         ImageView flashDataView = (ImageView) findViewById(R.id.flash_id);
         flashDataView.setOnClickListener(new View.OnClickListener() {
 
