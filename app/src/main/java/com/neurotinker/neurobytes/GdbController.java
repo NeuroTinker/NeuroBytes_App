@@ -5,6 +5,7 @@ import android.os.Handler;
 import android.os.Looper;
 import android.renderscript.ScriptGroup;
 import android.util.Log;
+import android.view.View;
 
 import com.felhr.utils.HexData;
 
@@ -45,6 +46,7 @@ public class GdbController {
     private Integer deviceType;
 
     private Context _context;
+    private View view;
 
     enum State {
         STOPPED,
@@ -64,7 +66,8 @@ public class GdbController {
         this._context = _context;
     }
 
-    public void start() {
+    public void start(View view) {
+        this.view = view;
         this.state = State.INITIALIZING;
         for (String s : gdbInitSequence) {
             messageQueue.add(s.getBytes());

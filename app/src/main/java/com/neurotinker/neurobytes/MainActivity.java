@@ -22,11 +22,14 @@ import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
 import android.support.v7.widget.helper.ItemTouchHelper;
 import android.util.Log;
+import android.view.LayoutInflater;
 import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.ViewGroup;
 import android.view.ViewTreeObserver;
 import android.widget.ImageView;
+import android.widget.PopupWindow;
 import android.widget.SeekBar;
 import android.widget.Toast;
 
@@ -80,6 +83,8 @@ public class MainActivity extends AppCompatActivity
     private static final String TAG = MainActivity.class.getSimpleName();
 
     private UsbFlashService flashService = new UsbFlashService(this, 0x6018, 0x1d50);
+    private GdbController gdbController = new GdbController(this, flashService);
+    private PopupWindow popupWindow;
 
     Handler timerHandler = new Handler(Looper.getMainLooper());
 
@@ -146,270 +151,15 @@ public class MainActivity extends AppCompatActivity
         ImageView flashDataView = (ImageView) findViewById(R.id.flash_id);
         flashDataView.setOnClickListener(new View.OnClickListener() {
 
-            private final String[] gdbInitSequence = {"!", "qRcmd,747020656e", "qRcmd,v", "qRcmd,73", "vAttach;1", "vFlashErase:08000000,00004000"};
-            private Queue<byte[]> messageQueue = new LinkedList<>();
-            private byte[] prevMessage;
-            private byte[] ACK = {'+'};
-
-            private final String elfFilename = "main.elf";
-            private final Integer blocksize = 0x80;
-            private final Integer textOffset = 0x10000;
-            private final Integer fingerprintOffset = 0x23e00;
-            private final Integer fingerprintAddress = 0x08003e00;
-            private Integer timeout = 0;
-            private final Integer TIMEOUT = 50;
-            private boolean quitFlag = false;
-
-            private byte[] concat(byte[] arr1, byte[] arr2) {
-                byte[] bytes = new byte[arr1.length + arr2.length];
-                System.arraycopy(arr1, 0, bytes, 0, arr1.length);
-                System.arraycopy(arr2, 0, bytes, arr1.length, arr2.length);
-                return bytes;
-            }
-
-            private byte[] concat(byte[] arr1, byte[] arr2, byte[] arr3, byte[] arr4) {
-                return concat(concat(concat(arr1, arr2), arr3), arr4);
-            }
-
-            private byte[] buildFlashCommand(int address, byte[] data) {
-                StringBuilder cmd = new StringBuilder("vFlashWrite:");
-                cmd.append(Integer.toHexString(address));
-                cmd.append(":");
-                byte[] bytes = concat(cmd.toString().getBytes(), escapeChars(data));
-                return bytes;
-            }
-
-            private boolean isBadChar(byte bb) {
-                return (bb == 0x23 || bb == 0x24 || bb == 0x7d);
-            }
-
-            private byte[] escapeChars(byte[] bytes) {
-
-                int numBadChars = 0;
-                for (byte b : bytes) {
-                    if (isBadChar(b)) {
-                        numBadChars += 1;
-                    }
-                }
-                Log.d(TAG, "num bad chars: " + Integer.toString(numBadChars));
-
-                byte[] escapedBytes = new byte[bytes.length + numBadChars];
-                for (int i = 0,j = 0; i < bytes.length; i++, j++) {
-//                    if (bytes[i] > 126) Log.d("Greater", Integer.toString(i));
-                    if (isBadChar(bytes[i])) {
-                        escapedBytes[j] = 0x7d; // escape char
-                        escapedBytes[++j] = (byte) ((bytes[i]) ^ ((byte) 0x20));
-                    } else {
-                        escapedBytes[j] = bytes[i];
-//                        escapedBytes[j] = 0xF;
-                    }
-                }
-                return escapedBytes;
-            }
-
-            private LinkedList<byte[]> downloadElf() {
-                try {
-                    URL url = new URL("https://github.com/NeuroTinker/NeuroBytes_Touch_Sensor/raw/master/FIRMWARE/bin/main.elf");
-                    InputStream inStream = new BufferedInputStream(url.openStream(), 0x2400);
-                    DataInputStream dataInStream = new DataInputStream(inStream);
-
-                    int textSize = 0x1ddc;
-                    int numBlocks = (textSize / blocksize);
-                    int extraBlockSize = textSize % blocksize;
-                    int fingerprintSize = 0xc;
-                    int length = 0;
-                    int fLoc = 0;
-
-                    /**
-                     * Skip to the start of the .text section
-                     */
-                    length = dataInStream.skipBytes(textOffset);
-                    if (length != textOffset) Log.d(TAG, "only skipped " + Integer.toString(length) + " bytes");
-                    fLoc += length;
-
-                    /**
-                     * Read .text content into blocks of size [blocksize]
-                     */
-                    byte[][] textBlocks = new byte[numBlocks][blocksize];
-                    for (int i = 0; i < numBlocks; i++) {
-                        length = dataInStream.read(textBlocks[i], 0, blocksize);
-                        Log.d(TAG, HexData.hexToString(textBlocks[i]));
-                        if (length != blocksize) {
-                            Log.d(TAG, "only read " + i + "th block " + Integer.toString(length) + " bytes");
-                        }
-                        fLoc += length;
-                    }
-
-                    /**
-                     * If there is extra .text content with size not >= [blocksize],
-                     * put it into [extrablock]
-                     */
-                    byte[] extraBlock = new byte[extraBlockSize];
-                    if (extraBlockSize > 0) {
-                        length = dataInStream.read(extraBlock, 0, extraBlockSize);
-                        if (length != extraBlockSize) {
-                            Log.d(TAG, "only read extra block " + Integer.toString(length) + " bytes");
-                        }
-                        fLoc += length;
-                    }
-
-                    /**
-                     * Skip to the .fingerprint section
-                     */
-                    dataInStream.skipBytes(fingerprintOffset - fLoc);
-
-                    /**
-                     * Read the .fingerprint section.
-                     * Note: the fingerprint size is always less than [blocksize]
-                     */
-                    byte[] fingerprint = new byte[fingerprintSize];
-                    length = dataInStream.read(fingerprint, 0, fingerprintSize);
-                    if (fingerprintSize != length) {
-                        Log.d(TAG, ".fingerprint load failed");
-                        Log.d(TAG, "only read " + Integer.toString(length) + " bytes");
-                    }
-
-                    Log.d(TAG, "fingerprint: " + HexData.hexToString(fingerprint));
-
-                    /**
-                     * Build flash command sequence
-                     */
-                    LinkedList<byte[]> flashSequence = new LinkedList<>();
-                    int address = 0x8000000;
-                    for (int i = 0; i < numBlocks; i++) {
-                        Log.d(TAG, Integer.toString(i));
-                        Log.d(TAG, "address " + Integer.toHexString(address));
-                        flashSequence.add(buildFlashCommand(address, textBlocks[i]));
-                        address += blocksize;
-                    }
-                    if (extraBlockSize > 0) flashSequence.add(buildFlashCommand(address, extraBlock));
-                    flashSequence.add(buildFlashCommand(fingerprintAddress, fingerprint));
-
-                    flashSequence.add("vFlashDone".getBytes());
-                    flashSequence.add("vRun;".getBytes());
-//                    flashSequence.add("R".getBytes());
-
-                    return flashSequence;
-
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
-            }
-
-            class GdbCallbackRunnable implements Runnable {
-                private UsbFlashService flashService;
-                public GdbCallbackRunnable(UsbFlashService flashService) {
-                    this.flashService = flashService;
-                }
-                @Override
-                public void run() {
-                    Log.d("GDB Received", Boolean.toString(flashService.IsThereAnyReceivedData()));
-
-                    /**
-                     * Check for received packets
-                     */
-                    if (flashService.IsThereAnyReceivedData()) {
-                        byte[] data = flashService.GetReceivedDataFromQueue();
-                        String asciiData = new String(data, Charset.forName("UTF-8"));
-
-                        if (asciiData.contains("-")) {
-                            Log.d(TAG, "message failed");
-                            sendPrevMessage();
-                            timeout += 25;
-                        } else {
-                            timeout = 0;
-                        }
-
-                        /**
-                         * Send ACK if packet fully received.
-                         * Not bothering to even check csum or anything...
-                         */
-                        if (asciiData.contains("#")) {
-                            flashService.WriteData(ACK);
-                        }
-
-                        /**
-                         * Process packet's message content and continue message sequence
-                         */
-                        if (asciiData.contains("$")) {
-                            String messageEncoded = asciiData.split("[$#]")[1];
-                            Log.d(TAG, "GDB message received " + messageEncoded);
-                            if (messageEncoded.contains("OK")) {
-                                quitFlag = sendNextMessage();
-                            } else if (messageEncoded.contains("T05")) {
-                                // attach successful
-                                quitFlag = sendNextMessage();
-                            }
-                        }
-
-                    } else {
-                        if (timeout++ >= TIMEOUT) {
-                            flashService.StopReadingThread();
-                            flashService.CloseTheDevice();
-                            Log.d(TAG, "timeout");
-                            quitFlag = true;
-                        }
-                    }
-                    if (!quitFlag) timerHandler.postDelayed(this, 10);
-                }
-            }
-
-            private boolean sendNextMessage() {
-                if (messageQueue.isEmpty()) {
-                    flashService.CloseTheDevice();
-                    Log.d(TAG, "flash sequence completed");
-                    return true;
-                } else {
-                    byte[] msg = messageQueue.remove();
-                    Log.d(TAG, "sending message: " + HexData.hexToString(msg));
-                    prevMessage = msg;
-                    flashService.WriteData(buildPacket(msg));
-                    return false;
-                }
-            }
-
-            private void sendPrevMessage() {
-                flashService.WriteData(buildPacket(prevMessage));
-            }
-
-            private byte[] buildPacket(byte[] msg) {
-                final String startTok = "$";
-                final String csumTok = "#";
-
-                /**
-                 * Calculate checksum
-                 */
-                Integer csum = 0;
-                for (byte b : msg) {
-                    csum += b;
-                    byte[] tmp = {b};
-                }
-                csum %= 256;
-                csum &= 0xFF;
-
-                /**
-                 * Build packet
-                 */
-                return concat(startTok.getBytes(), msg, csumTok.getBytes(), Integer.toHexString(csum).getBytes());
-            }
-
             @Override
             public void onClick(View view) {
-                for (String s : gdbInitSequence) {
-                    messageQueue.add(s.getBytes());
-                }
-                messageQueue.addAll(downloadElf());
-                /**
-                 * Flash the connected NeuroBytes board with correct firmware
-                 */
-                flashService.OpenDevice();
-                flashService.StartReadingThread();
-                sendNextMessage();
-                Log.d("GDB Received", Boolean.toString(flashService.IsThereAnyReceivedData()));
-                GdbCallbackRunnable callback = new GdbCallbackRunnable(flashService);
-//                flashService.StartReadingThread();
-                timerHandler.postDelayed(callback, 10);
-//                flashService.CloseTheDevice();
+                LayoutInflater popupInflater = getLayoutInflater();
+                View popupLayout = popupInflater.inflate(
+                        R.layout.flashing_popup,
+                        (ViewGroup) findViewById(R.id.popup_element)
+                );
+                popupWindow = new PopupWindow(popupLayout, 300, 470, true);
+                gdbController.start(popupLayout);
             }
         });
     }
