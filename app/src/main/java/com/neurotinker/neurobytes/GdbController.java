@@ -346,8 +346,9 @@ public class GdbController {
             flashSequence.add(buildFlashCommand(fingerprintAddress, fingerprint));
 
             flashSequence.add("vFlashDone".getBytes());
-//            flashSequence.add("vRun;".getBytes());
-            flashSequence.add("R00".getBytes());
+            flashSequence.add("vRun;".getBytes());
+            flashSequence.add("c".getBytes());
+//            flashSequence.add("R00".getBytes());
 
             return flashSequence;
         } catch (IOException e) {
@@ -365,7 +366,6 @@ public class GdbController {
             /**
              * Check for received packets
              */
-            Log.d(TAG, Boolean.toString(flashService.IsThereAnyReceivedData()));
             if (flashService.IsThereAnyReceivedData()) {
                 byte[] data = flashService.GetReceivedDataFromQueue();
                 String asciiData = new String(data, Charset.forName("UTF-8"));
@@ -400,7 +400,9 @@ public class GdbController {
                         if (messageEncoded.contains("T05")) {
                             // connection successful
                             state = State.CONNECTING;
+                            sendNextMessage();
                             statusTextView.setText("NeuroBytes found! Trying to connect...");
+                        } else if (messageEncoded.contains("E")) {
                             sendNextMessage();
                         } else if (messageEncoded.contains("OK")) {
                             sendNextMessage();
@@ -421,7 +423,7 @@ public class GdbController {
                             sendNextMessage();
                         }
                     } else if (state == State.FLASHING) {
-                        if (messageEncoded.contains("OK")) {
+                        if (messageEncoded.contains("OK") || messageEncoded.contains("T05")) {
                             // send flash messages until done
                             if (sendNextMessage()) {
                                 state = State.DONE;
@@ -433,13 +435,15 @@ public class GdbController {
                             // target disconnected
                             state = State.DETECTING;
                             sendNextMessage();
+                            statusTextView.setText("Waiting for NeuroBytes connection");
                         }
                     }
                 }
 
             } else {
-                if (timeout++ >= TIMEOUT && state != State.DETECTING) {
+                if (timeout++ >= TIMEOUT && state != State.DETECTING && state != State.DONE) {
                     state = State.DETECTING;
+                    timeout = 0;
                     Log.d(TAG, "timeout");
                 }
             }
@@ -461,6 +465,7 @@ public class GdbController {
                 this.state = State.DETECTING;
                 sendNextMessage();
             } else if (this.state == State.DETECTING) {
+                Log.d(TAG, "detect");
                 for (String s : gdbDetectSequence) {
                     messageQueue.add(s.getBytes());
                 }
