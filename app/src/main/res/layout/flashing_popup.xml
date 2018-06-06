@@ -3,7 +3,7 @@
     android:id="@+id/popup_element"
     android:layout_width="fill_parent"
     android:layout_height="fill_parent"
-    android:background="@color/md_white_1000"
+    android:background="@color/md_grey_200"
     android:padding="10px"
     android:orientation="vertical">
 
@@ -31,7 +31,7 @@
         android:orientation="horizontal"
         android:gravity="center_horizontal|bottom">
 
-        <Button android:id="@+id/end_data_send_button"
+        <Button android:id="@+id/cancelbutton_id"
             android:layout_width="100dp"
             android:layout_height="100dp"
             android:drawablePadding="3sp"

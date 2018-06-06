@@ -6,6 +6,7 @@ import android.os.Looper;
 import android.renderscript.ScriptGroup;
 import android.util.Log;
 import android.view.View;
+import android.widget.PopupWindow;
 
 import com.felhr.utils.HexData;
 
@@ -47,6 +48,7 @@ public class GdbController {
 
     private Context _context;
     private View view;
+    private PopupWindow popupWindow;
 
     enum State {
         STOPPED,
@@ -66,8 +68,18 @@ public class GdbController {
         this._context = _context;
     }
 
-    public void start(View view) {
-        this.view = view;
+    public void start(PopupWindow popupWindow) {
+        this.popupWindow = popupWindow;
+        this.view = popupWindow.getContentView();
+
+        View cancelBtnView = view.findViewById(R.id.cancelbutton_id);
+        cancelBtnView.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                stop();
+            }
+        });
+
         this.state = State.INITIALIZING;
         for (String s : gdbInitSequence) {
             messageQueue.add(s.getBytes());
@@ -89,6 +101,7 @@ public class GdbController {
     public void stop() {
         this.quitFlag = true;
         this.state = State.STOPPED;
+        popupWindow.dismiss();
     }
 
     private byte[] concat(byte[] arr1, byte[] arr2) {
@@ -397,7 +410,7 @@ public class GdbController {
                             timeout += 10;
                             sendNextMessage();
                         } else {
-                            // assume successful fingerprint transfer
+                            // successful fingerprint transfer
                             Log.d(TAG, "fingerprint string: " + messageEncoded);
                             deviceType = ByteBuffer.wrap(messageEncoded.getBytes()).asIntBuffer().get(0);
                             deviceId = ByteBuffer.wrap(messageEncoded.getBytes()).asIntBuffer().get(2);

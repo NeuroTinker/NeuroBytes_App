@@ -22,6 +22,7 @@ import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
 import android.support.v7.widget.helper.ItemTouchHelper;
 import android.util.Log;
+import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.Menu;
@@ -137,14 +138,11 @@ public class MainActivity extends AppCompatActivity
         recordDataView.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-//                try {
-//                    exportData();
-//                } catch(IOException ie) {
-//                    ie.printStackTrace();
-//                }
-                //timerHandler.postDelayed(new DelaySendRunnable(makeIdentifyMessage(0)), 1500);
-                //fastAdapter.notifyAdapterDataSetChanged();
-                //fastAdapter.notifyAdapterItemChanged(0, GraphItem.UpdateType.CHINFO);
+                try {
+                    exportData();
+                } catch(IOException ie) {
+                    ie.printStackTrace();
+                }
             }
         });
 
@@ -159,7 +157,8 @@ public class MainActivity extends AppCompatActivity
                         (ViewGroup) findViewById(R.id.popup_element)
                 );
                 popupWindow = new PopupWindow(popupLayout, 300, 470, true);
-                gdbController.start(popupLayout);
+                popupWindow.showAtLocation(findViewById(R.id.channelfragment_id), Gravity.CENTER, 0, 0);
+                gdbController.start(popupWindow);
             }
         });
     }
@@ -204,9 +203,7 @@ public class MainActivity extends AppCompatActivity
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
+
         int id = item.getItemId();
 
         //noinspection SimplifiableIfStatement
@@ -250,22 +247,6 @@ public class MainActivity extends AppCompatActivity
             nidBound = false;
         }
     };
-
-//    private void startService(Class<?> service, ServiceConnection serviceConnection, Bundle extras) {
-//        if (!UsbService.SERVICE_CONNECTED) {
-//            Intent startService = new Intent(this, service);
-//            if (extras != null && !extras.isEmpty()) {
-//                Set<String> keys = extras.keySet();
-//                for (String key : keys) {
-//                    String extra = extras.getString(key);
-//                    startService.putExtra(key, extra);
-//                }
-//            }
-//            startService(startService);
-//        }
-//        Intent bindingIntent = new Intent(this, service);
-//        bindService(bindingIntent, serviceConnection, Context.BIND_AUTO_CREATE);
-//    }
 
     private void setFilters() {
         IntentFilter filter = new IntentFilter();
