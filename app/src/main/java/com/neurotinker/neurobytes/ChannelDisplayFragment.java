@@ -88,14 +88,6 @@ public class ChannelDisplayFragment extends Fragment {
         // Required empty public constructor
     }
 
-    /**
-     * Use this factory method to create a new instance of
-     * this fragment using the provided parameters.
-     *
-     * @param param1 Parameter 1.
-     * @return A new instance of fragment ChannelDisplayFragment.
-     */
-    // TODO: Rename and change types and number of parameters
     public static ChannelDisplayFragment newInstance(String param1, String param2) {
         ChannelDisplayFragment fragment = new ChannelDisplayFragment();
         Bundle args = new Bundle();
@@ -145,20 +137,9 @@ public class ChannelDisplayFragment extends Fragment {
         /**
          * Make the first item
          */
-//        GraphItem firstItem = new GraphItem(++chCnt);
-//        itemAdapter.add(firstItem);
-//        fastAdapter.notifyAdapterItemChanged(0, firstItem);
-//        channels.put(firstItem.channel, firstItem);
         addItem();
 
         return layout;
-    }
-
-    // TODO: Rename method, update argument and hook method into UI event
-    public void onButtonPressed(Uri uri) {
-        if (mListener != null) {
-            mListener.onFragmentInteraction(uri);
-        }
     }
 
     @Override
@@ -177,9 +158,6 @@ public class ChannelDisplayFragment extends Fragment {
         Intent bindingIntent = new Intent(_context, NidService.class);
         _context.bindService(bindingIntent, nidConnection, Context.BIND_AUTO_CREATE);
         setFilters();
-        // make the first item
-//        GraphItem firstItem = new GraphItem(++chCnt);
-//        itemAdapter.add(firstItem);
     }
 
     @Override
