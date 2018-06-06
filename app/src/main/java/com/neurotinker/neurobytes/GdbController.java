@@ -68,7 +68,7 @@ public class GdbController {
     public GdbController(Context _context, UsbFlashService flashService) {
         this.flashService = flashService;
         this._context = _context;
-        downloadFirmware();
+//        downloadFirmware();
     }
 
     public void start(PopupWindow popupWindow) {
@@ -267,7 +267,7 @@ public class GdbController {
         File file = new File(_context.getFilesDir(), "touch_sensor.elf");
 //        InputStream inStream = new BufferedInputStream(, 0x2400);
         try {
-            InputStream inStream = new FileInputStream(file.getPath());
+            InputStream inStream = new BufferedInputStream(new FileInputStream(file.getPath()));
             DataInputStream dataInStream = new DataInputStream(inStream);
 
             int textSize = 0x1ddc;
@@ -365,6 +365,7 @@ public class GdbController {
             /**
              * Check for received packets
              */
+            Log.d(TAG, Boolean.toString(flashService.IsThereAnyReceivedData()));
             if (flashService.IsThereAnyReceivedData()) {
                 byte[] data = flashService.GetReceivedDataFromQueue();
                 String asciiData = new String(data, Charset.forName("UTF-8"));
@@ -422,7 +423,7 @@ public class GdbController {
                     } else if (state == State.FLASHING) {
                         if (messageEncoded.contains("OK")) {
                             // send flash messages until done
-                            if (sendNextMessage()){
+                            if (sendNextMessage()) {
                                 state = State.DONE;
                                 statusTextView.setText("Flashing completed. Please disconnect NeuroBytes board.");
                             }
@@ -502,9 +503,12 @@ public class GdbController {
         csum %= 256;
         csum &= 0xFF;
 
+        String csumHexStr = Integer.toHexString(csum);
+        if (csum <= 0xf) csumHexStr = '0' + csumHexStr;
+
         /**
          * Build packet
          */
-        return concat(startTok.getBytes(), msg, csumTok.getBytes(), Integer.toHexString(csum).getBytes());
+        return concat(startTok.getBytes(), msg, csumTok.getBytes(), csumHexStr.getBytes());
     }
 }
