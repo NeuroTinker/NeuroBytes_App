@@ -192,7 +192,7 @@ public class UsbService extends Service {
                     break;
             }
             if (!keep) {
-                // There is no USB devices connected (but usb host were listed). Send an intent to MainActivity.
+                // There is no USB device connected (but usb host were listed). Send an intent to MainActivity.
                 Intent intent = new Intent(ACTION_NO_USB);
                 sendBroadcast(intent);
             }
