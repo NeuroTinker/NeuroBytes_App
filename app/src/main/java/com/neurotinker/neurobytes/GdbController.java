@@ -22,8 +22,14 @@ import java.io.OutputStream;
 import java.net.URL;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
 import java.util.Queue;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 public class GdbController {
     private final String TAG = GdbController.class.getSimpleName();
@@ -61,6 +67,42 @@ public class GdbController {
         DONE;
     }
 
+    enum Firmware{
+        Interneuron (1, "interneuron.elf", "NeuroBytes_Interneuron"),
+        Photoreceptor (2, "photoreceptor.elf", "NeuroBytes_Photoreceptor"),
+        MotorNeuron (3, "motor_neuron.elf", "NeuroBytes_Motor_Neuron"),
+        TouchSensor (4, "touch_sensor.elf", "NeuroBytes_Touch_Sensor"),
+        TonicNeuron (5, "tonic_neuron.elf", "NeuroBytes_Tonic_Neuron"),
+        ForceSensor (6, "force_sensor.elf", "NeuroBytes_Force_Sensor");
+
+        public final Integer deviceId;
+        public final String elfName;
+        public final URL gitUrl;
+
+        private static final Map<Integer, Firmware> lookup = new HashMap<>();
+        static {
+            for (Firmware fw : Firmware.values()) {
+                lookup.put(fw.deviceId, fw);
+            }
+        }
+
+        Firmware(int deviceId, String elfName, String repoName) {
+            this.deviceId = deviceId;
+            this.elfName = elfName;
+            try {
+                this.gitUrl = new URL(
+                        "https://github.com/NeuroTinker/" + repoName + "/FIRMWARE/bin/main.elf"
+                );
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
+
+        public static Firmware get(Integer deviceId) {
+            return lookup.get(deviceId);
+        }
+    };
+
     public State state;
 
     Handler timerHandler = new Handler(Looper.getMainLooper());
@@ -72,6 +114,7 @@ public class GdbController {
     }
 
     public void start(PopupWindow popupWindow) {
+        int balh = Firmware.Interneuron.deviceId;
         this.popupWindow = popupWindow;
         this.view = popupWindow.getContentView();
         this.statusTextView = view.findViewById(R.id.flashstatus_id);
