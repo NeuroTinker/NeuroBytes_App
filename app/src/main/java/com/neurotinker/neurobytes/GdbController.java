@@ -121,8 +121,11 @@ public class GdbController {
         return bytes;
     }
 
-    private byte[] concat(byte[] arr1, byte[] arr2, byte[] arr3, byte[] arr4) {
-        return concat(concat(concat(arr1, arr2), arr3), arr4);
+    private byte[] concat(byte[] arr1, byte[]... arrs) {
+        for (byte[] arr : arrs) {
+            arr1 = concat(arr1, arr);
+        }
+        return arr1;
     }
 
     private byte[] buildFlashCommand(int address, byte[] data) {
@@ -160,98 +163,6 @@ public class GdbController {
         return escapedBytes;
     }
 
-    private LinkedList<byte[]> downloadElf() {
-        try {
-            URL url = new URL("https://github.com/NeuroTinker/NeuroBytes_Touch_Sensor/raw/master/FIRMWARE/bin/main.elf");
-            InputStream inStream = new BufferedInputStream(url.openStream(), 0x2400);
-            DataInputStream dataInStream = new DataInputStream(inStream);
-
-            int textSize = 0x1ddc;
-            int numBlocks = (textSize / blocksize);
-            int extraBlockSize = textSize % blocksize;
-            int fingerprintSize = 0xc;
-            int length = 0;
-            int fLoc = 0;
-
-            /**
-             * Skip to the start of the .text section
-             */
-            length = dataInStream.skipBytes(textOffset);
-            if (length != textOffset) Log.d(TAG, "only skipped " + Integer.toString(length) + " bytes");
-            fLoc += length;
-
-            /**
-             * Read .text content into blocks of size [blocksize]
-             */
-            byte[][] textBlocks = new byte[numBlocks][blocksize];
-            for (int i = 0; i < numBlocks; i++) {
-                length = dataInStream.read(textBlocks[i], 0, blocksize);
-//                Log.d(TAG, HexData.hexToString(textBlocks[i]));
-                if (length != blocksize) {
-                    Log.d(TAG, "only read " + i + "th block " + Integer.toString(length) + " bytes");
-                }
-                fLoc += length;
-            }
-
-            /**
-             * If there is extra .text content with size not >= [blocksize],
-             * put it into [extrablock]
-             */
-            byte[] extraBlock = new byte[extraBlockSize];
-            if (extraBlockSize > 0) {
-                length = dataInStream.read(extraBlock, 0, extraBlockSize);
-                if (length != extraBlockSize) {
-                    Log.d(TAG, "only read extra block " + Integer.toString(length) + " bytes");
-                }
-                fLoc += length;
-            }
-
-            /**
-             * Skip to the .fingerprint section
-             */
-            dataInStream.skipBytes(fingerprintOffset - fLoc);
-
-            /**
-             * Read the .fingerprint section.
-             * Note: the fingerprint size is always less than [blocksize]
-             */
-            byte[] fingerprint = new byte[fingerprintSize];
-            length = dataInStream.read(fingerprint, 0, fingerprintSize);
-            if (fingerprintSize != length) {
-                Log.d(TAG, ".fingerprint load failed");
-                Log.d(TAG, "only read " + Integer.toString(length) + " bytes");
-            }
-
-            Log.d(TAG, "fingerprint: " + HexData.hexToString(fingerprint));
-
-            /**
-             * Build flash command sequence
-             */
-            LinkedList<byte[]> flashSequence = new LinkedList<>();
-
-            flashSequence.add("vFlashErase:08000000,00004000".getBytes());
-
-            int address = 0x8000000;
-            for (int i = 0; i < numBlocks; i++) {
-                Log.d(TAG, Integer.toString(i));
-                Log.d(TAG, "address " + Integer.toHexString(address));
-                flashSequence.add(buildFlashCommand(address, textBlocks[i]));
-                address += blocksize;
-            }
-            if (extraBlockSize > 0) flashSequence.add(buildFlashCommand(address, extraBlock));
-            flashSequence.add(buildFlashCommand(fingerprintAddress, fingerprint));
-
-            flashSequence.add("vFlashDone".getBytes());
-//            flashSequence.add("vRun;".getBytes());
-            flashSequence.add("R00".getBytes());
-
-            return flashSequence;
-
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
     private LinkedList<byte[]> getFlashSequence(Integer deviceType) {
 
         Firmware firmware = Firmware.get(deviceType);
@@ -276,6 +187,7 @@ public class GdbController {
             length = dataInStream.read(programHeader, 0, 4);
             fLoc += length;
             int textSize = ByteBuffer.wrap(programHeader).getInt();
+            Log.d(TAG, "firmware size: " + Integer.toString(textSize));
             int numBlocks = (textSize / blocksize);
             int extraBlockSize = textSize % blocksize;
 

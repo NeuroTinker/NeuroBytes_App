@@ -123,8 +123,10 @@ public class MainActivity extends AppCompatActivity
         setSupportActionBar(toolbar);
 
         // Update all firmware files from their git repos
+        Firmware.updatePath(getFilesDir().getPath());
         updateFirmwareTask = new Firmware.UpdateFirmwareAsyncTask();
         updateFirmwareTask.execute(Firmware.values());
+        gdbController = new GdbController(flashService);
 
         ImageView pausePlayView = (ImageView) findViewById(R.id.pauseplay_id);
         pausePlayView.setOnClickListener(new View.OnClickListener() {
@@ -146,7 +148,6 @@ public class MainActivity extends AppCompatActivity
             }
         });
 
-        gdbController = new GdbController(flashService);
         ImageView flashDataView = (ImageView) findViewById(R.id.flash_id);
         flashDataView.setOnClickListener(new View.OnClickListener() {
 
