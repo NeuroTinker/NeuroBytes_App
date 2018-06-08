@@ -8,6 +8,7 @@ import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.graphics.Bitmap;
 import android.net.Uri;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
@@ -85,6 +86,7 @@ public class MainActivity extends AppCompatActivity
 
     private UsbFlashService flashService = new UsbFlashService(this, 0x6018, 0x1d50);
     private GdbController gdbController;
+    private Firmware.UpdateFirmwareAsyncTask updateFirmwareTask;
     private PopupWindow popupWindow;
 
     Handler timerHandler = new Handler(Looper.getMainLooper());
@@ -120,11 +122,9 @@ public class MainActivity extends AppCompatActivity
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
-        /**
-         * Allow main thread network connection // TODO: remove this!
-         */
-        StrictMode.ThreadPolicy policy = new StrictMode.ThreadPolicy.Builder().permitAll().build();
-        StrictMode.setThreadPolicy(policy);
+        // Update all firmware files from their git repos
+        updateFirmwareTask = new Firmware.UpdateFirmwareAsyncTask();
+        updateFirmwareTask.execute(Firmware.values());
 
         ImageView pausePlayView = (ImageView) findViewById(R.id.pauseplay_id);
         pausePlayView.setOnClickListener(new View.OnClickListener() {
@@ -146,7 +146,7 @@ public class MainActivity extends AppCompatActivity
             }
         });
 
-        gdbController = new GdbController(this, flashService);
+        gdbController = new GdbController(flashService);
         ImageView flashDataView = (ImageView) findViewById(R.id.flash_id);
         flashDataView.setOnClickListener(new View.OnClickListener() {
 

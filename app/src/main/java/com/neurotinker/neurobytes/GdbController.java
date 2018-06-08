@@ -1,6 +1,7 @@
 package com.neurotinker.neurobytes;
 
 import android.content.Context;
+import android.os.AsyncTask;
 import android.os.Handler;
 import android.os.Looper;
 import android.renderscript.ScriptGroup;
@@ -16,6 +17,7 @@ import java.io.DataInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -42,9 +44,11 @@ public class GdbController {
 
     private final String elfFilename = "main.elf";
     private final Integer blocksize = 0x80;
+    private final Integer textSizeOffset = 0x44;
     private final Integer textOffset = 0x10000;
     private final Integer fingerprintOffset = 0x23e00;
     private final Integer fingerprintAddress = 0x08003e00;
+    private final Integer fingerprintSize = 0xc;
     private Integer timeout = 0;
     private final Integer TIMEOUT = 50;
     private boolean quitFlag = false;
@@ -53,7 +57,6 @@ public class GdbController {
     private Integer deviceId;
     private Integer deviceType;
 
-    private Context _context;
     private View view;
     private PopupWindow popupWindow;
     private TextView statusTextView;
@@ -67,54 +70,15 @@ public class GdbController {
         DONE;
     }
 
-    enum Firmware{
-        Interneuron (1, "interneuron.elf", "NeuroBytes_Interneuron"),
-        Photoreceptor (2, "photoreceptor.elf", "NeuroBytes_Photoreceptor"),
-        MotorNeuron (3, "motor_neuron.elf", "NeuroBytes_Motor_Neuron"),
-        TouchSensor (4, "touch_sensor.elf", "NeuroBytes_Touch_Sensor"),
-        TonicNeuron (5, "tonic_neuron.elf", "NeuroBytes_Tonic_Neuron"),
-        ForceSensor (6, "force_sensor.elf", "NeuroBytes_Force_Sensor");
-
-        public final Integer deviceId;
-        public final String elfName;
-        public final URL gitUrl;
-
-        private static final Map<Integer, Firmware> lookup = new HashMap<>();
-        static {
-            for (Firmware fw : Firmware.values()) {
-                lookup.put(fw.deviceId, fw);
-            }
-        }
-
-        Firmware(int deviceId, String elfName, String repoName) {
-            this.deviceId = deviceId;
-            this.elfName = elfName;
-            try {
-                this.gitUrl = new URL(
-                        "https://github.com/NeuroTinker/" + repoName + "/FIRMWARE/bin/main.elf"
-                );
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-        }
-
-        public static Firmware get(Integer deviceId) {
-            return lookup.get(deviceId);
-        }
-    };
-
     public State state;
 
     Handler timerHandler = new Handler(Looper.getMainLooper());
 
-    public GdbController(Context _context, UsbFlashService flashService) {
+    public GdbController(UsbFlashService flashService) {
         this.flashService = flashService;
-        this._context = _context;
-//        downloadFirmware();
     }
 
     public void start(PopupWindow popupWindow) {
-        int balh = Firmware.Interneuron.deviceId;
         this.popupWindow = popupWindow;
         this.view = popupWindow.getContentView();
         this.statusTextView = view.findViewById(R.id.flashstatus_id);
@@ -288,37 +252,32 @@ public class GdbController {
         }
     }
 
-    private void downloadFirmware() {
-        try {
-            File file = new File(_context.getFilesDir(), "touch_sensor.elf");
-            OutputStream outputStream = new FileOutputStream(file.getPath());
-            URL url = new URL("https://github.com/NeuroTinker/NeuroBytes_Touch_Sensor/raw/master/FIRMWARE/bin/main.elf");
-            InputStream inputStream = url.openStream();
-            byte[] data = new byte[4096];
-            int count = 0;
-            int total = 0;
-            while ((count = inputStream.read(data)) != -1) {
-                total += count;
-                outputStream.write(data, 0, count);
-            }
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
     private LinkedList<byte[]> getFlashSequence(Integer deviceType) {
-        File file = new File(_context.getFilesDir(), "touch_sensor.elf");
-//        InputStream inStream = new BufferedInputStream(, 0x2400);
+
+        Firmware firmware = Firmware.get(deviceType);
+
         try {
-            InputStream inStream = new BufferedInputStream(new FileInputStream(file.getPath()));
+            InputStream inStream = new BufferedInputStream(new FileInputStream(firmware.elfPath));
             DataInputStream dataInStream = new DataInputStream(inStream);
 
-            int textSize = 0x1ddc;
-            int numBlocks = (textSize / blocksize);
-            int extraBlockSize = textSize % blocksize;
-            int fingerprintSize = 0xc;
             int length = 0;
             int fLoc = 0;
+
+            /**
+             * Skip to start of .text program header
+             */
+            length = dataInStream.skipBytes(textSizeOffset);
+            fLoc += length;
+
+            /**
+             * Read .text size and calculate number of blocks
+             */
+            byte[] programHeader = new byte[4];
+            length = dataInStream.read(programHeader, 0, 4);
+            fLoc += length;
+            int textSize = ByteBuffer.wrap(programHeader).getInt();
+            int numBlocks = (textSize / blocksize);
+            int extraBlockSize = textSize % blocksize;
 
             /**
              * Skip to the start of the .text section
@@ -560,3 +519,5 @@ public class GdbController {
         return concat(startTok.getBytes(), msg, csumTok.getBytes(), csumHexStr.getBytes());
     }
 }
+
+
