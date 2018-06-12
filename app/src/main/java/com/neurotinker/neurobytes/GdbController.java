@@ -23,6 +23,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URL;
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -35,7 +36,7 @@ import java.util.stream.Collectors;
 
 public class GdbController {
     private final String TAG = GdbController.class.getSimpleName();
-    private final String[] gdbFingerprintSequence = {"m08003e00,3"};
+    private final String[] gdbFingerprintSequence = {"m08003e00,c"};
     private final String[] gdbDetectSequence = {"qRcmd,73", "vAttach;1"};
     private final String[] gdbInitSequence = {"!", "qRcmd,747020656e", "qRcmd,v"};
     private Queue<byte[]> messageQueue = new LinkedList<>();
@@ -179,14 +180,25 @@ public class GdbController {
              */
             length = dataInStream.skipBytes(textSizeOffset);
             fLoc += length;
+            if (length != textSizeOffset) Log.d(TAG, "incorrect skip");
 
             /**
              * Read .text size and calculate number of blocks
              */
             byte[] programHeader = new byte[4];
             length = dataInStream.read(programHeader, 0, 4);
+            if (length != 4) Log.d(TAG, "incorrect read");
             fLoc += length;
-            int textSize = ByteBuffer.wrap(programHeader).getInt();
+            Log.d(TAG, "program header hex: " + HexData.hexToString(programHeader));
+            ByteBuffer buff;
+            buff = ByteBuffer.wrap(programHeader);
+            buff.order(ByteOrder.BIG_ENDIAN);
+            buff.rewind();
+            Log.d(TAG, HexData.hexToString(buff.array()));
+            Integer textSize = ByteBuffer.wrap(programHeader).getInt(0);
+            textSize = Integer.reverseBytes(textSize);
+            Log.d(TAG, textSize.toString());
+//            textSize = 0x23af;
             Log.d(TAG, "firmware size: " + Integer.toString(textSize));
             int numBlocks = (textSize / blocksize);
             int extraBlockSize = textSize % blocksize;
@@ -194,9 +206,9 @@ public class GdbController {
             /**
              * Skip to the start of the .text section
              */
-            length = dataInStream.skipBytes(textOffset);
-            if (length != textOffset)
-                Log.d(TAG, "only skipped " + Integer.toString(length) + " bytes");
+            length = dataInStream.skipBytes(textOffset - fLoc);
+//            if (length != textOffset)
+//                Log.d(TAG, "only skipped " + Integer.toString(length) + " bytes");
             fLoc += length;
 
             /**
@@ -270,6 +282,26 @@ public class GdbController {
         }
     }
 
+    class Fingerprint {
+        public Integer deviceType;
+        public Integer deviceId;
+        public Integer version;
+
+        public Fingerprint(String encoded) {
+            int [] unencoded = new int[3];
+            char [] field = new char[8];
+            for (int i = 0; i < 3; i++) {
+                // get each 32 bit field (8 chars)
+                for (int k=i*8, j=7; j >= 0; k++, j--) {
+                    // convert each 8 char field into big endian format
+                    field[j] = encoded.charAt(k - ((j+1) % 2) + (j % 2));
+                }
+                unencoded[i] = ByteBuffer.wrap(HexData.stringTobytes(String.valueOf(field))).getInt();
+            }
+            this.deviceType = unencoded[0];
+        }
+    }
+
     class GdbCallbackRunnable implements Runnable {
         private UsbFlashService flashService;
         public GdbCallbackRunnable(UsbFlashService flashService) {
@@ -329,10 +361,15 @@ public class GdbController {
                         } else {
                             // successful fingerprint transfer
                             Log.d(TAG, "fingerprint string: " + messageEncoded);
+                            deviceType = ByteBuffer.wrap(HexData.stringTobytes(messageEncoded.substring(0,8))).asIntBuffer().get(0);
+                            Fingerprint fing = new Fingerprint(messageEncoded);
+                            deviceType = fing.deviceType;
+//                            deviceType = 1; //debug
+                            Log.d(TAG, "fingerprint int: " + deviceType.toString());
 //                            deviceType = ByteBuffer.wrap(messageEncoded.getBytes()).asIntBuffer().get(0);
-                            deviceType = 
-                            deviceId = ByteBuffer.wrap(messageEncoded.getBytes()).asIntBuffer().get(2);
-                            Log.d(TAG, "connected to device id: " + deviceId.toString());
+//                            deviceType = Integer.parseInt(messageEncoded.subSequence(0,1).toString());
+//                            deviceId = ByteBuffer.wrap(messageEncoded.getBytes()).asIntBuffer().get(2);
+//                            Log.d(TAG, "connected to device id: " + deviceId.toString());
                             state = State.FLASHING;
                             statusTextView.setText("Flashing...");
                             sendNextMessage();

@@ -1,7 +1,11 @@
 package com.neurotinker.neurobytes;
 
 import android.os.AsyncTask;
+import android.util.Log;
 
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
+import java.io.DataInputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -24,7 +28,7 @@ public enum Firmware {
     public final URL gitUrl;
     public String elfPath;
 
-    private static final Map<Integer, Firmware> lookup = new HashMap<>();
+    public static final Map<Integer, Firmware> lookup = new HashMap<>();
     static {
         for (Firmware fw : Firmware.values()) {
             lookup.put(fw.deviceId, fw);
@@ -36,7 +40,7 @@ public enum Firmware {
         this.elfName = elfName;
         try {
             this.gitUrl = new URL(
-                    "https://github.com/NeuroTinker/" + repoName + "/blob/master/FIRMWARE/bin/main.elf"
+                    "https://github.com/NeuroTinker/" + repoName + "/blob/master/FIRMWARE/bin/main.elf?raw=true"
             );
         } catch (IOException e) {
             throw new RuntimeException(e);
@@ -49,32 +53,42 @@ public enum Firmware {
 
     public static void updatePath(String parentDir) {
         for (Firmware fw : Firmware.values()) {
-            fw.elfPath = parentDir + fw.elfName;
+            fw.elfPath = parentDir + "/" + fw.elfName;
         }
     }
 
     static class UpdateFirmwareAsyncTask extends AsyncTask<Firmware, Integer, Integer> {
+        private final String TAG = Firmware.class.getSimpleName();
         protected Integer doInBackground(Firmware... firmwares) {
 
             int numComplete = 0;
-
-            for (Firmware fw : firmwares) {
+            Log.d(TAG, firmwares.toString());
+            for (Firmware fw : Firmware.values()) {
                 try {
                     File file = new File(fw.elfPath);
-                    OutputStream outputStream = new FileOutputStream(file.getPath());
-                    InputStream inputStream = fw.gitUrl.openStream();
+                    Log.d(TAG, fw.elfPath);
+                    Log.d(TAG, fw.gitUrl.toString());
+                    OutputStream outputStream = new BufferedOutputStream(new FileOutputStream(file.getPath()), 0x2400);
+                    InputStream inputStream = new BufferedInputStream(fw.gitUrl.openStream(), 0x2400);
+                    DataInputStream dataInputStream = new DataInputStream(inputStream);
+                    Log.d(TAG, Integer.toString(inputStream.available()));
                     byte[] data = new byte[4096];
                     int count = 0;
                     int total = 0;
-                    while ((count = inputStream.read(data)) != -1) {
+                    while ((count = dataInputStream.read(data)) != -1) {
                         total += count;
                         outputStream.write(data, 0, count);
                     }
                     numComplete += 1;
+                    outputStream.close();
+                    inputStream.close();
+                    dataInputStream.close();
                 } catch (IOException e) {
                     throw new RuntimeException(e);
                 }
             }
+
+            Log.d(TAG, "done");
 
             return numComplete;
         }
