@@ -36,7 +36,7 @@ public enum Firmware {
         this.elfName = elfName;
         try {
             this.gitUrl = new URL(
-                    "https://github.com/NeuroTinker/" + repoName + "/FIRMWARE/bin/main.elf"
+                    "https://github.com/NeuroTinker/" + repoName + "/blob/master/FIRMWARE/bin/main.elf"
             );
         } catch (IOException e) {
             throw new RuntimeException(e);

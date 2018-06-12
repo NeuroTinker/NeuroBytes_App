@@ -35,7 +35,7 @@ import java.util.stream.Collectors;
 
 public class GdbController {
     private final String TAG = GdbController.class.getSimpleName();
-    private final String[] gdbFingerprintSequence = {"m08003e00,c"};
+    private final String[] gdbFingerprintSequence = {"m08003e00,3"};
     private final String[] gdbDetectSequence = {"qRcmd,73", "vAttach;1"};
     private final String[] gdbInitSequence = {"!", "qRcmd,747020656e", "qRcmd,v"};
     private Queue<byte[]> messageQueue = new LinkedList<>();
@@ -76,6 +76,7 @@ public class GdbController {
 
     public GdbController(UsbFlashService flashService) {
         this.flashService = flashService;
+        this.state = State.STOPPED;
     }
 
     public void start(PopupWindow popupWindow) {
@@ -110,7 +111,6 @@ public class GdbController {
     public void stop() {
         this.quitFlag = true;
         flashService.CloseTheDevice();
-        this.state = State.STOPPED;
         popupWindow.dismiss();
     }
 
@@ -329,7 +329,8 @@ public class GdbController {
                         } else {
                             // successful fingerprint transfer
                             Log.d(TAG, "fingerprint string: " + messageEncoded);
-                            deviceType = ByteBuffer.wrap(messageEncoded.getBytes()).asIntBuffer().get(0);
+//                            deviceType = ByteBuffer.wrap(messageEncoded.getBytes()).asIntBuffer().get(0);
+                            deviceType = 
                             deviceId = ByteBuffer.wrap(messageEncoded.getBytes()).asIntBuffer().get(2);
                             Log.d(TAG, "connected to device id: " + deviceId.toString());
                             state = State.FLASHING;
@@ -361,7 +362,11 @@ public class GdbController {
                     Log.d(TAG, "timeout");
                 }
             }
-            if (!quitFlag) timerHandler.postDelayed(this, 10);
+            if (!quitFlag) {
+                timerHandler.postDelayed(this, 10);
+            } else {
+                state = State.STOPPED;
+            }
         }
     }
 
