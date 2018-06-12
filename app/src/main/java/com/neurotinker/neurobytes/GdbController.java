@@ -198,7 +198,6 @@ public class GdbController {
             Integer textSize = ByteBuffer.wrap(programHeader).getInt(0);
             textSize = Integer.reverseBytes(textSize);
             Log.d(TAG, textSize.toString());
-//            textSize = 0x23af;
             Log.d(TAG, "firmware size: " + Integer.toString(textSize));
             int numBlocks = (textSize / blocksize);
             int extraBlockSize = textSize % blocksize;
@@ -361,15 +360,9 @@ public class GdbController {
                         } else {
                             // successful fingerprint transfer
                             Log.d(TAG, "fingerprint string: " + messageEncoded);
-                            deviceType = ByteBuffer.wrap(HexData.stringTobytes(messageEncoded.substring(0,8))).asIntBuffer().get(0);
                             Fingerprint fing = new Fingerprint(messageEncoded);
                             deviceType = fing.deviceType;
-//                            deviceType = 1; //debug
                             Log.d(TAG, "fingerprint int: " + deviceType.toString());
-//                            deviceType = ByteBuffer.wrap(messageEncoded.getBytes()).asIntBuffer().get(0);
-//                            deviceType = Integer.parseInt(messageEncoded.subSequence(0,1).toString());
-//                            deviceId = ByteBuffer.wrap(messageEncoded.getBytes()).asIntBuffer().get(2);
-//                            Log.d(TAG, "connected to device id: " + deviceId.toString());
                             state = State.FLASHING;
                             statusTextView.setText("Flashing...");
                             sendNextMessage();
