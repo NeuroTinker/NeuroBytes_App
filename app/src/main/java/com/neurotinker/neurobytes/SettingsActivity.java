@@ -18,7 +18,6 @@ import android.preference.PreferenceManager;
 import android.preference.RingtonePreference;
 import android.text.TextUtils;
 import android.view.MenuItem;
-import android.support.v4.app.NavUtils;
 
 import java.util.List;
 
@@ -173,8 +172,9 @@ public class SettingsActivity extends AppCompatPreferenceActivity {
     protected boolean isValidFragment(String fragmentName) {
         return PreferenceFragment.class.getName().equals(fragmentName)
                 || GeneralPreferenceFragment.class.getName().equals(fragmentName)
-                || DataSyncPreferenceFragment.class.getName().equals(fragmentName)
-                || NotificationPreferenceFragment.class.getName().equals(fragmentName);
+                || DataLoggerPreferenceFragment.class.getName().equals(fragmentName)
+                || FirmwarePreferenceFragment.class.getName().equals(fragmentName);
+
     }
 
     /**
@@ -193,8 +193,8 @@ public class SettingsActivity extends AppCompatPreferenceActivity {
             // to their values. When their values change, their summaries are
             // updated to reflect the new value, per the Android Design
             // guidelines.
-            bindPreferenceSummaryToValue(findPreference("example_text"));
-            bindPreferenceSummaryToValue(findPreference("example_list"));
+            bindPreferenceSummaryToValue(findPreference("graph_speed"));
+            bindPreferenceSummaryToValue(findPreference("color_scheme"));
         }
 
         @Override
@@ -213,18 +213,22 @@ public class SettingsActivity extends AppCompatPreferenceActivity {
      * activity is showing a two-pane settings UI.
      */
     @TargetApi(Build.VERSION_CODES.HONEYCOMB)
-    public static class NotificationPreferenceFragment extends PreferenceFragment {
+    public static class DataLoggerPreferenceFragment extends PreferenceFragment {
         @Override
         public void onCreate(Bundle savedInstanceState) {
             super.onCreate(savedInstanceState);
-            addPreferencesFromResource(R.xml.pref_notification);
+            addPreferencesFromResource(R.xml.pref_data_logger);
             setHasOptionsMenu(true);
 
             // Bind the summaries of EditText/List/Dialog/Ringtone preferences
             // to their values. When their values change, their summaries are
             // updated to reflect the new value, per the Android Design
             // guidelines.
-            bindPreferenceSummaryToValue(findPreference("notifications_new_message_ringtone"));
+            bindPreferenceSummaryToValue(findPreference("use_drive"));
+            bindPreferenceSummaryToValue(findPreference("local_file_location"));
+            bindPreferenceSummaryToValue(findPreference("drive_file_location"));
+            bindPreferenceSummaryToValue(findPreference("file_name_prefix"));
+            bindPreferenceSummaryToValue(findPreference("data_log_size"));
         }
 
         @Override
@@ -243,18 +247,25 @@ public class SettingsActivity extends AppCompatPreferenceActivity {
      * activity is showing a two-pane settings UI.
      */
     @TargetApi(Build.VERSION_CODES.HONEYCOMB)
-    public static class DataSyncPreferenceFragment extends PreferenceFragment {
+    public static class FirmwarePreferenceFragment extends PreferenceFragment {
         @Override
         public void onCreate(Bundle savedInstanceState) {
             super.onCreate(savedInstanceState);
-            addPreferencesFromResource(R.xml.pref_data_sync);
+            addPreferencesFromResource(R.xml.pref_firmware);
             setHasOptionsMenu(true);
 
             // Bind the summaries of EditText/List/Dialog/Ringtone preferences
             // to their values. When their values change, their summaries are
             // updated to reflect the new value, per the Android Design
             // guidelines.
-            bindPreferenceSummaryToValue(findPreference("sync_frequency"));
+            bindPreferenceSummaryToValue(findPreference("nid_firmware_location"));
+            bindPreferenceSummaryToValue(findPreference("interneuron_firmware_location"));
+            bindPreferenceSummaryToValue(findPreference("rod_photoreceptor_firmware_location"));
+            bindPreferenceSummaryToValue(findPreference("pressure_sensory_neuron_firmware_location"));
+            bindPreferenceSummaryToValue(findPreference("touch_sensory_neuron_firmware_location"));
+            bindPreferenceSummaryToValue(findPreference("motor_neuron_firmware_location"));
+            bindPreferenceSummaryToValue(findPreference("tonic_neuron_firmware_location"));
+
         }
 
         @Override

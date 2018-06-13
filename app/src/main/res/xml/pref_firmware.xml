@@ -1,0 +1,70 @@
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+    <SwitchPreference
+        android:defaultValue="true"
+        android:key="auto_firmware_nid"
+        android:title="@string/pref_title_auto_firmware_nid"/>
+    <SwitchPreference
+        android:defaultValue="true"
+        android:key="auto_firmware_neurobytes"
+        android:title="@string/pref_title_auto_firmware_neurobytes"/>
+    <SwitchPreference
+        android:defaultValue="false"
+        android:key="allow_firmware_location_changes"
+        android:title="@string/pref_title_allow_firmware_location_changes"/>
+    <EditTextPreference
+        android:defaultValue="@string/pref_nid_firmware_location_example"
+        android:inputType="textNoSuggestions"
+        android:key="nid_firmware_location"
+        android:maxLines="1"
+        android:selectAllOnFocus="true"
+        android:singleLine="true"
+        android:title="@string/pref_title_nid_firmware_location" />
+    <EditTextPreference
+        android:defaultValue="@string/pref_interneuron_firmware_location_example"
+        android:inputType="textNoSuggestions"
+        android:key="interneuron_firmware_location"
+        android:maxLines="1"
+        android:selectAllOnFocus="true"
+        android:singleLine="true"
+        android:title="@string/pref_title_interneuron_firmware_location" />
+    <EditTextPreference
+        android:defaultValue="@string/pref_motor_neuron_firmware_location_example"
+        android:inputType="textNoSuggestions"
+        android:key="motor_neuron_firmware_location"
+        android:maxLines="1"
+        android:selectAllOnFocus="true"
+        android:singleLine="true"
+        android:title="@string/pref_title_motor_neuron_firmware_location" />
+    <EditTextPreference
+        android:defaultValue="@string/pref_rod_photoreceptor_firmware_location_example"
+        android:inputType="textNoSuggestions"
+        android:key="rod_photoreceptor_firmware_location"
+        android:maxLines="1"
+        android:selectAllOnFocus="true"
+        android:singleLine="true"
+        android:title="@string/pref_title_rod_photoreceptor_firmware_location" />
+    <EditTextPreference
+        android:defaultValue="@string/pref_touch_sensory_neuron_firmware_location_example"
+        android:inputType="textNoSuggestions"
+        android:key="touch_sensory_neuron_firmware_location"
+        android:maxLines="1"
+        android:selectAllOnFocus="true"
+        android:singleLine="true"
+        android:title="@string/pref_title_touch_sensory_neuron_firmware_location" />
+    <EditTextPreference
+        android:defaultValue="@string/pref_pressure_sensory_neuron_firmware_location_example"
+        android:inputType="textNoSuggestions"
+        android:key="pressure_sensory_neuron_firmware_location"
+        android:maxLines="1"
+        android:selectAllOnFocus="true"
+        android:singleLine="true"
+        android:title="@string/pref_title_pressure_sensory_neuron_firmware_location" />
+    <EditTextPreference
+        android:defaultValue="@string/pref_tonic_neuron_firmware_location_example"
+        android:inputType="textNoSuggestions"
+        android:key="tonic_neuron_firmware_location"
+        android:maxLines="1"
+        android:selectAllOnFocus="true"
+        android:singleLine="true"
+        android:title="@string/pref_title_tonic_neuron_firmware_location" />
+</PreferenceScreen>

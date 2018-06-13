@@ -8,13 +8,13 @@
         android:title="@string/pref_header_general" />
 
     <header
-        android:fragment="com.neurotinker.neurobytes.SettingsActivity$NotificationPreferenceFragment"
+        android:fragment="com.neurotinker.neurobytes.SettingsActivity$DataLoggerPreferenceFragment"
         android:icon="@drawable/ic_notifications_black_24dp"
-        android:title="@string/pref_header_notifications" />
+        android:title="@string/pref_header_data_logger" />
 
     <header
-        android:fragment="com.neurotinker.neurobytes.SettingsActivity$DataSyncPreferenceFragment"
+        android:fragment="com.neurotinker.neurobytes.SettingsActivity$FirmwarePreferenceFragment"
         android:icon="@drawable/ic_sync_black_24dp"
-        android:title="@string/pref_header_data_sync" />
+        android:title="@string/pref_header_firmware" />
 
 </preference-headers>
