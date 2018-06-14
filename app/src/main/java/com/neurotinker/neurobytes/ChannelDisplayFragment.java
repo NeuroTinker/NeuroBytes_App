@@ -20,14 +20,20 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.SeekBar;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.mikepenz.fastadapter.FastAdapter;
 import com.mikepenz.fastadapter.adapters.ItemAdapter;
 import com.mikepenz.fastadapter.expandable.ExpandableExtension;
 import com.mikepenz.fastadapter.listeners.ClickEventHook;
+import com.mikepenz.fastadapter.listeners.CustomEventHook;
+import com.mikepenz.fastadapter.listeners.TouchEventHook;
 import com.mikepenz.fastadapter_extensions.drag.ItemTouchCallback;
 import com.mikepenz.fastadapter_extensions.drag.SimpleDragCallback;
+
+import org.w3c.dom.Text;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -119,10 +125,12 @@ public class ChannelDisplayFragment extends Fragment {
         expandableExtension.withOnlyOneExpandedItem(true);
         fastAdapter.addExtension(expandableExtension);
         fastAdapter.setHasStableIds(true);
+//        fastAdapter.isSelectable();
 
         itemTouchCallback = new ChannelTouchCallback();
         fastAdapter.withEventHook(new AddChannelEventHook());
         fastAdapter.withEventHook(new ClearChannelEventHook());
+        fastAdapter.withEventHook(new SeekBarEventHook());
 
         recyclerView = (RecyclerView) layout.findViewById(R.id.recview);
         recyclerView.setLayoutManager(new LinearLayoutManager(_context));
@@ -339,6 +347,42 @@ public class ChannelDisplayFragment extends Fragment {
             itemAdapter.remove(position);
             //fastAdapter.notifyAdapterDataSetChanged();
             //fastAdapter.notifyAdapterItemRemoved(position);
+        }
+    }
+
+    private class SeekBarEventHook extends CustomEventHook<GraphSubItem> {
+        @Nullable
+        @Override
+        public View onBind(@NonNull RecyclerView.ViewHolder viewHolder) {
+            if (viewHolder instanceof GraphSubItem.ViewHolder) {
+                return viewHolder.itemView.findViewById(R.id.dendrite1_seekbar);
+            }
+            return null;
+        }
+
+        @Override
+        public void attachEvent(View view, RecyclerView.ViewHolder viewHolder) {
+            GraphSubItem item = getItem(viewHolder);
+//            if (item != null) {
+                ((SeekBar) view).setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+                    @Override
+                    public void onProgressChanged(SeekBar seekBar, int i, boolean b) {
+                    ((TextView) viewHolder.itemView.findViewById(R.id.dendrite1_text)).setText(Integer.toString(i));
+//                        item.dendrite1Weighting = i;
+//                    ((TextView) ((View) seekBar.getParent()).findViewById(R.id.dendrite1_text)).setText(Integer.toString(i));
+                    }
+
+                    @Override
+                    public void onStartTrackingTouch(SeekBar seekBar) {
+
+                    }
+
+                    @Override
+                    public void onStopTrackingTouch(SeekBar seekBar) {
+
+                    }
+                });
+//            }
         }
     }
 
