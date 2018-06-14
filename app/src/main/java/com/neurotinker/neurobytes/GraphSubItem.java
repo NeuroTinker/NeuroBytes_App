@@ -28,7 +28,7 @@ public class GraphSubItem<Parent extends ISubItem> extends AbstractExpandableIte
 
     @Override
     public int getLayoutRes() {
-        return R.layout.sub_item;
+        return R.layout.sub_item_interneuron;
     }
 
     @Override
@@ -38,16 +38,16 @@ public class GraphSubItem<Parent extends ISubItem> extends AbstractExpandableIte
 
     protected static class ViewHolder extends FastAdapter.ViewHolder<GraphSubItem> {
 
-        @BindView(R.id.dendrite1_id)
+        @BindView(R.id.dendrite1_seekbar)
         SeekBar dendrite1;
 
-        @BindView(R.id.dendrite2_id)
+        @BindView(R.id.dendrite2_seekbar)
         SeekBar dendrite2;
 
-        @BindView(R.id.dendrite3_id)
+        @BindView(R.id.dendrite3_seekbar)
         SeekBar dendrite3;
 
-        @BindView(R.id.dendrite4_id)
+        @BindView(R.id.dendrite4_seekbar)
         SeekBar dendrite4;
 
         public ViewHolder(View view) {
