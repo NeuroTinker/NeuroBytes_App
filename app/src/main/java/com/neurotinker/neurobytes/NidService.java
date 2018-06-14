@@ -94,12 +94,12 @@ public class NidService extends Service {
         this.state = State.NOT_CONNECTED;
         usbCallback = new UsbCallback();
 
-        registerReceiver(new BroadcastReceiver() {
-            @Override
-            public void onReceive(Context context, Intent intent) {
-
-            }
-        }, new IntentFilter());
+//        registerReceiver(new BroadcastReceiver() {
+//            @Override
+//            public void onReceive(Context context, Intent intent) {
+//
+//            }
+//        }, new IntentFilter());
 
         setFilters();
         Log.d(TAG, "NidService started");
@@ -134,7 +134,8 @@ public class NidService extends Service {
     public void onDestroy() {
         super.onDestroy();
         state = State.QUITTING;
-        pingRunnable.stop();
+        if (pingRunnable != null)
+            pingRunnable.stop();
         unregisterReceiver(usbReceiver);
         unregisterReceiver(commandReceiver);
         unbindService(usbConnection);
