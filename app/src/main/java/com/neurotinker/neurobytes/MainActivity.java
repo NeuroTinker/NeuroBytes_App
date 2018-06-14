@@ -8,20 +8,12 @@ import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.graphics.Bitmap;
 import android.net.Uri;
-import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
-import android.os.Message;
-import android.os.StrictMode;
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.LinearLayoutManager;
-import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
-import android.support.v7.widget.helper.ItemTouchHelper;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.LayoutInflater;
@@ -29,55 +21,26 @@ import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.ViewGroup;
-import android.view.ViewTreeObserver;
 import android.widget.ImageView;
 import android.widget.PopupWindow;
-import android.widget.SeekBar;
-import android.widget.Toast;
 
-import com.felhr.utils.HexData;
 import com.google.android.gms.auth.api.signin.GoogleSignInClient;
 import com.google.api.client.extensions.android.http.AndroidHttp;
 import com.google.api.client.googleapis.extensions.android.gms.auth.GoogleAccountCredential;
-import com.google.api.client.http.ByteArrayContent;
 import com.google.api.client.http.FileContent;
 import com.google.api.client.http.HttpTransport;
 import com.google.api.client.json.JsonFactory;
 import com.google.api.client.json.jackson2.JacksonFactory;
 import com.google.api.client.util.ExponentialBackOff;
 import com.google.api.services.drive.DriveScopes;
-import com.google.api.services.drive.model.Channel;
 import com.google.api.services.drive.model.File;
-import com.google.common.primitives.Bytes;
-import com.google.common.primitives.UnsignedInteger;
-import com.mikepenz.fastadapter.FastAdapter;
-import com.mikepenz.fastadapter.adapters.ItemAdapter;
-import com.mikepenz.fastadapter.expandable.ExpandableExtension;
-import com.mikepenz.fastadapter.listeners.ClickEventHook;
-import com.mikepenz.fastadapter.listeners.CustomEventHook;
-import com.mikepenz.fastadapter_extensions.drag.ItemTouchCallback;
-import com.mikepenz.fastadapter_extensions.drag.SimpleDragCallback;
 
-import java.io.BufferedInputStream;
-import java.io.DataInputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.lang.ref.WeakReference;
-import java.net.URL;
-import java.nio.ByteBuffer;
-import java.nio.charset.Charset;
 import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.Map;
-import java.util.Queue;
-import java.util.Set;
-import java.util.StringTokenizer;
 
-import static com.neurotinker.neurobytes.DummyNidService.ACTION_NID_DISCONNECTED;
-import static com.neurotinker.neurobytes.DummyNidService.ACTION_NID_READY;
-import static com.neurotinker.neurobytes.DummyNidService.ACTION_SEND_PAUSE;
+import static com.neurotinker.neurobytes.NidService.ACTION_NID_DISCONNECTED;
+import static com.neurotinker.neurobytes.NidService.ACTION_NID_READY;
+import static com.neurotinker.neurobytes.NidService.ACTION_SEND_PAUSE;
 
 public class MainActivity extends AppCompatActivity
         implements ChannelDisplayFragment.OnFragmentInteractionListener{
@@ -97,7 +60,7 @@ public class MainActivity extends AppCompatActivity
     private com.google.api.services.drive.Drive driveService = null;
     private static boolean nidRunning;
 //    NidService nidService;
-    DummyNidService nidService;
+    NidService nidService;
     private static boolean nidBound = false;
 
     private final BroadcastReceiver nidReceiver = new BroadcastReceiver() {
@@ -224,7 +187,7 @@ public class MainActivity extends AppCompatActivity
         super.onResume();
         setFilters();  // Start listening notifications from UsbService
         Log.d(TAG, "trying to bind to NidService");
-        Intent bindingIntent = new Intent(this, DummyNidService.class);
+        Intent bindingIntent = new Intent(this, NidService.class);
         bindService(bindingIntent, nidConnection, Context.BIND_AUTO_CREATE);
     }
 
@@ -238,7 +201,7 @@ public class MainActivity extends AppCompatActivity
     private final ServiceConnection nidConnection = new ServiceConnection() {
         @Override
         public void onServiceConnected(ComponentName componentName, IBinder iBinder) {
-            DummyNidService.NidBinder binder = (DummyNidService.NidBinder) iBinder;
+            NidService.NidBinder binder = (NidService.NidBinder) iBinder;
             nidService = binder.getService();
             nidBound = true;
         }

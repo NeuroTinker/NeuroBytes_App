@@ -78,7 +78,7 @@ public class NidService extends Service {
 
     private UsbService usbService;
     private UsbCallback usbCallback;
-    public NidService.State state;
+    public State state;
     private Context context;
     SendMessageRunnable pingRunnable;
     SendMessageRunnable identifyRunnable;
@@ -152,7 +152,7 @@ public class NidService extends Service {
         @Override
         public void onServiceDisconnected(ComponentName componentName) {
             usbService = null;
-            state = NidService.State.NOT_CONNECTED;
+            state = State.NOT_CONNECTED;
         }
     };
 
