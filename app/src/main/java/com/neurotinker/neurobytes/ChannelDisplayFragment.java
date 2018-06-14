@@ -37,15 +37,15 @@ import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
 
-import static com.neurotinker.neurobytes.NidService.ACTION_ADD_CHANNEL;
-import static com.neurotinker.neurobytes.NidService.ACTION_CHANNEL_ACQUIRED;
-import static com.neurotinker.neurobytes.NidService.ACTION_NID_DISCONNECTED;
-import static com.neurotinker.neurobytes.NidService.ACTION_NID_READY;
-import static com.neurotinker.neurobytes.NidService.ACTION_RECEIVED_DATA;
-import static com.neurotinker.neurobytes.NidService.ACTION_REMOVE_CHANNEL;
-import static com.neurotinker.neurobytes.NidService.BUNDLE_CHANNEL;
-import static com.neurotinker.neurobytes.NidService.BUNDLE_DATA_POTENTIAL;
-import static com.neurotinker.neurobytes.NidService.BUNDLE_DATA_TYPE;
+import static com.neurotinker.neurobytes.DummyNidService.ACTION_CHANNEL_ACQUIRED;
+import static com.neurotinker.neurobytes.DummyNidService.ACTION_NID_DISCONNECTED;
+import static com.neurotinker.neurobytes.DummyNidService.ACTION_NID_READY;
+import static com.neurotinker.neurobytes.DummyNidService.ACTION_RECEIVED_DATA;
+import static com.neurotinker.neurobytes.DummyNidService.ACTION_REMOVE_CHANNEL;
+import static com.neurotinker.neurobytes.DummyNidService.BUNDLE_CHANNEL;
+import static com.neurotinker.neurobytes.DummyNidService.BUNDLE_DATA_POTENTIAL;
+import static com.neurotinker.neurobytes.DummyNidService.BUNDLE_DATA_TYPE;
+import static com.neurotinker.neurobytes.DummyNidService.ACTION_ADD_CHANNEL;
 
 
 /**
@@ -81,7 +81,7 @@ public class ChannelDisplayFragment extends Fragment {
     private OnFragmentInteractionListener mListener;
 
     private static boolean nidRunning;
-    NidService nidService;
+    DummyNidService nidService;
     private static boolean nidBound = false;
 
     public ChannelDisplayFragment() {
@@ -155,13 +155,15 @@ public class ChannelDisplayFragment extends Fragment {
 
         // setup broadcast receivers
         Log.d(TAG, "trying to bind to NidService");
-        Intent bindingIntent = new Intent(_context, NidService.class);
+        Intent bindingIntent = new Intent(_context, DummyNidService.class);
         _context.bindService(bindingIntent, nidConnection, Context.BIND_AUTO_CREATE);
         setFilters();
     }
 
     @Override
     public void onDetach() {
+        _context.unbindService(nidConnection);
+        _context.unregisterReceiver(nidReceiver);
         super.onDetach();
         mListener = null;
     }
@@ -243,7 +245,7 @@ public class ChannelDisplayFragment extends Fragment {
         IntentFilter filter = new IntentFilter();
 
         filter.addAction(ACTION_NID_READY);
-        filter.addAction(NidService.ACTION_NID_DISCONNECTED);
+        filter.addAction(ACTION_NID_DISCONNECTED);
         filter.addAction(ACTION_CHANNEL_ACQUIRED);
         filter.addAction(ACTION_RECEIVED_DATA);
 
@@ -253,7 +255,7 @@ public class ChannelDisplayFragment extends Fragment {
     private final ServiceConnection nidConnection = new ServiceConnection() {
         @Override
         public void onServiceConnected(ComponentName componentName, IBinder iBinder) {
-            NidService.NidBinder binder = (NidService.NidBinder) iBinder;
+            DummyNidService.NidBinder binder = (DummyNidService.NidBinder) iBinder;
             nidService = binder.getService();
             nidBound = true;
         }

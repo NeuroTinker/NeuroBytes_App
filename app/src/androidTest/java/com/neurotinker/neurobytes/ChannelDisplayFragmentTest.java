@@ -1,3 +1,4 @@
+
 package com.neurotinker.neurobytes;
 
 import android.support.test.rule.ActivityTestRule;
@@ -31,7 +32,8 @@ public class ChannelDisplayFragmentTest {
 
     @Test
     public void inflateFragmentTest() throws Exception {
-        onView(withId(R.id.channelfragment_id)).check(matches((isDisplayed())));
+//        onView(withId(R.id.channelfragment_id)).check(matches((isDisplayed())));
+        onView(withId(R.id.add_id)).check(matches(isDisplayed()));
 
     }
 }

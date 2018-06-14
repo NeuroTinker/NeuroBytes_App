@@ -31,6 +31,9 @@
         <service
             android:name=".NidService"
             />
+        <service
+            android:name=".DummyNidService"
+            />
 
         <activity
             android:name=".SettingsActivity"

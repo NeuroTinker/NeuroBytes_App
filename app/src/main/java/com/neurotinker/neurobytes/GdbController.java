@@ -298,6 +298,8 @@ public class GdbController {
                 unencoded[i] = ByteBuffer.wrap(HexData.stringTobytes(String.valueOf(field))).getInt();
             }
             this.deviceType = unencoded[0];
+            this.deviceId = unencoded[1];
+            this.version = unencoded[2];
         }
     }
 

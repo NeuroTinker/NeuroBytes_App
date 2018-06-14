@@ -75,9 +75,9 @@ import java.util.Queue;
 import java.util.Set;
 import java.util.StringTokenizer;
 
-import static com.neurotinker.neurobytes.NidService.ACTION_NID_DISCONNECTED;
-import static com.neurotinker.neurobytes.NidService.ACTION_NID_READY;
-import static com.neurotinker.neurobytes.NidService.ACTION_SEND_PAUSE;
+import static com.neurotinker.neurobytes.DummyNidService.ACTION_NID_DISCONNECTED;
+import static com.neurotinker.neurobytes.DummyNidService.ACTION_NID_READY;
+import static com.neurotinker.neurobytes.DummyNidService.ACTION_SEND_PAUSE;
 
 public class MainActivity extends AppCompatActivity
         implements ChannelDisplayFragment.OnFragmentInteractionListener{
@@ -96,7 +96,8 @@ public class MainActivity extends AppCompatActivity
     private Bitmap mBitmapToSave;
     private com.google.api.services.drive.Drive driveService = null;
     private static boolean nidRunning;
-    NidService nidService;
+//    NidService nidService;
+    DummyNidService nidService;
     private static boolean nidBound = false;
 
     private final BroadcastReceiver nidReceiver = new BroadcastReceiver() {
@@ -223,10 +224,8 @@ public class MainActivity extends AppCompatActivity
         super.onResume();
         setFilters();  // Start listening notifications from UsbService
         Log.d(TAG, "trying to bind to NidService");
-        Intent bindingIntent = new Intent(this, NidService.class);
+        Intent bindingIntent = new Intent(this, DummyNidService.class);
         bindService(bindingIntent, nidConnection, Context.BIND_AUTO_CREATE);
-
-
     }
 
     @Override
@@ -239,7 +238,7 @@ public class MainActivity extends AppCompatActivity
     private final ServiceConnection nidConnection = new ServiceConnection() {
         @Override
         public void onServiceConnected(ComponentName componentName, IBinder iBinder) {
-            NidService.NidBinder binder = (NidService.NidBinder) iBinder;
+            DummyNidService.NidBinder binder = (DummyNidService.NidBinder) iBinder;
             nidService = binder.getService();
             nidBound = true;
         }

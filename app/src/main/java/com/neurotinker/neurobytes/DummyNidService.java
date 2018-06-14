@@ -37,6 +37,9 @@ public class DummyNidService extends Service {
     public static final String ACTION_ADD_CHANNEL = "com.neurotinker.neurobytes.ACTION_SEND_IDENTIFY";
     public static final String ACTION_CHANNEL_ACQUIRED = "com.neurotinker.neurobytes.ACTION_CHANNEL_ACQUIRED";
     public static final String ACTION_REMOVE_CHANNEL = "com.neurotinker.neurobytes.ACTION_REMOVE_CHANNEL";
+    public static final String ACTION_SEND_PAUSE = "com.neurotinker.neurobytes.ACTION_SEND_PAUSE";
+    public static final String ACTION_PAUSE_COMMS = "com.neurotinker.neurobytes.ACTION_PAUSE_COMMS";
+    public static final String ACTION_RESUME_COMMS = "com.neurotinker.neurobytes.ACTION_RESUME_COMMS";
 
     public static final String BUNDLE_DATA_POTENTIAL = "com.neurotinker.neurobytes.BUNDLE_DATA_POTENTIAL";
     public static final String BUNDLE_DATA_TYPE = "com.neurotinker.neurobytes.BUNDLE_DATA_TYPE";
@@ -65,34 +68,44 @@ public class DummyNidService extends Service {
 
     private final IBinder binder = new NidBinder();
 
-    private final Map<Integer, ReceiveDataRunnable> channels = new HashMap<Integer, ReceiveDataRunnable>();
-
     @RestrictTo(RestrictTo.Scope.TESTS)
     public static boolean isStarted;
 
+    private UsbService usbService;
+    private UsbCallback usbCallback;
     public DummyNidService.State state;
     private Context context;
+    SendMessageRunnable pingRunnable;
+    SendMessageRunnable identifyRunnable;
     boolean isIdentifying;
     int identifyingChannel;
 
     @Override
     public void onCreate() {
-        context = this;
+        this.context = this;
         Log.d(TAG, "NidService.onCreate");
         super.onCreate();
         isStarted = true;
+        this.state = State.NOT_CONNECTED;
         this.state = State.RUNNING;
+        usbCallback = new UsbCallback();
 
-        context.registerReceiver(new BroadcastReceiver() {
-            @Override
-            public void onReceive(Context context, Intent intent) {
+//        registerReceiver(new BroadcastReceiver() {
+//            @Override
+//            public void onReceive(Context context, Intent intent) {
+//
+//            }
+//        }, new IntentFilter());
 
-            }
-        }, new IntentFilter());
+        setFilters();
+        Intent intent = new Intent(ACTION_NID_READY);
+        sendBroadcast(intent);
 
+        timerHandler.postDelayed(new ChangeStateRunnable(State.RUNNING), 1000);
 
-        //setFilters();
         Log.d(TAG, "NidService started");
+
+//        startService(UsbService.class, usbConnection, null);
     }
 
     /**
@@ -103,15 +116,13 @@ public class DummyNidService extends Service {
      */
     @Override
     public IBinder onBind(Intent intent) {
-        throw null;
-      // return binder;
+        return binder;
     }
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-//        return Service.START_NOT_STICKY;
 
-        Log.d(TAG, "NidService started");
+        Log.d(TAG, "NidService onStartCommand");
         //context = getApplicationContext();
         return Service.START_STICKY;
     }
@@ -123,11 +134,83 @@ public class DummyNidService extends Service {
     @Override
     public void onDestroy() {
         super.onDestroy();
-//        state = State.QUITTING;
-//        pingRunnable.stop();
-//        unregisterReceiver(usbReceiver);
-//        unregisterReceiver(commandReceiver);
+        state = State.QUITTING;
+        if (pingRunnable != null)
+            pingRunnable.stop();
+        unregisterReceiver(usbReceiver);
+        unregisterReceiver(commandReceiver);
 //        unbindService(usbConnection);
+    }
+
+//    private final ServiceConnection usbConnection = new ServiceConnection() {
+//        @Override
+//        public void onServiceConnected(ComponentName componentName, IBinder iBinder) {
+//            usbService = ((UsbService.UsbBinder) iBinder).getService();
+//            usbService.setHandler(new Handler(usbCallback));
+//            Log.d(TAG, "UsbService connected");
+//        }
+//
+//        @Override
+//        public void onServiceDisconnected(ComponentName componentName) {
+//            usbService = null;
+//            state = DummyNidService.State.NOT_CONNECTED;
+//        }
+//    };
+//
+//    private void startService(Class<?> service, ServiceConnection serviceConnection, Bundle extras) {
+//        if (!UsbService.SERVICE_CONNECTED) {
+//            Intent startService = new Intent(this, service);
+//            if (extras != null && !extras.isEmpty()) {
+//                Set<String> keys = extras.keySet();
+//                for (String key : keys) {
+//                    String extra = extras.getString(key);
+//                    startService.putExtra(key, extra);
+//                }
+//            }
+//            startService(startService);
+//        }
+//        Intent bindingIntent = new Intent(this, service);
+//        bindService(bindingIntent, serviceConnection, Context.BIND_AUTO_CREATE);
+//    }
+
+    private class UsbCallback implements Handler.Callback {
+
+        @Override
+        public boolean handleMessage(Message msg) {
+            switch (msg.what) {
+                case UsbService.MESSAGE_FROM_SERIAL_PORT:
+                    short [] packet = (short []) msg.obj;
+                    NbMessage nbMsg = new NbMessage(packet);
+                    Log.d(TAG, String.format("received %s", Integer.toBinaryString(packet[0])));
+
+                    if (nbMsg.isValid){
+                        Intent intent = new Intent(ACTION_RECEIVED_DATA);
+                        intent.putExtra(BUNDLE_CHANNEL, nbMsg.channel);
+                        if (nbMsg.checkSubheader(NbMessage.Subheader.POTENTIAL)) {
+                            intent.putExtra(BUNDLE_DATA_POTENTIAL, nbMsg.data);
+                            sendBroadcast(intent);
+                        } else if (nbMsg.checkSubheader(NbMessage.Subheader.TYPE)) {
+                            Log.d(TAG, "received type message");
+                            intent.putExtra(BUNDLE_DATA_TYPE, nbMsg.data);
+                            sendBroadcast(intent);
+                            if (isIdentifying) {
+                                // new channel has been acquired
+                                sendBroadcast(new Intent(ACTION_CHANNEL_ACQUIRED));
+                                identifyRunnable.stop();
+                                sendMessage(STOP_IDENTIFY);
+                                isIdentifying = false;
+                            } else {
+                                Log.d(TAG, "Duplicate channel acquired");
+                            }
+                        }
+                    } else {
+                        Log.d(TAG, String.format("Received invalid message %s",
+                                Integer.toBinaryString(nbMsg.header)));
+                    }
+                    break;
+            }
+            return true;
+        }
     }
 
     public class NidBinder extends Binder {
@@ -136,11 +219,35 @@ public class DummyNidService extends Service {
         }
     }
 
+    /**
+     * MessageScheduler
+     *
+     * schedules sending timed messages (e.g. pingMessage)
+     * schedules one-off packets (e.g. blinkMessage)
+     */
+
+    /**
+     * sendPing is ran through a ping handler every 200 ms
+     */
+    public void sendPing() {
+        if (usbService != null && state == State.RUNNING) {
+            usbService.write(PING_MESSAGE);
+        }
+    }
+
+    public void sendMessage(byte[] msg) {
+        if (usbService != null && state == State.RUNNING) {
+            usbService.write(msg);
+        }
+    }
+
     private final BroadcastReceiver commandReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
             switch (intent.getAction()) {
                 case ACTION_SEND_BLINK:
+                    Log.d(TAG, "sending blink");
+                    sendMessage(BLINK_MESSAGE);
                     break;
                 case ACTION_ADD_CHANNEL:
                     /**
@@ -149,10 +256,55 @@ public class DummyNidService extends Service {
                      * Once identified, Send CHANNEL_ACQUIRED broadcast with board info
                      * Finish by sending ID_DONE message to network so no more boards ID
                      */
+                    Log.d(TAG, "sending identify");
+                    sendBroadcast(new Intent(ACTION_CHANNEL_ACQUIRED));
+                    Intent dataIntent = new Intent(ACTION_RECEIVED_DATA);
                     int ch = intent.getIntExtra(BUNDLE_CHANNEL, 0);
-                    ReceiveDataRunnable newCh = new ReceiveDataRunnable(ch);
-                    channels.put(ch, newCh);
-                    timerHandler.postDelayed(newCh, 1000);
+                    dataIntent.putExtra(BUNDLE_CHANNEL, ch);
+                    dataIntent.putExtra(BUNDLE_DATA_TYPE, 1);
+                    sendBroadcast(dataIntent);
+//                    identifyRunnable = new SendMessageRunnable(makeIdentifyMessage(ch), 500);
+//                    timerHandler.postDelayed(identifyRunnable, 100);
+//                    isIdentifying = true;
+                    break;
+            }
+        }
+    };
+
+    private final BroadcastReceiver usbReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            switch (intent.getAction()) {
+                case UsbService.ACTION_USB_PERMISSION_GRANTED: // USB PERMISSION GRANTED
+                    break;
+                case UsbService.ACTION_USB_PERMISSION_NOT_GRANTED: // USB PERMISSION NOT GRANTED
+                    Toast.makeText(context, "USB Permission not granted",
+                            Toast.LENGTH_SHORT).show();
+                    break;
+                case UsbService.ACTION_NO_USB: // NO USB CONNECTED
+                    break;
+                case UsbService.ACTION_USB_DISCONNECTED: // USB DISCONNECTED
+                    Toast.makeText(context, "USB disconnected", Toast.LENGTH_SHORT).show();
+                    state = State.NOT_CONNECTED;
+                    break;
+                case UsbService.ACTION_USB_READY:
+                    Log.d(TAG, "USB_READY");
+                    Toast.makeText(context, "USB communication established",
+                            Toast.LENGTH_SHORT).show();
+
+                    /**
+                     * Start initialization sequence:
+                     * 10 ms - start sending pings
+                     * 1000 ms - send clear channel command
+                     * 2000 ms - enable NID communications
+                     */
+
+                    if (state == State.NOT_CONNECTED) {
+                        pingRunnable = new SendMessageRunnable(PING_MESSAGE, 200);
+                        timerHandler.postDelayed(pingRunnable, 10);
+                        timerHandler.postDelayed(new SendMessageRunnable(CLEAR_CHANNEL), 1000);
+                        timerHandler.postDelayed(new ChangeStateRunnable(State.RUNNING), 2000);
+                    }
                     break;
             }
         }
@@ -167,10 +319,45 @@ public class DummyNidService extends Service {
         filter.addAction(DummyNidService.ACTION_NID_DISCONNECTED);
         filter.addAction(DummyNidService.ACTION_NID_CONNECTED);
 
+        filter.addAction(UsbService.ACTION_USB_PERMISSION_GRANTED);
+        filter.addAction(UsbService.ACTION_NO_USB);
+        filter.addAction(UsbService.ACTION_USB_DISCONNECTED);
+        filter.addAction(UsbService.ACTION_USB_NOT_SUPPORTED);
+        filter.addAction(UsbService.ACTION_USB_PERMISSION_NOT_GRANTED);
+        filter.addAction(UsbService.ACTION_CDC_DRIVER_NOT_WORKING);
+        filter.addAction(UsbService.ACTION_USB_DEVICE_NOT_WORKING);
+        filter.addAction(UsbService.ACTION_USB_READY);
+
+        registerReceiver(usbReceiver, filter);
         registerReceiver(commandReceiver, filter);
     }
 
     Handler timerHandler = new Handler(Looper.getMainLooper());
+    class SendMessageRunnable implements Runnable {
+        private byte[] message;
+        boolean isRepeating;
+        int repeatTime;
+
+        public SendMessageRunnable(byte[] message) {
+            this.message = message;
+        }
+
+        public SendMessageRunnable(byte[] message, int repeatTime) {
+            this.message = message;
+            this.isRepeating = true;
+            this.repeatTime = repeatTime;
+        }
+
+        @Override
+        public void run() {
+            sendMessage(message);
+            if (isRepeating) timerHandler.postDelayed(this, repeatTime);
+        }
+
+        public void stop() {
+            this.isRepeating = false;
+        }
+    }
 
     class ChangeStateRunnable implements Runnable {
         private State newState;
@@ -183,42 +370,10 @@ public class DummyNidService extends Service {
         public void run() {
             state = newState;
             if (newState == State.RUNNING) {
+                Log.d(TAG, "NID running");
                 Intent intent = new Intent(ACTION_NID_READY);
                 sendBroadcast(intent);
             }
-        }
-    }
-
-    class ReceiveDataRunnable implements Runnable {
-        private int ch;
-        private int step = 0;
-        private int pot = 0;
-        private boolean isRunning = true;
-
-        public ReceiveDataRunnable(int ch) {this.ch = ch;}
-
-        private int nextPotential() {
-            if (step == 100 || pot == 200) {
-                pot += 8000;
-            } else if (pot == 300) {
-                step = 0;
-            }
-            if (pot > 10000) {
-                pot = -6000;
-            }
-
-            pot *= 63/64;
-
-            return pot;
-        }
-
-        @Override
-        public void run() {
-            Intent intent = new Intent(ACTION_RECEIVED_DATA);
-            intent.putExtra(BUNDLE_DATA_POTENTIAL, nextPotential());
-            intent.putExtra(BUNDLE_CHANNEL, ch);
-            sendBroadcast(intent);
-            timerHandler.postDelayed(this, 50);
         }
     }
 
