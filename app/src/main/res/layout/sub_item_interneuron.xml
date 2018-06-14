@@ -5,47 +5,55 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="wrap_content"
     android:layout_height="wrap_content">
-
     <ImageView
         android:id="@+id/boardgraphic_interneuron"
-        android:layout_width="367dp"
-        android:layout_height="200dp"
+        android:layout_width="200dp"
+        android:layout_height="150dp"
         app:layout_constraintLeft_toRightOf="@id/dendrite1_text"
         app:srcCompat="@drawable/boards_interneuron_subitem"
-        android:paddingTop="18dp"
         tools:ignore="ContentDescription" />
+    <TextView
+        android:id="@+id/title_adjust_dendrites"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:ems="5"
+        android:gravity="center"
+        android:text="@string/sub_item_adjust_dendrites"
+        android:textSize="20sp"
+        android:textColor="@color/colorAccent2"
+        app:layout_constraintTop_toTopOf="@id/boardgraphic_interneuron"/>
+    <TextView
+        android:id="@+id/title_percent_threshold"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:ems="8"
+        android:gravity="center"
+        android:text="@string/sub_item_percent_threshold"
+        android:textSize="12sp"
+        app:layout_constraintTop_toBottomOf="@id/title_adjust_dendrites"
+        app:layout_constraintLeft_toLeftOf="@id/title_adjust_dendrites"
+        app:layout_constraintRight_toRightOf="@id/title_adjust_dendrites"
+        android:textColor="@color/colorAccent2"/>
+    <Button
+        android:id="@+id/reset_dendrites"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:ems="6"
+        android:text="@string/sub_item_reset_dendrites"
+        android:textSize="12sp"
+        app:layout_constraintTop_toBottomOf="@id/title_percent_threshold"
+        app:layout_constraintLeft_toLeftOf="@id/title_percent_threshold"
+        app:layout_constraintRight_toRightOf="@id/title_percent_threshold"
+        app:layout_constraintBottom_toBottomOf="@id/boardgraphic_interneuron"/>
     <SeekBar
         android:id="@+id/dendrite1_seekbar"
-        android:layout_width="300dp"
-        android:layout_height="wrap_content"
-        android:max="15000"
-        android:paddingTop="10dp"
-        android:progress="12000" />
-    <SeekBar
-        android:id="@+id/dendrite2_seekbar"
-        android:layout_width="300dp"
-        android:layout_height="wrap_content"
-        android:max="15000"
-        android:progress="6000"
-        android:paddingTop="36dp"
-        app:layout_constraintTop_toBottomOf="@id/dendrite1_seekbar"/>
-    <SeekBar
-        android:id="@+id/dendrite3_seekbar"
-        android:layout_width="300dp"
-        android:layout_height="wrap_content"
-        android:max="15000"
-        android:progress="6000"
-        android:paddingTop="36dp"
-        app:layout_constraintTop_toBottomOf="@id/dendrite2_seekbar" />
-    <SeekBar
-        android:id="@+id/dendrite4_seekbar"
-        android:layout_width="300dp"
+        android:layout_width="200dp"
         android:layout_height="wrap_content"
         android:max="15000"
         android:progress="12000"
-        android:paddingTop="36dp"
-        app:layout_constraintTop_toBottomOf="@id/dendrite3_seekbar"/>
-
+        app:layout_constraintLeft_toRightOf="@id/title_adjust_dendrites"
+        app:layout_constraintBottom_toTopOf="@id/dendrite2_seekbar"
+        app:layout_constraintTop_toTopOf="@id/boardgraphic_interneuron"/>
     <TextView
         android:id="@+id/dendrite1_text"
         android:layout_width="wrap_content"
@@ -53,9 +61,20 @@
         android:ems="3"
         android:gravity="center"
         android:text="@string/sub_item_dendrite_large_default"
-        android:textSize="30sp"
+        android:textSize="20sp"
         android:textColor="@color/colorAccent2"
-        app:layout_constraintLeft_toRightOf="@id/dendrite1_seekbar" />
+        app:layout_constraintLeft_toRightOf="@id/dendrite1_seekbar"
+        app:layout_constraintTop_toTopOf="@id/dendrite1_seekbar"
+        app:layout_constraintBottom_toBottomOf="@id/dendrite1_seekbar"/>
+    <SeekBar
+        android:id="@+id/dendrite2_seekbar"
+        android:layout_width="200dp"
+        android:layout_height="wrap_content"
+        android:max="15000"
+        android:progress="6000"
+        app:layout_constraintTop_toBottomOf="@id/dendrite1_seekbar"
+        app:layout_constraintBottom_toTopOf="@id/dendrite3_seekbar"
+        app:layout_constraintLeft_toRightOf="@id/title_adjust_dendrites"/>
     <TextView
         android:id="@+id/dendrite2_text"
         android:layout_width="wrap_content"
@@ -63,11 +82,20 @@
         android:ems="3"
         android:gravity="center"
         android:text="@string/sub_item_dendrite_small_default"
-        android:textSize="30sp"
+        android:textSize="20sp"
         android:textColor="@color/colorAccent2"
-        app:layout_constraintTop_toBottomOf="@id/dendrite1_text"
-        app:layout_constraintLeft_toRightOf="@id/dendrite2_seekbar"
-        android:paddingTop="18dp"/>
+        app:layout_constraintTop_toTopOf="@id/dendrite2_seekbar"
+        app:layout_constraintBottom_toBottomOf="@id/dendrite2_seekbar"
+        app:layout_constraintLeft_toRightOf="@id/dendrite2_seekbar" />
+    <SeekBar
+        android:id="@+id/dendrite3_seekbar"
+        android:layout_width="200dp"
+        android:layout_height="wrap_content"
+        android:max="15000"
+        android:progress="6000"
+        app:layout_constraintTop_toBottomOf="@id/dendrite2_seekbar"
+        app:layout_constraintBottom_toTopOf="@id/dendrite4_seekbar"
+        app:layout_constraintLeft_toRightOf="@id/title_adjust_dendrites"/>
     <TextView
         android:id="@+id/dendrite3_text"
         android:layout_width="wrap_content"
@@ -75,11 +103,20 @@
         android:ems="3"
         android:gravity="center"
         android:text="@string/sub_item_dendrite_small_default"
-        android:textSize="30sp"
+        android:textSize="20sp"
         android:textColor="@color/colorAccent2"
-        app:layout_constraintTop_toBottomOf="@id/dendrite2_text"
-        app:layout_constraintLeft_toRightOf="@id/dendrite3_seekbar"
-        android:paddingTop="18dp"/>
+        app:layout_constraintTop_toTopOf="@id/dendrite3_seekbar"
+        app:layout_constraintBottom_toBottomOf="@id/dendrite3_seekbar"
+        app:layout_constraintLeft_toRightOf="@id/dendrite3_seekbar" />
+    <SeekBar
+        android:id="@+id/dendrite4_seekbar"
+        android:layout_width="200dp"
+        android:layout_height="wrap_content"
+        android:max="15000"
+        android:progress="12000"
+        app:layout_constraintTop_toBottomOf="@id/dendrite3_seekbar"
+        app:layout_constraintLeft_toRightOf="@id/title_adjust_dendrites"
+        app:layout_constraintBottom_toBottomOf="@id/boardgraphic_interneuron"/>
     <TextView
         android:id="@+id/dendrite4_text"
         android:layout_width="wrap_content"
@@ -87,9 +124,9 @@
         android:ems="3"
         android:gravity="center"
         android:text="@string/sub_item_dendrite_large_default"
-        android:textSize="30sp"
+        android:textSize="20sp"
         android:textColor="@color/colorAccent2"
-        app:layout_constraintTop_toBottomOf="@id/dendrite3_text"
-        app:layout_constraintLeft_toRightOf="@id/dendrite4_seekbar"
-        android:paddingTop="18dp"/>
+        app:layout_constraintTop_toTopOf="@id/dendrite4_seekbar"
+        app:layout_constraintBottom_toBottomOf="@id/dendrite4_seekbar"
+        app:layout_constraintLeft_toRightOf="@id/dendrite4_seekbar"/>
 </android.support.constraint.ConstraintLayout>
