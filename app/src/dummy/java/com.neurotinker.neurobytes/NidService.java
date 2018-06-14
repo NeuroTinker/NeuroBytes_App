@@ -20,6 +20,9 @@ import com.neurotinker.neurobytes.UsbService;
 import java.util.HashMap;
 import java.util.Map;
 
+import static java.lang.Math.PI;
+import static java.lang.Math.sin;
+
 /**
  * Created by jrwhi on 3/24/2018.
  */
@@ -78,6 +81,8 @@ public class NidService extends Service {
     SendMessageRunnable identifyRunnable;
     boolean isIdentifying;
     int identifyingChannel;
+
+    Map<Integer, SendDataRunnable> channelDataRunners = new HashMap<>();
 
     @Override
     public void onCreate() {
@@ -265,6 +270,9 @@ public class NidService extends Service {
 //                    identifyRunnable = new SendMessageRunnable(makeIdentifyMessage(ch), 500);
 //                    timerHandler.postDelayed(identifyRunnable, 100);
 //                    isIdentifying = true;
+                    SendDataRunnable dataRunnable = new SendDataRunnable(ch);
+                    channelDataRunners.put(ch, dataRunnable);
+                    timerHandler.postDelayed(dataRunnable, 1000);
                     break;
             }
         }
@@ -355,6 +363,28 @@ public class NidService extends Service {
 
         public void stop() {
             this.isRepeating = false;
+        }
+    }
+
+    class SendDataRunnable implements Runnable {
+        private int ch;
+        private double t;
+
+        public SendDataRunnable(int ch) {
+            this.ch = ch;
+            this.t = 0;
+        }
+
+        @Override
+        public void run() {
+            Intent intent = new Intent(ACTION_RECEIVED_DATA);
+            intent.putExtra(BUNDLE_CHANNEL, ch);
+            int val = (int) (2000.0 * sin(t));
+            intent.putExtra(BUNDLE_DATA_POTENTIAL, val);
+            sendBroadcast(intent);
+            t += (2.0*PI) / 20.0;
+            if (t >= 2*PI) t = 0.0;
+            timerHandler.postDelayed(this, 50);
         }
     }
 
