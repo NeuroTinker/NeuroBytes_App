@@ -7,6 +7,9 @@
 
     <string name="sub_item_dendrite_large_default">12000</string>
     <string name="sub_item_dendrite_small_default">6000</string>
+    <string name="sub_item_adjust_dendrites">Dendrite Weighting Adjustment</string>
+    <string name="sub_item_reset_dendrites">Reset</string>
+    <string name="sub_item_percent_threshold">Percent of Action Potential Threshold</string>
 
     <!-- Strings related to Settings -->
 
