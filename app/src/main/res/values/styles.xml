@@ -20,7 +20,7 @@
         <item name="contentPaddingTop">24dp</item>
         <item name="contentPaddingLeft">16dp</item>
         <item name="contentPaddingRight">16dp</item>
-        <item name="cardBackgroundColor">@color/md_white_1000</item>
+        <item name="cardBackgroundColor">@color/colorBackgroundLight</item>
     </style>
 
     <style name="AppTheme.AppBarOverlay" parent="Theme.AppCompat.Light.DarkActionBar" />

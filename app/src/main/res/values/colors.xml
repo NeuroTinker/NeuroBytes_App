@@ -5,4 +5,16 @@
     <color name="colorAccent">#e9d400</color>
     <color name="colorAccent2">#ef476f</color>
     <color name="colorAccent3">#ffd166</color>
+    <color name="colorBackgroundLight">#ffffff</color>
+
+    <color name="colorGraph1">#000080</color>
+    <color name="colorGraph2">#800000</color>
+    <color name="colorGraph3">#008000</color>
+    <color name="colorGraph4">#800080</color>
+    <color name="colorGraph5">#808000</color>
+    <color name="colorGraph6">#006044</color>
+    <color name="colorGraph7">#604400</color>
+    <color name="colorGraph8">#440060</color>
+    <color name="colorGraph9">#444444</color>
+    <color name="colorGraph10">#008080</color>
 </resources>

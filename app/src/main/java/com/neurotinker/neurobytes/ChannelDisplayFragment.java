@@ -428,7 +428,7 @@ public class ChannelDisplayFragment extends Fragment {
         public View onBind(@NonNull RecyclerView.ViewHolder viewHolder) {
             if (viewHolder instanceof GraphSubItem.ViewHolder) {
                 Log.d(TAG, "subview found!");
-                return viewHolder.itemView.findViewById(R.id.reset_dendrites);
+                return viewHolder.itemView.findViewById(R.id.button_reset);
             }
             return null;
         }
