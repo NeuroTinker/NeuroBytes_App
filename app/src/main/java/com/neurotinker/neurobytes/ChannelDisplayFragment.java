@@ -343,6 +343,7 @@ public class ChannelDisplayFragment extends Fragment {
             Intent intent = new Intent(ACTION_REMOVE_CHANNEL);
             intent.putExtra(BUNDLE_CHANNEL, item.channel);
             _context.sendBroadcast(intent);
+            expandableExtension.collapse(position);
             channels.remove(item);
             itemAdapter.remove(position);
             //fastAdapter.notifyAdapterDataSetChanged();
