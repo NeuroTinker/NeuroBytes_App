@@ -4,7 +4,7 @@
     android:layout_width="match_parent"
     android:layout_height="300dp"
     android:paddingLeft="15dp"
-    android:paddingTop="15dp"
+    android:paddingTop="0dp"
     android:paddingBottom="15dp"
     android:paddingRight="15dp"
     android:descendantFocusability="beforeDescendants"
@@ -25,7 +25,7 @@
                 android:id="@+id/name"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="NO ID"
+                android:text="@string/sub_item_no_id"
                 android:visibility="gone"/>
 
             <io.saeid.fabloading.LoadingView
@@ -82,15 +82,13 @@
                     android:layout_width="50dp"
                     android:layout_height="50dp"
                     android:layout_centerInParent="true"
-                    android:src="@drawable/plus"
-                    android:tint="@android:color/darker_gray" />
-
+                    app:srcCompat="@drawable/ic_baseline_add_24"/>
                 <TextView
                     android:id="@+id/nousb_id"
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
                     android:layout_centerInParent="true"
-                    android:text="NID is not connected yet!"
+                    android:text="@string/sub_item_nid_not_connected"
                     android:visibility="gone" />
 
                 <ProgressBar
@@ -117,28 +115,35 @@
                     android:layout_height="match_parent">
 
                     <include
-                        android:id="@+id/channelinfo_id"
+                        android:id="@+id/channel_info_id"
                         layout="@layout/channel_info" />
 
                     <com.github.mikephil.charting.charts.LineChart
                         android:id="@+id/chart"
                         android:layout_width="fill_parent"
                         android:layout_height="200dp"
-                        android:visibility="visible" />
+                        android:visibility="visible"
+                        android:layout_gravity="top"/>
 
                 </LinearLayout>
 
                 <ImageView
                     android:id="@+id/clear_id"
-                    android:layout_width="30dp"
-                    android:layout_height="30dp"
+                    android:layout_width="36dp"
+                    android:layout_height="36dp"
                     android:layout_alignParentRight="true"
                     android:layout_gravity="right"
                     android:color="@android:color/darker_gray"
-                    app:srcCompat="@drawable/clear" />
-
+                    app:srcCompat="@drawable/ic_baseline_close_24" />
+                <ImageView
+                    android:id="@+id/more_id"
+                    android:layout_width="36dp"
+                    android:layout_height="36dp"
+                    android:layout_alignParentBottom="true"
+                    android:layout_centerHorizontal="true"
+                    android:layout_gravity="center"
+                    app:srcCompat="@drawable/ic_baseline_menu_24" />
             </RelativeLayout>
-
         </LinearLayout>
     </android.support.v7.widget.CardView>
 

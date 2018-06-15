@@ -7,9 +7,21 @@
 
     <string name="sub_item_dendrite_large_default">12000</string>
     <string name="sub_item_dendrite_small_default">6000</string>
-    <string name="sub_item_adjust_dendrites">Dendrite Weighting Adjustment</string>
-    <string name="sub_item_reset_dendrites">Reset</string>
-    <string name="sub_item_percent_threshold">Percent of Action Potential Threshold</string>
+    <string name="sub_item_adjust_dendrites">Dendrite Weighting</string>
+    <string name="sub_item_adjust_other">Other Adjustments</string>
+    <string name="sub_item_nid_not_connected">NID is not connected!</string>
+    <string name="sub_item_no_id">No ID!</string>
+    <string name="sub_item_reset">Reset Board</string>
+    <string name="sub_item_learning_mode_toggle">Learning Mode</string>
+    <string name="sub_item_channel_title">Channel Name</string>
+    <string name="sub_item_default_channel">NeuroBytes Board</string>
+    <string name="sub_item_freeze_toggle">Freeze Board</string>
+    <string name="sub_item_speed_title">Speed</string>
+    <string name="sub_item_speed_default">50</string>
+
+    <!-- Strings related to graph items -->
+
+    <string name="graph_item_more">Configure NeuroBytes Board</string>
 
     <!-- Strings related to Settings -->
 
