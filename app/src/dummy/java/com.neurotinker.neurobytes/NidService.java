@@ -368,7 +368,8 @@ public class NidService extends Service {
 
     class SendDataRunnable implements Runnable {
         private int ch;
-        private double t;
+        private int t;
+        private int val;
 
         public SendDataRunnable(int ch) {
             this.ch = ch;
@@ -379,11 +380,22 @@ public class NidService extends Service {
         public void run() {
             Intent intent = new Intent(ACTION_RECEIVED_DATA);
             intent.putExtra(BUNDLE_CHANNEL, ch);
-            int val = (int) (2000.0 * sin(t));
+//            int val = (int) (10000.0 * sin(t));
+            if (t++ >= 10) {
+                t = 0;
+                val += 6000;
+            }
+            Log.d(TAG, Integer.toString(val));
             intent.putExtra(BUNDLE_DATA_POTENTIAL, val);
+            if (val >= 10000) {
+                val = -10000;
+            } else {
+                val *= 61;
+                val /= 64;
+            }
             sendBroadcast(intent);
-            t += (2.0*PI) / 20.0;
-            if (t >= 2*PI) t = 0.0;
+//            t += (2.0*PI) / 20.0;
+//            if (t >= 2*PI) t = 0.0;
             timerHandler.postDelayed(this, 50);
         }
     }
