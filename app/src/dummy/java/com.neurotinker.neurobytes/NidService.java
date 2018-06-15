@@ -339,6 +339,7 @@ public class NidService extends Service {
         registerReceiver(commandReceiver, filter);
     }
 
+    // TODO: move this to a nonUI thread (i.e. use Timer)
     Handler timerHandler = new Handler(Looper.getMainLooper());
     class SendMessageRunnable implements Runnable {
         private byte[] message;
@@ -385,7 +386,6 @@ public class NidService extends Service {
                 t = 0;
                 val += 6000;
             }
-            Log.d(TAG, Integer.toString(val));
             intent.putExtra(BUNDLE_DATA_POTENTIAL, val);
             if (val >= 10000) {
                 val = -10000;

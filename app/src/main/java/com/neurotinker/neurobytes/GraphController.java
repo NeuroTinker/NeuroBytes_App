@@ -29,10 +29,13 @@ import com.google.api.client.googleapis.extensions.android.gms.auth.GoogleAccoun
 import com.google.api.client.http.FileContent;
 import com.google.api.client.util.ExponentialBackOff;
 
+import static android.support.constraint.Constraints.TAG;
 import static android.view.View.VISIBLE;
 
 
 public class GraphController {
+
+    private final String TAG = GraphController.class.getSimpleName();
 
     LineChart chart; // = (LineChart) findViewById(R.id.chart);
     List<Entry> entries = new ArrayList<Entry>();
@@ -140,7 +143,7 @@ public class GraphController {
                     && potential < 0)
                 fireCount += 1;
 
-            firingRate = fireCount / 5.0;
+            this.firingRate = fireCount / 5.0;
 
             data.addEntry(new Entry(set.getEntryCount(), potential), 0);
 

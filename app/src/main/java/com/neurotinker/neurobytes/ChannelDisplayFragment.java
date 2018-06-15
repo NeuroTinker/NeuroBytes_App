@@ -1,6 +1,7 @@
 package com.neurotinker.neurobytes;
 
 import android.content.BroadcastReceiver;
+import android.content.ClipData;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
@@ -8,7 +9,9 @@ import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Handler;
 import android.os.IBinder;
+import android.os.Looper;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.constraint.ConstraintLayout;
@@ -25,6 +28,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.mikepenz.fastadapter.FastAdapter;
+import com.mikepenz.fastadapter.ISubItem;
 import com.mikepenz.fastadapter.adapters.ItemAdapter;
 import com.mikepenz.fastadapter.expandable.ExpandableExtension;
 import com.mikepenz.fastadapter.listeners.ClickEventHook;
@@ -35,12 +39,16 @@ import com.mikepenz.fastadapter_extensions.drag.SimpleDragCallback;
 
 import org.w3c.dom.Text;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.Queue;
+import java.util.Timer;
+import java.util.TimerTask;
 
 import static com.neurotinker.neurobytes.NidService.ACTION_CHANNEL_ACQUIRED;
 import static com.neurotinker.neurobytes.NidService.ACTION_NID_DISCONNECTED;
@@ -70,11 +78,14 @@ public class ChannelDisplayFragment extends Fragment {
     private boolean isPaused = false;
     private boolean nidIsRunning;
     private Map<Integer, GraphItem> channels = new HashMap<>();
+    private Timer updateTimer = new Timer();
+    private Handler timerHandler = new Handler(Looper.getMainLooper());
 
     private ItemAdapter itemAdapter = new ItemAdapter();
     private FastAdapter fastAdapter = FastAdapter.with(itemAdapter);
     private RecyclerView recyclerView;
     private ExpandableExtension expandableExtension;
+    private ArrayList<GraphSubItem> subItems;
 
     private SimpleDragCallback dragCallback;
     private ItemTouchCallback itemTouchCallback;
@@ -146,6 +157,12 @@ public class ChannelDisplayFragment extends Fragment {
          */
         addItem();
 
+        /**
+         * Start the channel update timed task
+         */
+//        updateTimer.schedule(updateTask,1000, 200);
+        timerHandler.postDelayed(updateRunnable, 2000);
+
         return layout;
     }
 
@@ -175,17 +192,77 @@ public class ChannelDisplayFragment extends Fragment {
         mListener = null;
     }
 
+    private Runnable updateRunnable = new Runnable() {
+        @Override
+        public void run() {
+            /**
+             * Remove inactive items and update UI of active ones
+             */
+            for (int i = 0; i < fastAdapter.getItemCount(); i++) {
+                Object iItem = fastAdapter.getItem(i);
+                if (iItem instanceof GraphItem) {
+                    Log.d(TAG, "updating item");
+                    GraphItem item = (GraphItem) iItem;
+                    if (item.state != GraphItem.GraphState.NEW) {
+                        if (item.graphController.count == 0) {
+//                        removeItem(item);
+                        } else {
+//                            fastAdapter.notifyAdapterItemChanged(i, GraphItem.UpdateType.CHINFO);
+                            fastAdapter.notifyItemChanged(i, GraphItem.UpdateType.CHINFO);
+                        }
+                        item.graphController.count = 0;
+                    }
+                } else if (iItem instanceof GraphSubItem) {
+                    Log.d(TAG, "updating subitem");
+//                    fastAdapter.notifyAdapterItemChanged(i, GraphSubItem.UpdateType.UI);
+                }
+            }
+            timerHandler.postDelayed(this, 200);
+        }
+    };
+
+    private TimerTask updateTask = new TimerTask() {
+        @Override
+        public void run() {
+            /**
+             * Remove inactive items
+             */
+            for (int i = 0; i < fastAdapter.getItemCount(); i++) {
+                GraphItem item = (GraphItem) fastAdapter.getItem(i);
+                if (item.graphController.count == 0) {
+//                    removeItem(item);
+                } else {
+                    fastAdapter.notifyAdapterItemChanged(i, GraphItem.UpdateType.CHINFO);
+                }
+                item.graphController.count = 0;
+            }
+        }
+    };
+
     private GraphItem addItem() {
         GraphItem newItem = new GraphItem(
                 nextCh.peek() != null ? nextCh.remove() : ++chCnt
         );
+        // use the channel number for id
+        newItem.withIdentifier(newItem.channel);
         itemAdapter.add(newItem);
         channels.put(newItem.channel, newItem);
         return newItem;
     }
 
+    private void removeItem(GraphItem item) {
+        nextCh.add(item.channel);
+        Intent intent = new Intent(ACTION_REMOVE_CHANNEL);
+        intent.putExtra(BUNDLE_CHANNEL, item.channel);
+        _context.sendBroadcast(intent);
+        int position = itemAdapter.getAdapterPosition(item);
+        expandableExtension.collapse(position);
+        channels.remove(item);
+        itemAdapter.remove(position);
+    }
+
     private GraphSubItem addSubItem(GraphItem item) {
-        GraphSubItem newSubItem = new GraphSubItem();
+        GraphSubItem newSubItem = new GraphSubItem(item.channel);
         newSubItem.withParent(item);
         return newSubItem;
     }
@@ -339,19 +416,38 @@ public class ChannelDisplayFragment extends Fragment {
         @Override
         public void onClick(View v, int position, FastAdapter fastAdapter, GraphItem item) {
             //itemAdapter.remove(position);
-            nextCh.add(item.channel);
-            Intent intent = new Intent(ACTION_REMOVE_CHANNEL);
-            intent.putExtra(BUNDLE_CHANNEL, item.channel);
-            _context.sendBroadcast(intent);
-            expandableExtension.collapse(position);
-            channels.remove(item);
-            itemAdapter.remove(position);
+            removeItem(item);
             //fastAdapter.notifyAdapterDataSetChanged();
             //fastAdapter.notifyAdapterItemRemoved(position);
         }
     }
 
+    private class ResetDendritesEventHook extends ClickEventHook<GraphSubItem> {
+        @Nullable
+        @Override
+        public View onBind(@NonNull RecyclerView.ViewHolder viewHolder) {
+            if (viewHolder instanceof GraphSubItem.ViewHolder) {
+                Log.d(TAG, "subview found!");
+                return viewHolder.itemView.findViewById(R.id.reset_dendrites);
+            }
+            return null;
+        }
+
+        @Override
+        public void onClick(View v, int position, FastAdapter fastAdapter, GraphSubItem item) {
+            item.dendrite2Weighting = 1000;
+        }
+    }
+
     private class SeekBarEventHook extends CustomEventHook<GraphSubItem> {
+        private Timer sendMessageTimer = new Timer();
+        private List<SeekBar> seekBarList;
+        private List<TextView> textViewList;
+
+//        private ISubItem getSubItem(RecyclerView.ViewHolder viewHolder) {
+//            viewHolder.itemView.getTag()
+//        }
+
         @Nullable
         @Override
         public View onBind(@NonNull RecyclerView.ViewHolder viewHolder) {
@@ -363,27 +459,23 @@ public class ChannelDisplayFragment extends Fragment {
 
         @Override
         public void attachEvent(View view, RecyclerView.ViewHolder viewHolder) {
-            GraphSubItem item = getItem(viewHolder);
-//            if (item != null) {
-                ((SeekBar) view).setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
-                    @Override
-                    public void onProgressChanged(SeekBar seekBar, int i, boolean b) {
+            ((SeekBar) view).setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+                @Override
+                public void onProgressChanged(SeekBar seekBar, int i, boolean b) {
                     ((TextView) viewHolder.itemView.findViewById(R.id.dendrite1_text)).setText(Integer.toString(i));
-//                        item.dendrite1Weighting = i;
 //                    ((TextView) ((View) seekBar.getParent()).findViewById(R.id.dendrite1_text)).setText(Integer.toString(i));
-                    }
+                }
 
-                    @Override
-                    public void onStartTrackingTouch(SeekBar seekBar) {
+                @Override
+                public void onStartTrackingTouch(SeekBar seekBar) {
 
-                    }
+                }
 
-                    @Override
-                    public void onStopTrackingTouch(SeekBar seekBar) {
+                @Override
+                public void onStopTrackingTouch(SeekBar seekBar) {
 
-                    }
-                });
-//            }
+                }
+            });
         }
     }
 
