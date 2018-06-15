@@ -21,6 +21,7 @@ import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.helper.ItemTouchHelper;
 import android.util.Log;
 import android.view.LayoutInflater;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.SeekBar;
@@ -28,6 +29,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.mikepenz.fastadapter.FastAdapter;
+import com.mikepenz.fastadapter.IItem;
 import com.mikepenz.fastadapter.ISubItem;
 import com.mikepenz.fastadapter.adapters.ItemAdapter;
 import com.mikepenz.fastadapter.expandable.ExpandableExtension;
@@ -141,7 +143,15 @@ public class ChannelDisplayFragment extends Fragment {
         itemTouchCallback = new ChannelTouchCallback();
         fastAdapter.withEventHook(new AddChannelEventHook());
         fastAdapter.withEventHook(new ClearChannelEventHook());
-        fastAdapter.withEventHook(new SeekBarEventHook());
+        fastAdapter.withEventHook(new ResetDendritesEventHook());
+        fastAdapter.withEventHook(new DendriteChangeEventHook(R.id.dendrite1_seekbar, 0));
+        fastAdapter.withEventHook(new DendriteChangeEventHook(R.id.dendrite2_seekbar, 1));
+        fastAdapter.withEventHook(new DendriteChangeEventHook(R.id.dendrite3_seekbar, 2));
+        fastAdapter.withEventHook(new DendriteChangeEventHook(R.id.dendrite4_seekbar, 3));
+        fastAdapter.withEventHook(new SeekBarEventHook(R.id.dendrite1_seekbar, 0));
+        fastAdapter.withEventHook(new SeekBarEventHook(R.id.dendrite2_seekbar, 1));
+        fastAdapter.withEventHook(new SeekBarEventHook(R.id.dendrite3_seekbar, 2));
+        fastAdapter.withEventHook(new SeekBarEventHook(R.id.dendrite4_seekbar, 3));
 
         recyclerView = (RecyclerView) layout.findViewById(R.id.recview);
         recyclerView.setLayoutManager(new LinearLayoutManager(_context));
@@ -215,6 +225,7 @@ public class ChannelDisplayFragment extends Fragment {
                 } else if (iItem instanceof GraphSubItem) {
                     Log.d(TAG, "updating subitem");
 //                    fastAdapter.notifyAdapterItemChanged(i, GraphSubItem.UpdateType.UI);
+                    fastAdapter.notifyItemChanged(i, GraphSubItem.UpdateType.UI);
                 }
             }
             timerHandler.postDelayed(this, 200);
@@ -435,14 +446,49 @@ public class ChannelDisplayFragment extends Fragment {
 
         @Override
         public void onClick(View v, int position, FastAdapter fastAdapter, GraphSubItem item) {
-            item.dendrite2Weighting = 1000;
+        }
+    }
+
+    private class DendriteChangeEventHook extends TouchEventHook<GraphSubItem> {
+
+        private int seekBarId;
+        private int dendNum;
+
+        public DendriteChangeEventHook(int seekBarId, int dendNum) {
+            this.seekBarId = seekBarId;
+            this.dendNum = dendNum;
+        }
+
+        @Nullable
+        @Override
+        public View onBind(@NonNull RecyclerView.ViewHolder viewHolder) {
+            if (viewHolder instanceof GraphSubItem.ViewHolder) {
+                return viewHolder.itemView.findViewById(seekBarId);
+            }
+            return null;
+        }
+
+        @Override
+        public boolean onTouch(@NonNull View v, MotionEvent motion, int position, FastAdapter fastAdapter, GraphSubItem item) {
+            Log.d(TAG, "touch");
+            SeekBar seekBar = (SeekBar) v;
+            item.dendriteWeightings.set(dendNum, seekBar.getProgress());
+//            fastAdapter.notifyItemChanged(position, GraphSubItem.UpdateType.UI);
+            return false;
         }
     }
 
     private class SeekBarEventHook extends CustomEventHook<GraphSubItem> {
+        int seekId;
+        int dendNum;
         private Timer sendMessageTimer = new Timer();
         private List<SeekBar> seekBarList;
         private List<TextView> textViewList;
+
+        public SeekBarEventHook(int seekId, int dendNum) {
+            this.seekId = seekId;
+            this.dendNum = dendNum;
+        }
 
 //        private ISubItem getSubItem(RecyclerView.ViewHolder viewHolder) {
 //            viewHolder.itemView.getTag()
@@ -452,17 +498,27 @@ public class ChannelDisplayFragment extends Fragment {
         @Override
         public View onBind(@NonNull RecyclerView.ViewHolder viewHolder) {
             if (viewHolder instanceof GraphSubItem.ViewHolder) {
-                return viewHolder.itemView.findViewById(R.id.dendrite1_seekbar);
+                return viewHolder.itemView.findViewById(seekId);
             }
             return null;
         }
 
         @Override
         public void attachEvent(View view, RecyclerView.ViewHolder viewHolder) {
+            Object iItem = getItem(viewHolder);
+            FastAdapter fastAdapter = getFastAdapter(viewHolder);
+            if (fastAdapter != null) {
+                Log.d(TAG, fastAdapter.toString());
+                Log.d(TAG, Integer.toString(fastAdapter.getItemCount()));
+                Log.d(TAG, Integer.toString(fastAdapter.getHolderAdapterPosition(viewHolder)));
+            } else {
+                Log.d(TAG, "adapter not found");
+            }
             ((SeekBar) view).setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
                 @Override
                 public void onProgressChanged(SeekBar seekBar, int i, boolean b) {
-                    ((TextView) viewHolder.itemView.findViewById(R.id.dendrite1_text)).setText(Integer.toString(i));
+//                    ((TextView) viewHolder.itemView.findViewById(R.id.dendrite1_text)).setText(Integer.toString(i));
+                    ((TextView) seekBar.getTag()).setText(Integer.toString(i));
 //                    ((TextView) ((View) seekBar.getParent()).findViewById(R.id.dendrite1_text)).setText(Integer.toString(i));
                 }
 

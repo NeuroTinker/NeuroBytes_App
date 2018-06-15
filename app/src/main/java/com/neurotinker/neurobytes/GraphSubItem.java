@@ -12,6 +12,7 @@ import com.mikepenz.fastadapter.expandable.items.AbstractExpandableItem;
 import com.mikepenz.fastadapter.items.AbstractItem;
 import com.mikepenz.materialize.holder.StringHolder;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
@@ -25,22 +26,18 @@ import butterknife.ButterKnife;
 
 public class GraphSubItem<Parent extends ISubItem> extends AbstractExpandableItem<GraphItem, GraphSubItem.ViewHolder, GraphSubItem> {
 
-    public Integer dendrite1Weighting;
-    public Integer dendrite2Weighting;
-    public Integer dendrite3Weighting;
-    public Integer dendrite4Weighting;
+    public ArrayList<Integer> dendriteWeightings;
     public Integer identifier;
     public int channel;
+    public int numDendrites;
 
     public enum UpdateType {
         UI
     }
 
     public GraphSubItem(Integer identifier) {
-        this.dendrite1Weighting = 10000;
-        this.dendrite2Weighting = 6000;
-        this.dendrite3Weighting = 6000;
-        this.dendrite4Weighting = 10000;
+        this.numDendrites = 4;
+        this.dendriteWeightings = new ArrayList<>();
     }
 
     @Override
@@ -85,6 +82,9 @@ public class GraphSubItem<Parent extends ISubItem> extends AbstractExpandableIte
         @BindView(R.id.dendrite4_text)
         TextView dendrite4Text;
 
+        ArrayList<SeekBar> dendSeekBars;
+        ArrayList<TextView> dendTextViews;
+        ArrayList<StringHolder> dendStringHolder;
         StringHolder dendrite1Holder;
         StringHolder dendrite2Holder;
 
@@ -96,19 +96,25 @@ public class GraphSubItem<Parent extends ISubItem> extends AbstractExpandableIte
         @Override
         public void bindView(GraphSubItem item, List<Object> payloads) {
             Log.d("bind w/ payload", payloads.toString());
+
             if (payloads.isEmpty()) {
-                List<SeekBar> seekBars = Arrays.asList(dendrite1Seek, dendrite2Seek, dendrite3Seek, dendrite4Seek);
-                List<TextView> textViews = Arrays.asList(dendrite1Text, dendrite2Text, dendrite3Text, dendrite4Text);
 
-                dendrite1Holder = new StringHolder(Integer.toString(item.dendrite1Weighting));
-                dendrite1Holder.applyTo(dendrite1Text);
+                dendSeekBars = new ArrayList<>(Arrays.asList(dendrite1Seek, dendrite2Seek, dendrite3Seek, dendrite4Seek));
+                dendTextViews = new ArrayList<>(Arrays.asList(dendrite1Text, dendrite2Text, dendrite3Text, dendrite4Text));
+                dendStringHolder = new ArrayList<>();
 
-                dendrite2Holder = new StringHolder(Integer.toString(item.dendrite2Weighting));
-                dendrite2Holder.applyTo(dendrite2Text);
+                for (int i = 0; i < item.numDendrites; i++) {
+                    item.dendriteWeightings.add(dendSeekBars.get(i).getProgress());
+                    dendStringHolder.add(new StringHolder(item.dendriteWeightings.get(i).toString()));
+                    dendStringHolder.get(i).applyTo(dendTextViews.get(i));
+                    dendSeekBars.get(i).setTag(dendTextViews.get(i));
+                }
+
             } else if (payloads.contains(GraphSubItem.UpdateType.UI)) {
-                Log.d("subitem binded", payloads.toString());
-                dendrite1Holder.setText(item.dendrite1Weighting.toString());
-                dendrite2Holder.setText(item.dendrite2Weighting.toString());
+                for (int i = 0; i < item.numDendrites; i++) {
+//                    Log.d("dend", item.dendriteWeightings.get(i).toString());
+                    dendStringHolder.get(i).setText(item.dendriteWeightings.get(i).toString());
+                }
             }
         }
 
