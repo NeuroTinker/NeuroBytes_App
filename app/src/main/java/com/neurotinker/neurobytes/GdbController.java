@@ -38,6 +38,7 @@ public class GdbController {
     private final String TAG = GdbController.class.getSimpleName();
     private final String[] gdbFingerprintSequence = {"m08003e00,c"};
     private final String[] gdbDetectSequence = {"qRcmd,73", "vAttach;1"};
+//    private final String[] gdbInitSequence = {"!", "qRcmd,747020656e", "qRcmd,v"};
     private final String[] gdbInitSequence = {"!", "qRcmd,747020656e", "qRcmd,v"};
     private Queue<byte[]> messageQueue = new LinkedList<>();
     private byte[] prevMessage;

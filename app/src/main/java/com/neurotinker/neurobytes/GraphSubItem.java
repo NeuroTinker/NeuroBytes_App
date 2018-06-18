@@ -99,6 +99,8 @@ public class GraphSubItem<Parent extends ISubItem> extends AbstractExpandableIte
 
             if (payloads.isEmpty()) {
 
+                // initial binding
+
                 dendSeekBars = new ArrayList<>(Arrays.asList(dendrite1Seek, dendrite2Seek, dendrite3Seek, dendrite4Seek));
                 dendTextViews = new ArrayList<>(Arrays.asList(dendrite1Text, dendrite2Text, dendrite3Text, dendrite4Text));
                 dendStringHolder = new ArrayList<>();
@@ -113,7 +115,8 @@ public class GraphSubItem<Parent extends ISubItem> extends AbstractExpandableIte
             } else if (payloads.contains(GraphSubItem.UpdateType.UI)) {
                 for (int i = 0; i < item.numDendrites; i++) {
 //                    Log.d("dend", item.dendriteWeightings.get(i).toString());
-                    dendStringHolder.get(i).setText(item.dendriteWeightings.get(i).toString());
+//                    dendStringHolder.get(i).setText(item.dendriteWeightings.get(i).toString());
+                    dendTextViews.get(i).setText(item.dendriteWeightings.get(i).toString());
                 }
             }
         }

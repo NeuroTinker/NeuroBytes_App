@@ -43,11 +43,16 @@ public class NidService extends Service {
     public static final String ACTION_CHANNEL_ACQUIRED = "com.neurotinker.neurobytes.ACTION_CHANNEL_ACQUIRED";
     public static final String ACTION_REMOVE_CHANNEL = "com.neurotinker.neurobytes.ACTION_REMOVE_CHANNEL";
     public static final String ACTION_SEND_PAUSE = "com.neurotinker.neurobytes.ACTION_SEND_PAUSE";
+    public static final String ACTION_SEND_DATA = "com.neurotinker.neurobytes.ACTION_SEND_DATA";
     public static final String ACTION_PAUSE_COMMS = "com.neurotinker.neurobytes.ACTION_PAUSE_COMMS";
     public static final String ACTION_RESUME_COMMS = "com.neurotinker.neurobytes.ACTION_RESUME_COMMS";
 
     public static final String BUNDLE_DATA_POTENTIAL = "com.neurotinker.neurobytes.BUNDLE_DATA_POTENTIAL";
     public static final String BUNDLE_DATA_TYPE = "com.neurotinker.neurobytes.BUNDLE_DATA_TYPE";
+    public static final String BUNDLE_DATA_WEIGHTING = "com.neurotinker.neurobytes.BUNDLE_DATA_WEIGHTING";
+    public static final String BUNDLE_DATA_VALUE = "com.neurotinker.neurobytes.BUNDLE_DATA_VALUE";
+    public static final String BUNDLE_DATA_PARAM = "com.neurotinker.neurobytes.BUNDLE_DATA_PARAM";
+    public static final String BUNDLE_CHANNEL_TYPE = "com.neurotinker.neurobytes.BUNDLE_CHANNEL_TYPE";
     public static final String BUNDLE_CHANNEL = "com.neurotinker.neurobytes.BUNDLE_CHANNEL";
 
     /**
@@ -243,6 +248,10 @@ public class NidService extends Service {
     private final BroadcastReceiver commandReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
+            int ch = intent.getIntExtra(BUNDLE_CHANNEL, 0);
+            int type = intent.getIntExtra(BUNDLE_CHANNEL_TYPE, 0);
+            int param = intent.getIntExtra(BUNDLE_DATA_PARAM, 0);
+            int val = intent.getIntExtra(BUNDLE_DATA_VALUE, 0);
             switch (intent.getAction()) {
                 case ACTION_SEND_BLINK:
                     Log.d(TAG, "sending blink");
@@ -256,10 +265,17 @@ public class NidService extends Service {
                      * Finish by sending ID_DONE message to network so no more boards ID
                      */
                     Log.d(TAG, "sending identify");
-                    int ch = intent.getIntExtra(BUNDLE_CHANNEL, 0);
                     identifyRunnable = new SendMessageRunnable(makeIdentifyMessage(ch), 500);
                     timerHandler.postDelayed(identifyRunnable, 100);
                     isIdentifying = true;
+                    break;
+                case ACTION_SEND_DATA:
+                    Log.d(TAG, "sending data");
+                    sendMessage(makeDataMessage(
+                            ch,
+                            param,
+                            val
+                    ));
                     break;
             }
         }

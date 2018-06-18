@@ -57,10 +57,13 @@ import static com.neurotinker.neurobytes.NidService.ACTION_NID_DISCONNECTED;
 import static com.neurotinker.neurobytes.NidService.ACTION_NID_READY;
 import static com.neurotinker.neurobytes.NidService.ACTION_RECEIVED_DATA;
 import static com.neurotinker.neurobytes.NidService.ACTION_REMOVE_CHANNEL;
+import static com.neurotinker.neurobytes.NidService.ACTION_SEND_DATA;
 import static com.neurotinker.neurobytes.NidService.BUNDLE_CHANNEL;
+import static com.neurotinker.neurobytes.NidService.BUNDLE_DATA_PARAM;
 import static com.neurotinker.neurobytes.NidService.BUNDLE_DATA_POTENTIAL;
 import static com.neurotinker.neurobytes.NidService.BUNDLE_DATA_TYPE;
 import static com.neurotinker.neurobytes.NidService.ACTION_ADD_CHANNEL;
+import static com.neurotinker.neurobytes.NidService.BUNDLE_DATA_VALUE;
 
 
 /**
@@ -148,10 +151,10 @@ public class ChannelDisplayFragment extends Fragment {
         fastAdapter.withEventHook(new DendriteChangeEventHook(R.id.dendrite2_seekbar, 1));
         fastAdapter.withEventHook(new DendriteChangeEventHook(R.id.dendrite3_seekbar, 2));
         fastAdapter.withEventHook(new DendriteChangeEventHook(R.id.dendrite4_seekbar, 3));
-        fastAdapter.withEventHook(new SeekBarEventHook(R.id.dendrite1_seekbar, 0));
-        fastAdapter.withEventHook(new SeekBarEventHook(R.id.dendrite2_seekbar, 1));
-        fastAdapter.withEventHook(new SeekBarEventHook(R.id.dendrite3_seekbar, 2));
-        fastAdapter.withEventHook(new SeekBarEventHook(R.id.dendrite4_seekbar, 3));
+//        fastAdapter.withEventHook(new SeekBarEventHook(R.id.dendrite1_seekbar, 0));
+//        fastAdapter.withEventHook(new SeekBarEventHook(R.id.dendrite2_seekbar, 1));
+//        fastAdapter.withEventHook(new SeekBarEventHook(R.id.dendrite3_seekbar, 2));
+//        fastAdapter.withEventHook(new SeekBarEventHook(R.id.dendrite4_seekbar, 3));
 
         recyclerView = (RecyclerView) layout.findViewById(R.id.recview);
         recyclerView.setLayoutManager(new LinearLayoutManager(_context));
@@ -240,8 +243,9 @@ public class ChannelDisplayFragment extends Fragment {
              */
             for (int i = 0; i < fastAdapter.getItemCount(); i++) {
                 GraphItem item = (GraphItem) fastAdapter.getItem(i);
-                if (item.graphController.count == 0) {
-//                    removeItem(item);
+                if (item.graphController.count == 0 && item.state != GraphItem.GraphState.NEW) {
+                    // channel timed out
+                    removeItem(item);
                 } else {
                     fastAdapter.notifyAdapterItemChanged(i, GraphItem.UpdateType.CHINFO);
                 }
@@ -473,12 +477,20 @@ public class ChannelDisplayFragment extends Fragment {
             Log.d(TAG, "touch");
             SeekBar seekBar = (SeekBar) v;
             item.dendriteWeightings.set(dendNum, seekBar.getProgress());
-//            fastAdapter.notifyItemChanged(position, GraphSubItem.UpdateType.UI);
+            fastAdapter.notifyItemChanged(position, GraphSubItem.UpdateType.UI);
+            Intent intent = new Intent(ACTION_SEND_DATA);
+            intent.putExtra(BUNDLE_CHANNEL, item.channel);
+            intent.putExtra(BUNDLE_DATA_PARAM, dendNum);
+            intent.putExtra(BUNDLE_DATA_VALUE, seekBar.getProgress());
             return false;
         }
     }
 
     private class SeekBarEventHook extends CustomEventHook<GraphSubItem> {
+        /**
+         * Updates the textView next to the seekBar with the new dendrite weighting.
+         * DendriteChangeEventHook updates the item's internal dendrite weightings.
+         */
         int seekId;
         int dendNum;
         private Timer sendMessageTimer = new Timer();
@@ -518,7 +530,7 @@ public class ChannelDisplayFragment extends Fragment {
                 @Override
                 public void onProgressChanged(SeekBar seekBar, int i, boolean b) {
 //                    ((TextView) viewHolder.itemView.findViewById(R.id.dendrite1_text)).setText(Integer.toString(i));
-                    ((TextView) seekBar.getTag()).setText(Integer.toString(i));
+//                    ((TextView) seekBar.getTag()).setText(Integer.toString(i));
 //                    ((TextView) ((View) seekBar.getParent()).findViewById(R.id.dendrite1_text)).setText(Integer.toString(i));
                 }
 

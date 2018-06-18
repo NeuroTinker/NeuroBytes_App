@@ -272,7 +272,7 @@ public class NidService extends Service {
 //                    isIdentifying = true;
                     SendDataRunnable dataRunnable = new SendDataRunnable(ch);
                     channelDataRunners.put(ch, dataRunnable);
-                    timerHandler.postDelayed(dataRunnable, 1000);
+                    timerHandler.postDelayed(dataRunnable, 100);
                     break;
             }
         }
