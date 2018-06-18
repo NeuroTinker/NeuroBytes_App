@@ -31,6 +31,7 @@ public class NidService extends Service {
 
     private static final String TAG = NidService.class.getSimpleName();
 
+
     public static final String ACTION_RECEIVED_DATA = "com.neurotinker.neurobytes.ACTION_RECEIVED_DATA";
     public static final String ACTION_NID_DISCONNECTED = "com.neurotinker.neurobytes.ACTION_NID_DISCONNECTED";
     public static final String ACTION_NID_CONNECTED = "com.neurotinker.neurobytes.ACTION_NID_CONNECTED";
@@ -40,11 +41,16 @@ public class NidService extends Service {
     public static final String ACTION_CHANNEL_ACQUIRED = "com.neurotinker.neurobytes.ACTION_CHANNEL_ACQUIRED";
     public static final String ACTION_REMOVE_CHANNEL = "com.neurotinker.neurobytes.ACTION_REMOVE_CHANNEL";
     public static final String ACTION_SEND_PAUSE = "com.neurotinker.neurobytes.ACTION_SEND_PAUSE";
+    public static final String ACTION_SEND_DATA = "com.neurotinker.neurobytes.ACTION_SEND_DATA";
     public static final String ACTION_PAUSE_COMMS = "com.neurotinker.neurobytes.ACTION_PAUSE_COMMS";
     public static final String ACTION_RESUME_COMMS = "com.neurotinker.neurobytes.ACTION_RESUME_COMMS";
 
     public static final String BUNDLE_DATA_POTENTIAL = "com.neurotinker.neurobytes.BUNDLE_DATA_POTENTIAL";
     public static final String BUNDLE_DATA_TYPE = "com.neurotinker.neurobytes.BUNDLE_DATA_TYPE";
+    public static final String BUNDLE_DATA_WEIGHTING = "com.neurotinker.neurobytes.BUNDLE_DATA_WEIGHTING";
+    public static final String BUNDLE_DATA_VALUE = "com.neurotinker.neurobytes.BUNDLE_DATA_VALUE";
+    public static final String BUNDLE_DATA_PARAM = "com.neurotinker.neurobytes.BUNDLE_DATA_PARAM";
+    public static final String BUNDLE_CHANNEL_TYPE = "com.neurotinker.neurobytes.BUNDLE_CHANNEL_TYPE";
     public static final String BUNDLE_CHANNEL = "com.neurotinker.neurobytes.BUNDLE_CHANNEL";
 
     /**
