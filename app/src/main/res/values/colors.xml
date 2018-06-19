@@ -6,6 +6,7 @@
     <color name="colorAccent2">#ef476f</color>
     <color name="colorAccent3">#ffd166</color>
     <color name="colorBackgroundLight">#ffffff</color>
+    <color name="colorOff">#999999</color>
 
     <color name="colorGraph1">#000080</color>
     <color name="colorGraph2">#800000</color>

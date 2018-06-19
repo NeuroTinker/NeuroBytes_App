@@ -16,17 +16,18 @@
     <string name="sub_item_channel_title">Channel Name</string>
     <string name="sub_item_default_channel">NeuroBytes Board</string>
     <string name="sub_item_freeze_toggle">Freeze Board</string>
-    <string name="sub_item_speed_title">Speed</string>
-    <string name="sub_item_speed_default">50</string>
-    <string name="sub_item_configure_touch_sensory_neuron">Configure Touch Sensory Neuron</string>
-    <string name="sub_item_configure_pressure_sensory_neuron">Configure Pressure Sensory Neuron</string>
+    <string name="sub_item_pause_button_title">Freeze Board</string>
+    <string name="sub_item_axon_delay_title">Axon Delay</string>
+    <string name="sub_item_axon_delay_default">50</string>
+    <string name="sub_item_decay_rate_title">Decay Rate</string>
+    <string name="sub_item_decay_rate_default">200</string>
+    <string name="sub_item_touch_sensory_neuron_configure">Configure Touch Sensory Neuron</string>
+    <string name="sub_item_pressure_sensory_neuron_configure">Configure Pressure Sensory Neuron</string>
     <string name="sub_item_adaptation_title">Adaptation</string>
-    <string name="sub_item_adaptation_touch_default">0</string>
-    <string name="sub_item_adaptation_pressure_default">50</string>
-
-    <!-- Strings related to graph items -->
-
-    <string name="graph_item_more">Configure NeuroBytes Board</string>
+    <string name="sub_item_touch_sensory_neuron_adaptation_default">0</string>
+    <string name="sub_item_pressure_sensory_neuron_adaptation_default">50</string>
+    <string name="sub_item_learn_button_title">Learning Mode</string>
+    <string name="sub_item_blink_button_title">Flash LED</string>
 
     <!-- Strings related to Settings -->
 
