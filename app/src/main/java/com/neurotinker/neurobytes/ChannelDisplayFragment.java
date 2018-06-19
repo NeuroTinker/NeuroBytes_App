@@ -104,6 +104,7 @@ public class ChannelDisplayFragment extends Fragment {
     private static boolean nidRunning;
     NidService nidService;
     private static boolean nidBound = false;
+    private static boolean sendDendWeightingFlag = false;
 
     public ChannelDisplayFragment() {
         // Required empty public constructor
@@ -228,6 +229,7 @@ public class ChannelDisplayFragment extends Fragment {
                 } else if (iItem instanceof GraphSubItem) {
                     Log.d(TAG, "updating subitem");
 //                    fastAdapter.notifyAdapterItemChanged(i, GraphSubItem.UpdateType.UI);
+                    sendDendWeightingFlag = true;
                     fastAdapter.notifyItemChanged(i, GraphSubItem.UpdateType.UI);
                 }
             }
@@ -482,6 +484,10 @@ public class ChannelDisplayFragment extends Fragment {
             intent.putExtra(BUNDLE_CHANNEL, item.channel);
             intent.putExtra(BUNDLE_DATA_PARAM, dendNum);
             intent.putExtra(BUNDLE_DATA_VALUE, seekBar.getProgress());
+            if (sendDendWeightingFlag) {
+                _context.sendBroadcast(intent);
+                sendDendWeightingFlag = false;
+            }
             return false;
         }
     }
