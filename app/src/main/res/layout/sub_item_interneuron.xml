@@ -336,7 +336,7 @@
                 android:textSize="12sp"
                 app:layout_constraintLeft_toLeftOf="@id/button_blink"
                 app:layout_constraintRight_toRightOf="@id/button_blink"
-                app:layout_constraintTop_toBottomOf="button_blink"
+                app:layout_constraintTop_toBottomOf="@id/button_blink"
                 app:layout_constraintBottom_toBottomOf="parent"/>
 
             <!-- toggle via @drawable/ic_learn_on (push-on/push-off) -->
