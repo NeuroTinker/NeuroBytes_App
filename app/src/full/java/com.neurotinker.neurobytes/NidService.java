@@ -210,6 +210,7 @@ public class NidService extends Service {
                     } else {
                         Log.d(TAG, String.format("Received invalid message %s",
                                 Integer.toBinaryString(nbMsg.header)));
+                        UsbService.correctFlag = true;
                     }
                     break;
             }
@@ -270,7 +271,7 @@ public class NidService extends Service {
                     isIdentifying = true;
                     break;
                 case ACTION_SEND_DATA:
-                    Log.d(TAG, "sending data");
+                    Log.d(TAG, String.format("sending data"));
                     sendMessage(makeDataMessage(
                             ch,
                             param,
@@ -328,6 +329,7 @@ public class NidService extends Service {
         filter.addAction(NidService.ACTION_SEND_BLINK);
         filter.addAction(NidService.ACTION_NID_DISCONNECTED);
         filter.addAction(NidService.ACTION_NID_CONNECTED);
+        filter.addAction(NidService.ACTION_SEND_DATA);
 
         filter.addAction(UsbService.ACTION_USB_PERMISSION_GRANTED);
         filter.addAction(UsbService.ACTION_NO_USB);

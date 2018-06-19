@@ -40,6 +40,7 @@ public class UsbService extends Service {
     private static final String ACTION_USB_PERMISSION = "com.android.example.USB_PERMISSION";
     private static final int BAUD_RATE = 38400; // BaudRate. Change this value if you need
     public static boolean SERVICE_CONNECTED = false;
+    public static boolean correctFlag = false;
 
     private IBinder binder = new UsbBinder();
 
@@ -81,7 +82,8 @@ public class UsbService extends Service {
                 short[] packet = {headers, data};
                 if (mHandler != null)
                     mHandler.obtainMessage(MESSAGE_FROM_SERIAL_PORT, packet).sendToTarget();
-                if (channel > 8 || channel == 0) {
+                if (channel > 8 || channel == 0 || correctFlag == true) {
+                    correctFlag = false;
                     offset += 1;
                     //offset = 0;
                     Log.d("Correcting USB stream", Integer.toString(offset));
