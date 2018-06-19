@@ -210,6 +210,7 @@ public class NidService extends Service {
                     } else {
                         Log.d(TAG, String.format("Received invalid message %s",
                                 Integer.toBinaryString(nbMsg.header)));
+                        UsbService.correctFlag = true;
                     }
                     break;
             }
