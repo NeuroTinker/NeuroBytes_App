@@ -42,7 +42,7 @@ public class GraphSubItem<Parent extends ISubItem> extends AbstractExpandableIte
 
     @Override
     public int getType() {
-        return R.id.subitem_id;
+        return R.id.subitem_controls_id;
     }
 
     @Override
