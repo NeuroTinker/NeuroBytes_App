@@ -18,9 +18,11 @@
     <string name="sub_item_freeze_toggle">Freeze Board</string>
     <string name="sub_item_speed_title">Speed</string>
     <string name="sub_item_speed_default">50</string>
-    <string name="sub_item_config">Configure Touch Sensory Neuron</string>
+    <string name="sub_item_configure_touch_sensory_neuron">Configure Touch Sensory Neuron</string>
+    <string name="sub_item_configure_pressure_sensory_neuron">Configure Pressure Sensory Neuron</string>
     <string name="sub_item_adaptation_title">Adaptation</string>
-    <string name="sub_item_adaptation_default">0</string>
+    <string name="sub_item_adaptation_touch_default">0</string>
+    <string name="sub_item_adaptation_pressure_default">50</string>
 
     <!-- Strings related to graph items -->
 

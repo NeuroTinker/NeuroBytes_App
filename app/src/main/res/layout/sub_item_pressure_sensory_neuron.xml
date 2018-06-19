@@ -23,7 +23,7 @@
             android:layout_height="wrap_content"
             android:ems="5"
             android:gravity="center"
-            android:text="@string/sub_item_configure_touch_sensory_neuron"
+            android:text="@string/sub_item_configure_pressure_sensory_neuron"
             android:textSize="16sp"
             android:textColor="@color/colorBackgroundLight"
             android:background="@color/colorAccent2"
@@ -54,11 +54,11 @@
         app:layout_constraintTop_toTopOf="parent">
 
         <ImageView
-            android:id="@+id/boardgraphic_touch_sensory_neuron"
+            android:id="@+id/boardgraphic_pressure_sensory_neuron"
             android:layout_width="200dp"
             android:layout_height="150dp"
             app:layout_constraintRight_toRightOf="parent"
-            app:srcCompat="@drawable/boards_touch_sensory_neuron_subitem"
+            app:srcCompat="@drawable/boards_pressure_sensory_neuron_subitem"
             tools:ignore="ContentDescription" />
 
         <TextView
@@ -120,7 +120,7 @@
             android:layout_marginEnd="0dp"
             android:layout_marginStart="10dp"
             android:ems="1"
-            android:text="@string/sub_item_adaptation_touch_default"
+            android:text="@string/sub_item_adaptation_pressure_default"
             android:textColor="@color/colorAccent2"
             android:textSize="20sp"
             app:layout_constraintBottom_toBottomOf="@id/adaptation_seekbar_title"
@@ -132,7 +132,7 @@
             android:layout_width="180dp"
             android:layout_height="wrap_content"
             android:max="100"
-            android:progress="0"
+            android:progress="50"
             app:layout_constraintBottom_toBottomOf="@id/adaptation_seekbar_title"
             app:layout_constraintLeft_toRightOf="@id/adaptation_current"
             app:layout_constraintTop_toTopOf="@id/adaptation_seekbar_title" />
