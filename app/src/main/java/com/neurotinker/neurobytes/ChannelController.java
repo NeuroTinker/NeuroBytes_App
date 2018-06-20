@@ -30,6 +30,12 @@ public class ChannelController {
         this.state = State.ADD;
     }
 
+    public void disable() {
+        this.state = State.ADD;
+        view.findViewById(R.id.channel_id).setVisibility(View.GONE);
+        view.findViewById(R.id.newcard_id).setVisibility(View.VISIBLE);
+    }
+
     public void setAcquired() {
         view.findViewById(R.id.channel_id).setVisibility(View.VISIBLE);
         this.state = State.ACQUIRED;

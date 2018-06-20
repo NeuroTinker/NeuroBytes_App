@@ -243,11 +243,10 @@ public class ChannelDisplayFragment extends Fragment {
             /**
              * Remove inactive items
              */
+            // not on UI thread
             for (int i = 0; i < fastAdapter.getItemCount(); i++) {
                 GraphItem item = (GraphItem) fastAdapter.getItem(i);
                 if (item.graphController.count == 0 && item.state != GraphItem.GraphState.NEW) {
-                    // channel timed out
-                    removeItem(item);
                 } else {
                     fastAdapter.notifyAdapterItemChanged(i, GraphItem.UpdateType.CHINFO);
                 }
