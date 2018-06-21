@@ -24,7 +24,7 @@ import butterknife.ButterKnife;
  * Created by jarod on 2/9/18.
  */
 
-public class GraphSubItem<Parent extends ISubItem> extends AbstractExpandableItem<GraphItem, GraphSubItem.ViewHolder, GraphSubItem> {
+public class GraphSubItem<Parent extends ISubItem> extends AbstractExpandableItem<Parent, GraphSubItem.ViewHolder, GraphSubItem> {
 
     public ArrayList<Integer> dendriteWeightings;
     public Integer identifier;
@@ -35,6 +35,9 @@ public class GraphSubItem<Parent extends ISubItem> extends AbstractExpandableIte
         UI
     }
 
+    public GraphSubItem() {
+
+    }
     public GraphSubItem(Integer identifier) {
         this.numDendrites = 4;
         this.dendriteWeightings = new ArrayList<>();

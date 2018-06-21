@@ -256,7 +256,7 @@ public class ChannelDisplayFragment extends Fragment {
     };
 
     private GraphItem addItem() {
-        GraphItem newItem = new GraphItem(
+        AddItem newItem = new AddItem(
                 nextCh.peek() != null ? nextCh.remove() : ++chCnt
         );
         // use the channel number for id
@@ -340,6 +340,10 @@ public class ChannelDisplayFragment extends Fragment {
             }
         }
     };
+
+    private void onChannelAcquired(int ch) {
+        channels.put(ch, )
+    }
 
     private void setFilters() {
         IntentFilter filter = new IntentFilter();
@@ -551,6 +555,8 @@ public class ChannelDisplayFragment extends Fragment {
             });
         }
     }
+    private class InterneuronSubItem extends GraphSubItem<InterneuronItem> {};
+    private class InterneuronItem extends GraphItem<InterneuronSubItem> {}};
 
     /**
      * This interface must be implemented by activities that contain this
