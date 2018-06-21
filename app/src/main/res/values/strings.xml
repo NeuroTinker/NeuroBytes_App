@@ -27,7 +27,9 @@
     <string name="sub_item_touch_sensory_neuron_adaptation_default">0</string>
     <string name="sub_item_pressure_sensory_neuron_adaptation_default">50</string>
     <string name="sub_item_learn_button_title">Learning Mode</string>
-    <string name="sub_item_blink_button_title">Flash LED</string>
+    <string name="sub_item_blink_button_title">Blink LED</string>
+    <string name="sub_item_reset_button_interneuron_title">Reset Interneuron</string>
+    <string name="sub_item_channel_name_hint">Channel Name</string>
 
     <!-- Strings related to Settings -->
 
