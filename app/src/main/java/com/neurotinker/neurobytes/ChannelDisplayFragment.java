@@ -1,5 +1,6 @@
 package com.neurotinker.neurobytes;
 
+import android.app.Application;
 import android.content.BroadcastReceiver;
 import android.content.ClipData;
 import android.content.ComponentName;
@@ -106,6 +107,8 @@ public class ChannelDisplayFragment extends Fragment {
     private static boolean nidBound = false;
     private static boolean sendDendWeightingFlag = false;
 
+    private GraphView testGraph; // debug
+
     public ChannelDisplayFragment() {
         // Required empty public constructor
     }
@@ -133,6 +136,7 @@ public class ChannelDisplayFragment extends Fragment {
 
         ConstraintLayout layout = (ConstraintLayout) inflater.inflate(
                 R.layout.fragment_channel_display, container, false);
+
 
         /**
          * Initialize the RecyclerView
@@ -301,8 +305,12 @@ public class ChannelDisplayFragment extends Fragment {
 
                     if (channels.containsKey(ch)) {
                         if (intent.hasExtra(BUNDLE_DATA_POTENTIAL)) {
+                            if (testGraph == null) {
+                                testGraph = ((View) getView().getParent()).findViewById(R.id.testGraph);
+                            }
                             int data = intent.getIntExtra(BUNDLE_DATA_POTENTIAL, 0);
-                            channels.get(ch).graphController.update(data);
+//                            channels.get(ch).graphController.update(data);
+                            testGraph.update(data);
                         } else if (intent.hasExtra(BUNDLE_DATA_TYPE)) {
                             /**
                              * Initialize newly acquired channel:
@@ -379,6 +387,13 @@ public class ChannelDisplayFragment extends Fragment {
 
         @Override
         public void itemTouchDropped(int oldPosition, int newPosition) {
+
+        }
+    }
+
+    private class TestEventHook extends ClickEventHook<GraphItem> {
+        @Override
+        public void onClick(View v, int position, FastAdapter<GraphItem> fastAdapter, GraphItem item) {
 
         }
     }
