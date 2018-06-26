@@ -2,10 +2,12 @@ package com.neurotinker.neurobytes;
 
 import android.content.Context;
 import android.content.res.TypedArray;
+import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Path;
+import android.graphics.PorterDuff;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.MotionEvent;
@@ -40,6 +42,8 @@ public class GraphView extends View {
     private float startY = 0;
     private int width;
     private int height;
+    private Bitmap buffBitmap;
+    private Canvas buffCanvas;
 
     private void init() {
         graphPaint.setStyle(Paint.Style.STROKE);
@@ -66,6 +70,7 @@ public class GraphView extends View {
     }
 
     public void update(int data) {
+        buffCanvas.drawColor(Color.WHITE);
         // scroll the whole graph
         for (Path path : pathQueue) {
             path.offset(-1 * xUnitPixels, 0);
@@ -121,6 +126,13 @@ public class GraphView extends View {
 
         Log.d(TAG, String.format("xPixels %f, yPixels %f, yZero %d", xUnitPixels, yUnitPixels, yZeroPixel));
 
+        // update size for buffered bitmap
+        buffBitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
+        if (buffCanvas == null) {
+            buffCanvas = new Canvas();
+        }
+        buffCanvas.setBitmap(buffBitmap);
+
         // redraw on size change
         redraw();
     }
@@ -129,14 +141,13 @@ public class GraphView extends View {
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
 
-//        canvas.drawColor(Color.BLUE);
-
         if (updated) {
+            // clear the buffered canvas
             for (Path path : pathQueue) {
-                canvas.drawPath(path, graphPaint);
+                buffCanvas.drawPath(path, graphPaint);
             }
+            canvas.drawBitmap(buffBitmap, 0, 0, graphPaint);
             updated = false;
-//            invalidate();
         }
     }
 
