@@ -76,8 +76,8 @@ public class AddGraphItem extends AbstractItem<AddGraphItem, AddGraphItem.ViewHo
         @BindView(R.id.name)
         TextView name;
 
-        @BindView(R.id.chart)
-        LineChart chart;
+//        @BindView(R.id.chart)
+//        LineChart chart;
 
         @BindView(R.id.loading_view)
         LoadingView loadingView;
@@ -95,8 +95,8 @@ public class AddGraphItem extends AbstractItem<AddGraphItem, AddGraphItem.ViewHo
             name.setText(item.name);
 
             // initialize chart
-            chart.setDrawGridBackground(false);
-            item.graphController.PotentialGraph(chart);
+//            chart.setDrawGridBackground(false);
+//            item.graphController.PotentialGraph(chart);
 
             // start loading animation
             loadingView.addAnimation(Color.BLUE, R.drawable.photoreceptor_square, LoadingView.FROM_BOTTOM);

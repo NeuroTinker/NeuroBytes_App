@@ -39,7 +39,7 @@ public class GraphItem extends AbstractExpandableItem<GraphItem, GraphItem.ViewH
     public String boardType;
     public double firingRate;
     public int channel;
-    public GraphController graphController;
+//    public GraphController graphController;
     public ChannelController channelController;
     public FrameLayout channelLayout;
 
@@ -58,16 +58,17 @@ public class GraphItem extends AbstractExpandableItem<GraphItem, GraphItem.ViewH
     public GraphState state;
 
     public GraphItem(int ch) {
-        GraphController g = new GraphController();
-        GraphItem(ch, g);
+//        GraphController g = new GraphController();
+        ChannelController channelController = new ChannelController();
+        GraphItem(ch, channelController);
     }
 
-    public void GraphItem(int ch, GraphController g) {
+    public void GraphItem(int ch, ChannelController chCont) {
         this.channel = ch;
         this.name = "Channel " + ch;
         this.boardType = "New";
         this.firingRate = 0;
-        this.graphController = g;
+        this.channelController = chCont;
         this.state = GraphState.NEW;
     }
 
@@ -90,8 +91,10 @@ public class GraphItem extends AbstractExpandableItem<GraphItem, GraphItem.ViewH
         @BindView(R.id.name)
         TextView name;
 
-        @BindView(R.id.chart)
-        LineChart chart;
+//        @BindView(R.id.chart)
+//        LineChart chart;
+        @BindView(R.id.graphView)
+        GraphView graphView;
 
         @BindView(R.id.loading_view)
         LoadingView loadingView;
@@ -146,17 +149,20 @@ public class GraphItem extends AbstractExpandableItem<GraphItem, GraphItem.ViewH
                 state = GraphState.NEW;
 
                 // initialize channelController
-                item.channelController = new ChannelController(channelLayout);
+//                    item.channelController = new ChannelController();
+                    item.channelController.setLayout(channelLayout);
+                    item.channelController.setGraph(graphView);
+                item.channelController.resume();
 
                 // initialize chart
-                chart.setDrawGridBackground(false);
-                item.graphController.PotentialGraph(chart);
+//                chart.setDrawGridBackground(false);
+//                item.graphController.PotentialGraph(chart);
 
                 // initialize channel info panel stuff
                 (new StringHolder(item.name)).applyTo(channelName);
                 rateHolder = new StringHolder(
                         "Firing Rate: " +
-                                Double.toString(item.graphController.firingRate) + " APs/ Sec");
+                                Double.toString(item.channelController.firingRate) + " APs/ Sec");
                 rateHolder.applyTo(firingRate);
 
 
@@ -180,13 +186,14 @@ public class GraphItem extends AbstractExpandableItem<GraphItem, GraphItem.ViewH
                 Log.d("bind just", "chinfo");
                 Log.d("bind w/ expanded", Boolean.toString(item.isExpanded()));
                 firingRate.setText("Firing Rate: " +
-                        Double.toString(item.graphController.firingRate) + " APs/ Sec");
+                        Double.toString(item.channelController.firingRate) + " APs/ Sec");
                 name.setText(item.name);
             }
         }
 
         @Override
         public void unbindView(GraphItem item) {
+            item.channelController.pause();
             Log.d("unbind channel", Integer.toString(item.channel));
             newcard.setVisibility(View.VISIBLE);
             loading.setVisibility(View.GONE);

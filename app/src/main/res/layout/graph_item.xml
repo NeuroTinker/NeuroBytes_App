@@ -118,12 +118,19 @@
                         android:id="@+id/channel_info_id"
                         layout="@layout/channel_info" />
 
-                    <com.github.mikephil.charting.charts.LineChart
-                        android:id="@+id/chart"
+                    <!--<com.github.mikephil.charting.charts.LineChart-->
+                        <!--android:id="@+id/chart"-->
+                        <!--android:layout_width="fill_parent"-->
+                        <!--android:layout_height="200dp"-->
+                        <!--android:visibility="visible"-->
+                        <!--android:layout_gravity="top"/>-->
+
+                    <com.neurotinker.neurobytes.GraphView
+                        android:id="@+id/graphView"
                         android:layout_width="fill_parent"
-                        android:layout_height="200dp"
-                        android:visibility="visible"
-                        android:layout_gravity="top"/>
+                        app:numPoints="200"
+                        app:lineWeight="5"
+                        android:layout_height="150dp" />
 
                 </LinearLayout>
 

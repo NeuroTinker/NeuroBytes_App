@@ -15,6 +15,9 @@ import static android.view.View.VISIBLE;
 public class ChannelController {
     private static final String TAG = "Channel Controller";
     private FrameLayout view;
+    public Integer firingRate;
+    public Integer count;
+    private GraphView graphView;
 
     public enum State {
         ADD,
@@ -25,9 +28,30 @@ public class ChannelController {
 
     private State state;
 
-    public ChannelController(FrameLayout view) {
-        this.view = view;
+    public ChannelController() {
         this.state = State.ADD;
+        this.firingRate = 0;
+        this.count = 1;
+    }
+
+    public void setLayout(FrameLayout layout) {
+        this.view = layout;
+    }
+
+    public void setGraph(GraphView graphView) {
+        this.graphView = graphView;
+    }
+
+    public void update(int data) {
+        graphView.update(data);
+    }
+
+    public void resume() {
+        graphView.resume();
+    }
+
+    public void pause() {
+        graphView.pause();
     }
 
     public void disable() {

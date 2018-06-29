@@ -65,49 +65,50 @@ public class GraphView extends SurfaceView implements Runnable{
                 0, 0
         );
 
+        init();
+
         try {
             numPoints = arr.getInteger(R.styleable.GraphView_numPoints, 240);
+            graphPaint.setStrokeWidth(arr.getInteger(R.styleable.GraphView_lineWeight, 5));
+            graphPaint.setColor(arr.getInteger(R.styleable.GraphView_lineColor, Color.BLACK));
         } finally {
             arr.recycle();
         }
 
-        init();
     }
 
     public void update(int data) {
-        buffCanvas.drawColor(Color.WHITE);
-        // scroll the whole graph
-        for (Path path : pathQueue) {
-            path.offset(-1 * xUnitPixels, 0);
-        }
-
-        // add the new data point path
-        if (++dataTop > 1) {
-            Path path = new Path();
-//            int x1 = (int) ((numPoints - 1) * xUnitPixels);
-            float x1 = width - xUnitPixels;
-//            int x2 = (int) (numPoints * xUnitPixels);
-            float x2 = width;
-
-            float y1 = height - ((prevData - yMin) * yUnitPixels);
-            float y2 = height - ((data - yMin) * yUnitPixels);
-
-            Log.d(TAG, String.format("line from %f, %f to %f, %f", x1,y1,x2,y2));
-            path.moveTo(x1, y1);
-            path.lineTo(x2, y2);
-            pathQueue.add(path);
-            if (++dataTop > numPoints) {
-                dataQueue.remove();
-                dataTop -= 1;
+        if (!updated || running == false) {
+            buffCanvas.drawColor(Color.WHITE);
+            // scroll the whole graph
+            for (Path path : pathQueue) {
+                path.offset(-1 * xUnitPixels, 0);
             }
+
+            // add the new data point path
+            if (++dataTop > 1) {
+                Path path = new Path();
+//            int x1 = (int) ((numPoints - 1) * xUnitPixels);
+                float x1 = width - xUnitPixels;
+//            int x2 = (int) (numPoints * xUnitPixels);
+                float x2 = width;
+
+                float y1 = height - ((prevData - yMin) * yUnitPixels);
+                float y2 = height - ((data - yMin) * yUnitPixels);
+
+                path.moveTo(x1, y1);
+                path.lineTo(x2, y2);
+                pathQueue.add(path);
+                if (++dataTop > numPoints) {
+                    dataQueue.remove();
+                    dataTop -= 1;
+                }
+            }
+            dataQueue.add(data);
+            prevData = data;
+            updated = true;
+            invalidate();
         }
-        dataQueue.add(data);
-        prevData = data;
-        if (updated) {
-            Log.d(TAG, "graph updated before rendering previous update");
-        }
-        updated = true;
-        invalidate();
     }
 
     public void redraw() {
@@ -162,7 +163,6 @@ public class GraphView extends SurfaceView implements Runnable{
         Canvas canvas;
 
         while (running) {
-            Log.d(TAG, Boolean.toString(running));
             if (updated && getHolder().getSurface().isValid()) {
                 canvas = getHolder().lockCanvas();
                 // clear the buffered canvas

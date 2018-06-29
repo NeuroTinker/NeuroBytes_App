@@ -10,14 +10,7 @@
 
     <fragment class="com.neurotinker.neurobytes.ChannelDisplayFragment"
         android:id="@+id/channelfragment_id"
-        android:layout_width="match_parent" android:layout_height="200dp"
+        android:layout_width="match_parent" android:layout_height="match_parent"
         tools:layout="@layout/fragment_channel_display" />
-
-    <com.neurotinker.neurobytes.GraphView
-        android:id="@+id/testGraph"
-        android:layout_width="match_parent"
-        app:layout_constraintTop_toBottomOf="@id/channelfragment_id"
-        android:layout_height="200dp" />
-
 
 </android.support.constraint.ConstraintLayout>

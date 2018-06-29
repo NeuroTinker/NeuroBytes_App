@@ -206,7 +206,9 @@ public class ChannelDisplayFragment extends Fragment {
 
     @Override
     public void onDetach() {
-        testGraph.pause();
+        for (GraphItem item : channels.values()) {
+            item.channelController.pause();
+        }
         _context.unbindService(nidConnection);
         _context.unregisterReceiver(nidReceiver);
         super.onDetach();
@@ -225,13 +227,13 @@ public class ChannelDisplayFragment extends Fragment {
                     Log.d(TAG, "updating item");
                     GraphItem item = (GraphItem) iItem;
                     if (item.state != GraphItem.GraphState.NEW) {
-                        if (item.graphController.count == 0) {
+                        if (item.channelController.count == 0) {
 //                        removeItem(item);
                         } else {
 //                            fastAdapter.notifyAdapterItemChanged(i, GraphItem.UpdateType.CHINFO);
                             fastAdapter.notifyItemChanged(i, GraphItem.UpdateType.CHINFO);
                         }
-                        item.graphController.count = 0;
+                        item.channelController.count = 0;
                     }
                 } else if (iItem instanceof GraphSubItem) {
                     Log.d(TAG, "updating subitem");
@@ -253,11 +255,11 @@ public class ChannelDisplayFragment extends Fragment {
             // not on UI thread
             for (int i = 0; i < fastAdapter.getItemCount(); i++) {
                 GraphItem item = (GraphItem) fastAdapter.getItem(i);
-                if (item.graphController.count == 0 && item.state != GraphItem.GraphState.NEW) {
+                if (item.channelController.count == 0 && item.state != GraphItem.GraphState.NEW) {
                 } else {
                     fastAdapter.notifyAdapterItemChanged(i, GraphItem.UpdateType.CHINFO);
                 }
-                item.graphController.count = 0;
+                item.channelController.count = 0;
             }
         }
     };
@@ -308,13 +310,8 @@ public class ChannelDisplayFragment extends Fragment {
 
                     if (channels.containsKey(ch)) {
                         if (intent.hasExtra(BUNDLE_DATA_POTENTIAL)) {
-                            if (testGraph == null) {
-                                testGraph = ((View) getView().getParent()).findViewById(R.id.testGraph);
-                                testGraph.resume();
-                            }
                             int data = intent.getIntExtra(BUNDLE_DATA_POTENTIAL, 0);
-//                            channels.get(ch).graphController.update(data);
-                            testGraph.update(data);
+                            channels.get(ch).channelController.update(data);
                         } else if (intent.hasExtra(BUNDLE_DATA_TYPE)) {
                             /**
                              * Initialize newly acquired channel:
