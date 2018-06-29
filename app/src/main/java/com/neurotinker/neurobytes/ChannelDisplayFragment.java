@@ -195,6 +195,8 @@ public class ChannelDisplayFragment extends Fragment {
                     + " must implement OnFragmentInteractionListener");
         }
 
+        if (testGraph != null) testGraph.resume();
+
         // setup broadcast receivers
         Log.d(TAG, "trying to bind to NidService");
         Intent bindingIntent = new Intent(_context, NidService.class);
@@ -204,6 +206,7 @@ public class ChannelDisplayFragment extends Fragment {
 
     @Override
     public void onDetach() {
+        testGraph.pause();
         _context.unbindService(nidConnection);
         _context.unregisterReceiver(nidReceiver);
         super.onDetach();
@@ -307,6 +310,7 @@ public class ChannelDisplayFragment extends Fragment {
                         if (intent.hasExtra(BUNDLE_DATA_POTENTIAL)) {
                             if (testGraph == null) {
                                 testGraph = ((View) getView().getParent()).findViewById(R.id.testGraph);
+                                testGraph.resume();
                             }
                             int data = intent.getIntExtra(BUNDLE_DATA_POTENTIAL, 0);
 //                            channels.get(ch).graphController.update(data);

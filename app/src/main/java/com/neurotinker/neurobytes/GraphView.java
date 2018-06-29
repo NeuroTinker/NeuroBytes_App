@@ -11,6 +11,7 @@ import android.graphics.PorterDuff;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.MotionEvent;
+import android.view.SurfaceView;
 import android.view.View;
 
 import java.util.ArrayList;
@@ -19,10 +20,12 @@ import java.util.List;
 import java.util.PriorityQueue;
 import java.util.Queue;
 
-public class GraphView extends View {
+// TODO: Make this a surface view to get graph rendering off of the UI thread
+public class GraphView extends SurfaceView implements Runnable{
 
     private final String TAG = GraphView.class.getSimpleName();
 
+    private Thread thread;
     private int pathIndex = 0;
     private int prevData;
     private int numPoints;
@@ -44,10 +47,12 @@ public class GraphView extends View {
     private int height;
     private Bitmap buffBitmap;
     private Canvas buffCanvas;
+    private boolean running;
 
     private void init() {
         graphPaint.setStyle(Paint.Style.STROKE);
         graphPaint.setStrokeWidth(5F);
+        graphPaint.setAntiAlias(true);
     }
 
     public GraphView(Context context, AttributeSet attrs) {
@@ -137,19 +142,58 @@ public class GraphView extends View {
         redraw();
     }
 
-    @Override
-    protected void onDraw(Canvas canvas) {
-        super.onDraw(canvas);
+    public void pause() {
+        running = false;
+        try{
+            thread.join();
+        } catch (InterruptedException e) {
 
-        if (updated) {
-            // clear the buffered canvas
-            for (Path path : pathQueue) {
-                buffCanvas.drawPath(path, graphPaint);
-            }
-            canvas.drawBitmap(buffBitmap, 0, 0, graphPaint);
-            updated = false;
         }
     }
+
+    public void resume() {
+        running = true;
+        thread = new Thread(this);
+        thread.start();
+    }
+
+    @Override
+    public void run() {
+        Canvas canvas;
+
+        while (running) {
+            Log.d(TAG, Boolean.toString(running));
+            if (updated && getHolder().getSurface().isValid()) {
+                canvas = getHolder().lockCanvas();
+                // clear the buffered canvas
+                for (Path path : pathQueue) {
+                    buffCanvas.drawPath(path, graphPaint);
+                }
+                canvas.drawBitmap(buffBitmap, 0, 0, graphPaint);
+//                canvas.drawColor(Color.WHITE);
+                getHolder().unlockCanvasAndPost(canvas);
+                buffCanvas.drawColor(Color.WHITE);
+                updated = false;
+            }
+        }
+    }
+//
+//    @Override
+//    protected void onDraw(Canvas canvas) {
+//        super.onDraw(canvas);
+//
+//        if (updated && getHolder().getSurface().isValid()) {
+//            canvas = getHolder().lockCanvas();
+//            // clear the buffered canvas
+//            for (Path path : pathQueue) {
+//                buffCanvas.drawPath(path, graphPaint);
+//            }
+//            canvas.drawBitmap(buffBitmap, 0, 0, graphPaint);
+//            getHolder().unlockCanvasAndPost(canvas);
+//            buffCanvas.drawColor(Color.WHITE);
+//            updated = false;
+//        }
+//    }
 
     @Override
     public boolean onTouchEvent(MotionEvent event) {

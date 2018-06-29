@@ -2,5 +2,8 @@
 <resources>
     <declare-styleable name="GraphView">
         <attr name="numPoints" format="integer"/>
+        <attr name="lineColor" format="integer"/>
+        <attr name="yMin" format="integer"/>
+        <attr name="ymax" format="integer"/>
     </declare-styleable>
 </resources>
