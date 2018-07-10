@@ -242,6 +242,7 @@ public class ChannelDisplayFragment extends Fragment {
                     fastAdapter.notifyItemChanged(i, GraphSubItem.UpdateType.UI);
                 }
             }
+
             timerHandler.postDelayed(this, 200);
         }
     };
@@ -426,7 +427,8 @@ public class ChannelDisplayFragment extends Fragment {
             } else {
                 Log.d(TAG, "onClick() NID not running");
                 Toast.makeText(_context, "NID not Running", Toast.LENGTH_SHORT).show();
-                ((View) v.getParent()).findViewById(R.id.nousb_id).setVisibility(View.VISIBLE);
+                // TODO: NID not running indication
+//                ((View) v.getParent()).findViewById(R.id.nousb_id).setVisibility(View.VISIBLE);
             }
         }
     }

@@ -193,6 +193,14 @@ public class NidService extends Service {
                         if (nbMsg.checkSubheader(NbMessage.Subheader.POTENTIAL)) {
                             intent.putExtra(BUNDLE_DATA_POTENTIAL, nbMsg.data);
                             sendBroadcast(intent);
+                            // temporary backwards compatibility:
+                            if (isIdentifying && nbMsg.channel == identifyingChannel) {
+                                // new channel has been acquired
+                                sendBroadcast(new Intent(ACTION_CHANNEL_ACQUIRED));
+                                identifyRunnable.stop();
+                                sendMessage(STOP_IDENTIFY);
+                                isIdentifying = false;
+                            }
                         } else if (nbMsg.checkSubheader(NbMessage.Subheader.TYPE)) {
                             Log.d(TAG, "received type message");
                             intent.putExtra(BUNDLE_DATA_TYPE, nbMsg.data);
@@ -269,6 +277,7 @@ public class NidService extends Service {
                     identifyRunnable = new SendMessageRunnable(makeIdentifyMessage(ch), 500);
                     timerHandler.postDelayed(identifyRunnable, 100);
                     isIdentifying = true;
+                    identifyingChannel = ch;
                     break;
                 case ACTION_SEND_DATA:
                     Log.d(TAG, String.format("sending data"));
@@ -383,7 +392,7 @@ public class NidService extends Service {
             state = newState;
             if (newState == State.RUNNING) {
                 Log.d(TAG, "NID running");
-                sendMessage(BLINK_MESSAGE);
+//                sendMessage(BLINK_MESSAGE);
                 Intent intent = new Intent(ACTION_NID_READY);
                 sendBroadcast(intent);
             }
