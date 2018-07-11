@@ -392,7 +392,7 @@ public class NidService extends Service {
             state = newState;
             if (newState == State.RUNNING) {
                 Log.d(TAG, "NID running");
-//                sendMessage(BLINK_MESSAGE);
+                sendMessage(BLINK_MESSAGE);
                 Intent intent = new Intent(ACTION_NID_READY);
                 sendBroadcast(intent);
             }
@@ -405,7 +405,9 @@ public class NidService extends Service {
      */
 
     private final byte[] PING_MESSAGE = new byte[] {
-            (byte)0b11100000, 0x0, 0x0, 0x0
+//            (byte)0b11100000, 0x0, 0x0, 0x0
+            (byte) 0xAA, (byte) 0xAA, (byte) 0xAA, (byte) 0xAA
+//            0x0, 0x0
     };
 
     private final byte[] BLINK_MESSAGE = new byte[]{

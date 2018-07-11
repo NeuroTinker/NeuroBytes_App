@@ -224,7 +224,7 @@ public class ChannelDisplayFragment extends Fragment {
             for (int i = 0; i < fastAdapter.getItemCount(); i++) {
                 Object iItem = fastAdapter.getItem(i);
                 if (iItem instanceof GraphItem) {
-                    Log.d(TAG, "updating item");
+//                    Log.d(TAG, "updating item");
                     GraphItem item = (GraphItem) iItem;
                     if (item.state != GraphItem.GraphState.NEW) {
                         if (item.channelController.count == 0) {

@@ -40,6 +40,7 @@ import java.util.Arrays;
 
 import static com.neurotinker.neurobytes.NidService.ACTION_NID_DISCONNECTED;
 import static com.neurotinker.neurobytes.NidService.ACTION_NID_READY;
+import static com.neurotinker.neurobytes.NidService.ACTION_SEND_BLINK;
 import static com.neurotinker.neurobytes.NidService.ACTION_SEND_PAUSE;
 
 public class MainActivity extends AppCompatActivity
@@ -47,7 +48,7 @@ public class MainActivity extends AppCompatActivity
 
     private static final String TAG = MainActivity.class.getSimpleName();
 
-    private UsbFlashService flashService = new UsbFlashService(this, 0x6018, 0x1d50);
+//    private UsbFlashService flashService = new UsbFlashService(this, 0x6018, 0x1d50);
     private GdbController gdbController;
     private Firmware.UpdateFirmwareAsyncTask updateFirmwareTask;
     private PopupWindow popupWindow;
@@ -90,7 +91,7 @@ public class MainActivity extends AppCompatActivity
         Firmware.updatePath(getFilesDir().getPath());
         updateFirmwareTask = new Firmware.UpdateFirmwareAsyncTask();
         updateFirmwareTask.execute(Firmware.values());
-        gdbController = new GdbController(flashService);
+//        gdbController = new GdbController(flashService);
 
         ImageView pausePlayView = (ImageView) findViewById(R.id.pauseplay_id);
         pausePlayView.setOnClickListener(new View.OnClickListener() {
@@ -104,11 +105,12 @@ public class MainActivity extends AppCompatActivity
         recordDataView.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                try {
-                    exportData();
-                } catch(IOException ie) {
-                    ie.printStackTrace();
-                }
+                sendBroadcast(new Intent(ACTION_SEND_BLINK));
+//                try {
+//                    exportData();
+//                } catch(IOException ie) {
+//                    ie.printStackTrace();
+//                }
             }
         });
 

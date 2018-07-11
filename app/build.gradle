@@ -5,7 +5,7 @@ android {
     defaultConfig {
         applicationId "com.neurotinker.neurobytes"
         minSdkVersion 18
-        targetSdkVersion 26
+        targetSdkVersion 22
         versionCode 1
         versionName "1.0"
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
@@ -21,15 +21,15 @@ android {
     configurations.all {
         resolutionStrategy.force 'com.google.code.findbugs:jsr305:1.3.9'
     }
-    externalNativeBuild {
-        cmake {
-            path '../CMakeLists.txt'
-        }
-    }
-    compileOptions {
-        sourceCompatibility JavaVersion.VERSION_1_8
-        targetCompatibility JavaVersion.VERSION_1_8
-    }
+//    externalNativeBuild {
+//        cmake {
+//            path '../CMakeLists.txt'
+//        }
+//    }
+//    compileOptions {
+//        sourceCompatibility JavaVersion.VERSION_1_8
+//        targetCompatibility JavaVersion.VERSION_1_8
+//    }
 
     flavorDimensions('tier')
 
@@ -55,7 +55,7 @@ dependencies {
     testImplementation 'junit:junit:4.12'
     implementation 'com.github.SaeedMasoumi:FAB-Loading:0.6.0'
     implementation 'com.github.PhilJay:MPAndroidChart:v3.0.2'
-    implementation 'com.github.felHR85:UsbSerial:4.5.1'
+    implementation 'com.github.felHR85:UsbSerial:ee1f49f931'
     androidTestImplementation 'com.android.support.test:runner:1.0.2'
     androidTestImplementation 'com.android.support.test.espresso:espresso-core:3.0.2'
     androidTestImplementation 'com.android.support.test:rules:1.0.2'

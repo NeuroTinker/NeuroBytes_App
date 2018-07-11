@@ -67,7 +67,7 @@ public class UsbService extends Service {
         public void onReceivedData(byte[] arg0) {
             nidStream.write(arg0, 0, arg0.length);
             count += arg0.length;
-            //Log.d("Read length", Integer.toString(arg0.length));
+            Log.d("Read length", Integer.toString(arg0.length));
             if (count >= (offset + 4) && (count - offset) % 4 == 0) {
                 byte[] sub = Arrays.copyOfRange(nidStream.toByteArray(), offset + 2, offset + 4);
                 //String data = new String(arg0, "UTF-8");
@@ -175,6 +175,7 @@ public class UsbService extends Service {
         // This snippet will try to open the first encountered usb device connected, excluding usb root hubs
         HashMap<String, UsbDevice> usbDevices = usbManager.getDeviceList();
         if (!usbDevices.isEmpty()) {
+            Log.d("Usb", usbDevices.toString());
             boolean keep = true;
             for (Map.Entry<String, UsbDevice> entry : usbDevices.entrySet()) {
                 device = entry.getValue();
@@ -236,7 +237,9 @@ public class UsbService extends Service {
         public void run() {
             serialPort = UsbSerialDevice.createUsbSerialDevice(device, connection, 3);
             if (serialPort != null) {
+                serialPort.setInitialBaudRate(38400);
                 if (serialPort.open()) {
+                    Log.d("USB open", serialPort.toString());
                     serialPort.setBaudRate(BAUD_RATE);
                     serialPort.setDataBits(UsbSerialInterface.DATA_BITS_8);
                     serialPort.setStopBits(UsbSerialInterface.STOP_BITS_1);
