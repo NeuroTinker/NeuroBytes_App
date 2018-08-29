@@ -48,8 +48,8 @@ public class MainActivity extends AppCompatActivity
 
     private static final String TAG = MainActivity.class.getSimpleName();
 
-//    private UsbFlashService flashService = new UsbFlashService(this, 0x6018, 0x1d50);
-    private GdbController gdbController;
+    private UsbFlashService flashService = new UsbFlashService(this, 0x6018, 0x1d50);
+    private GdbController gdbController = new GdbController(flashService);
     private Firmware.UpdateFirmwareAsyncTask updateFirmwareTask;
     private PopupWindow popupWindow;
 
@@ -119,14 +119,14 @@ public class MainActivity extends AppCompatActivity
 
             @Override
             public void onClick(View view) {
-                LayoutInflater popupInflater = getLayoutInflater();
-                View popupLayout = popupInflater.inflate(
-                        R.layout.flashing_popup,
-                        (ViewGroup) findViewById(R.id.popup_element)
-                );
-                popupWindow = new PopupWindow(popupLayout, 300, 470, true);
-                popupWindow.showAtLocation(findViewById(R.id.channelfragment_id), Gravity.CENTER, 0, 0);
-                gdbController.start(popupWindow);
+//                LayoutInflater popupInflater = getLayoutInflater();
+//                View popupLayout = popupInflater.inflate(
+//                        R.layout.flashing_popup,
+//                        (ViewGroup) findViewById(R.id.popup_element)
+//                );
+//                popupWindow = new PopupWindow(popupLayout, 300, 470, true);
+//                popupWindow.showAtLocation(findViewById(R.id.channelfragment_id), Gravity.CENTER, 0, 0);
+//                gdbController.startFlash(popupWindow);
             }
         });
     }

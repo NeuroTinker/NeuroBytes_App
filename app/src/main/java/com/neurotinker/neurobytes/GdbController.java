@@ -38,8 +38,10 @@ public class GdbController {
     private final String TAG = GdbController.class.getSimpleName();
     private final String[] gdbFingerprintSequence = {"m08003e00,c"};
     private final String[] gdbDetectSequence = {"qRcmd,73", "vAttach;1"};
-//    private final String[] gdbInitSequence = {"!", "qRcmd,747020656e", "qRcmd,v"};
-    private final String[] gdbInitSequence = {"!", "qRcmd,747020656e", "qRcmd,v"};
+    private final String gdbEnterSwd = "qRcmd,656e7465725f73776";
+    private final String gdbEnderUart = "qRcmd,656e7465725f75617274";
+    private final String gdbEnterDfu = "qRcmd,656e7465725f646675";
+    private final String[] gdbInitSequence = {"!", gdbEnterSwd, "qRcmd,747020656e", "qRcmd,v"};
     private Queue<byte[]> messageQueue = new LinkedList<>();
     private byte[] prevMessage;
     private byte[] ACK = {'+'};
@@ -64,10 +66,13 @@ public class GdbController {
     private TextView statusTextView;
 
     enum State {
+        DISCONNECTED,
         STOPPED,
         INITIALIZING,
         DETECTING,
         CONNECTING,
+        DFU,
+        SERIAL,
         FLASHING,
         DONE;
     }
@@ -81,18 +86,16 @@ public class GdbController {
         this.state = State.STOPPED;
     }
 
-    public void start(PopupWindow popupWindow) {
-        this.popupWindow = popupWindow;
-        this.view = popupWindow.getContentView();
-        this.statusTextView = view.findViewById(R.id.flashstatus_id);
+    public void startFlash(TextView statusTextView) {
+        this.statusTextView = statusTextView;
 
-        View cancelBtnView = view.findViewById(R.id.cancelbutton_id);
-        cancelBtnView.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                stop();
-            }
-        });
+//        View cancelBtnView = view.findViewById(R.id.cancelbutton_id);
+//        cancelBtnView.setOnClickListener(new View.OnClickListener() {
+//            @Override
+//            public void onClick(View view) {
+//                stopFlash();
+//            }
+//        });
 
         this.state = State.INITIALIZING;
         for (String s : gdbInitSequence) {
@@ -110,7 +113,17 @@ public class GdbController {
 //                flashService.CloseTheDevice();
     }
 
-    public void stop() {
+    public void enterSwd() {
+        messageQueue.add(gdbEnterSwd.getBytes());
+        flashService.OpenDevice();
+        flashService.StartReadingThread();
+        sendNextMessage();
+//        GdbCallbackRunnable callback = new GdbCallbackRunnable(flashService);
+//        timerHandler.postDelayed()
+    }
+
+    public void stopFlash() {
+        this.state = State.DISCONNECTED;
         this.quitFlag = true;
         flashService.CloseTheDevice();
         popupWindow.dismiss();

@@ -62,7 +62,7 @@ public enum Firmware {
         protected Integer doInBackground(Firmware... firmwares) {
 
             int numComplete = 0;
-            Log.d(TAG, firmwares.toString());
+//            Log.d(TAG, firmwares.toString());
             for (Firmware fw : Firmware.values()) {
                 try {
                     File file = new File(fw.elfPath);

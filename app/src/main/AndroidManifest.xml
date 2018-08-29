@@ -23,6 +23,19 @@
             </intent-filter>
         </activity>
 
+        <activity
+            android:name=".UpdateActivity"
+            android:parentActivityName=".MainActivity"
+            android:theme="@style/AppTheme">
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value=".MainActivity"/>
+            <intent-filter>
+                <action android:name="com.neurotinker.neurobytes.UPDATE" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
         <service
             android:name=".UsbService"
             android:enabled="true"
