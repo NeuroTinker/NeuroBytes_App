@@ -12,6 +12,8 @@ import android.widget.TextView;
 
 import com.felhr.utils.HexData;
 
+import org.w3c.dom.Text;
+
 import java.io.BufferedInputStream;
 import java.io.DataInputStream;
 import java.io.File;
@@ -41,7 +43,7 @@ public class GdbController {
     private final String gdbEnterSwd = "qRcmd,656e7465725f73776";
     private final String gdbEnderUart = "qRcmd,656e7465725f75617274";
     private final String gdbEnterDfu = "qRcmd,656e7465725f646675";
-    private final String[] gdbInitSequence = {"!", gdbEnterSwd, "qRcmd,747020656e", "qRcmd,v"};
+    private final String[] gdbInitSequence = {"!", "qRcmd,747020656e", "qRcmd,v"};
     private Queue<byte[]> messageQueue = new LinkedList<>();
     private byte[] prevMessage;
     private byte[] ACK = {'+'};
@@ -62,8 +64,8 @@ public class GdbController {
     private Integer deviceType;
 
     private View view;
-    private PopupWindow popupWindow;
     private TextView statusTextView;
+    private TextView fingerprintTextView;
 
     enum State {
         DISCONNECTED,
@@ -86,8 +88,10 @@ public class GdbController {
         this.state = State.STOPPED;
     }
 
-    public void startFlash(TextView statusTextView) {
+    public void startFlash(TextView statusTextView, TextView fingerprintStatus) {
         this.statusTextView = statusTextView;
+        this.fingerprintTextView = fingerprintStatus;
+        this.quitFlag = false;
 
 //        View cancelBtnView = view.findViewById(R.id.cancelbutton_id);
 //        cancelBtnView.setOnClickListener(new View.OnClickListener() {
@@ -104,6 +108,8 @@ public class GdbController {
         /**
          * Flash the connected NeuroBytes board with correct firmware
          */
+        Log.d(TAG, "started");
+        statusTextView.setText("Trying to connect to NID");
         flashService.OpenDevice();
         flashService.StartReadingThread();
         sendNextMessage();
@@ -123,10 +129,12 @@ public class GdbController {
     }
 
     public void stopFlash() {
+        Log.d(TAG, "stopped");
+        statusTextView.setText("Stopped");
         this.state = State.DISCONNECTED;
         this.quitFlag = true;
         flashService.CloseTheDevice();
-        popupWindow.dismiss();
+        this.messageQueue.clear();
     }
 
     private byte[] concat(byte[] arr1, byte[] arr2) {
@@ -364,6 +372,7 @@ public class GdbController {
                             sendNextMessage();
                             statusTextView.setText("NeuroBytes found! Trying to connect...");
                         } else if (messageEncoded.contains("E")) {
+                            statusTextView.setText("No NeuroBytes board connected");
                             sendNextMessage();
                         } else if (messageEncoded.contains("OK")) {
                             sendNextMessage();
@@ -379,6 +388,7 @@ public class GdbController {
                             Fingerprint fing = new Fingerprint(messageEncoded);
                             deviceType = fing.deviceType;
                             Log.d(TAG, "fingerprint int: " + deviceType.toString());
+                            fingerprintTextView.setText(deviceType.toString());
                             state = State.FLASHING;
                             statusTextView.setText("Flashing...");
                             sendNextMessage();
@@ -389,6 +399,7 @@ public class GdbController {
                             if (sendNextMessage()) {
                                 state = State.DONE;
                                 statusTextView.setText("Flashing completed. Please disconnect NeuroBytes board.");
+                                fingerprintTextView.setText("None");
                             }
                         }
                     } else if (state == State.DONE) {
@@ -406,12 +417,14 @@ public class GdbController {
                     state = State.DETECTING;
                     timeout = 0;
                     Log.d(TAG, "timeout");
+//                    stopFlash();
                 }
             }
             if (!quitFlag) {
                 timerHandler.postDelayed(this, 10);
             } else {
                 state = State.STOPPED;
+                Log.d(TAG, "read thread stopped");
             }
         }
     }
