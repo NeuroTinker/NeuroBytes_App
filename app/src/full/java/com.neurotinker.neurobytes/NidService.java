@@ -194,13 +194,13 @@ public class NidService extends Service {
                             intent.putExtra(BUNDLE_DATA_POTENTIAL, nbMsg.data);
                             sendBroadcast(intent);
                             // temporary backwards compatibility:
-                            if (isIdentifying && nbMsg.channel == identifyingChannel) {
-                                // new channel has been acquired
-                                sendBroadcast(new Intent(ACTION_CHANNEL_ACQUIRED));
-                                identifyRunnable.stop();
-                                sendMessage(STOP_IDENTIFY);
-                                isIdentifying = false;
-                            }
+//                            if (isIdentifying && nbMsg.channel == identifyingChannel) {
+//                                // new channel has been acquired
+//                                sendBroadcast(new Intent(ACTION_CHANNEL_ACQUIRED));
+//                                identifyRunnable.stop();
+//                                sendMessage(STOP_IDENTIFY);
+//                                isIdentifying = false;
+//                            }
                         } else if (nbMsg.checkSubheader(NbMessage.Subheader.TYPE)) {
                             Log.d(TAG, "received type message");
                             intent.putExtra(BUNDLE_DATA_TYPE, nbMsg.data);
@@ -405,8 +405,8 @@ public class NidService extends Service {
      */
 
     private final byte[] PING_MESSAGE = new byte[] {
-//            (byte)0b11100000, 0x0, 0x0, 0x0
-            (byte) 0xAA, (byte) 0xAA, (byte) 0xAA, (byte) 0xAA
+            (byte)0b11100000, 0x0, 0x0, 0x0
+//            (byte) 0xAA, (byte) 0xAA, (byte) 0xAA, (byte) 0xAA
 //            0x0, 0x0
     };
 

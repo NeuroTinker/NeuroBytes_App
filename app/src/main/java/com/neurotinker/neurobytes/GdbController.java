@@ -41,7 +41,7 @@ public class GdbController {
     private final String[] gdbFingerprintSequence = {"m08003e00,c"};
     private final String[] gdbDetectSequence = {"qRcmd,73", "vAttach;1"};
     private final String gdbEnterSwd = "qRcmd,656e7465725f73776";
-    private final String gdbEnderUart = "qRcmd,656e7465725f75617274";
+    private final String gdbEnterUart = "qRcmd,656e7465725f75617274";
     private final String gdbEnterDfu = "qRcmd,656e7465725f646675";
     private final String[] gdbInitSequence = {"!", "qRcmd,747020656e", "qRcmd,v"};
     private Queue<byte[]> messageQueue = new LinkedList<>();
@@ -74,6 +74,7 @@ public class GdbController {
         DETECTING,
         CONNECTING,
         DFU,
+        SWITCHING,
         SERIAL,
         FLASHING,
         DONE;
@@ -86,6 +87,13 @@ public class GdbController {
     public GdbController(UsbFlashService flashService) {
         this.flashService = flashService;
         this.state = State.STOPPED;
+    }
+
+    private void initializeGdb() {
+        this.state = State.INITIALIZING;
+        for (String s : gdbInitSequence) {
+            messageQueue.add(s.getBytes());
+        }
     }
 
     public void startFlash(TextView statusTextView, TextView fingerprintStatus) {
@@ -119,13 +127,32 @@ public class GdbController {
 //                flashService.CloseTheDevice();
     }
 
+    public void enterUart() {
+        Log.d(TAG, "entering UART");
+        initializeGdb();
+        this.state = State.SWITCHING;
+        messageQueue.add(gdbEnterUart.getBytes());
+        flashService.OpenDevice();
+        flashService.StartReadingThread();
+        sendNextMessage();
+    }
+
     public void enterSwd() {
+        initializeGdb();
+        this.state = State.SWITCHING;
         messageQueue.add(gdbEnterSwd.getBytes());
         flashService.OpenDevice();
         flashService.StartReadingThread();
         sendNextMessage();
 //        GdbCallbackRunnable callback = new GdbCallbackRunnable(flashService);
 //        timerHandler.postDelayed()
+    }
+
+    public void quit() {
+        this.state = State.DISCONNECTED;
+        this.quitFlag = true;
+        flashService.CloseTheDevice();
+        this.messageQueue.clear();
     }
 
     public void stopFlash() {
@@ -456,6 +483,8 @@ public class GdbController {
             } else if (this.state == State.FLASHING) {
                 messageQueue.addAll(getFlashSequence(deviceType));
                 sendNextMessage();
+            } else if (this.state == State.SWITCHING) {
+                quit();
             }
         } else {
             byte[] msg = messageQueue.remove();

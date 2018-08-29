@@ -88,10 +88,12 @@ public class MainActivity extends AppCompatActivity
         setSupportActionBar(toolbar);
 
         // Update all firmware files from their git repos
-        Firmware.updatePath(getFilesDir().getPath());
-        updateFirmwareTask = new Firmware.UpdateFirmwareAsyncTask();
-        updateFirmwareTask.execute(Firmware.values());
-//        gdbController = new GdbController(flashService);
+//        Firmware.updatePath(getFilesDir().getPath());
+//        updateFirmwareTask = new Firmware.UpdateFirmwareAsyncTask();
+//        updateFirmwareTask.execute(Firmware.values());
+        gdbController = new GdbController(flashService);
+        gdbController.enterUart();
+        gdbController.quit();
 
         ImageView pausePlayView = (ImageView) findViewById(R.id.pauseplay_id);
         pausePlayView.setOnClickListener(new View.OnClickListener() {
