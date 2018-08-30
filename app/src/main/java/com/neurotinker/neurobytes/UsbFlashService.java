@@ -111,6 +111,7 @@ public class UsbFlashService {
      */
     public void StartReadingThread() {
         if (_readingThread == null) {
+            isQuitting = false;
             _readingThread = new Thread(readerReceiver);
             _readingThread.start();
         } else {
@@ -212,7 +213,7 @@ public class UsbFlashService {
                     {
                         if (_usbDevice == null) {
                             OpenDevice();
-                            Log("No device. Recheking in 10 sec...");
+                            Log("No device. Rechecking in 10 sec...");
 
                             Sleep(10000);
                             continue;
@@ -224,9 +225,9 @@ public class UsbFlashService {
                             Log("Failed to connect to the device. Retrying to acquire it.");
                             OpenDevice();
                             if (!_usbManager.getDeviceList().containsKey(_deviceName)) {
-                                Log("No device. Rechecking in 10 sec...");
+                                Log("No device. Rechecking in 1 sec...");
 
-                                Sleep(10000);
+                                Sleep(1000);
                                 continue;
                             }
                         }

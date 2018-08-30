@@ -59,6 +59,7 @@ public class GdbController {
     private final Integer TIMEOUT = 50;
     private boolean quitFlag = false;
     private UsbFlashService flashService;
+    private GdbCallbackRunnable callback;
 
     private Integer deviceId;
     private Integer deviceType;
@@ -71,6 +72,7 @@ public class GdbController {
         DISCONNECTED,
         STOPPED,
         INITIALIZING,
+        INITIALIZED,
         DETECTING,
         CONNECTING,
         DFU,
@@ -89,16 +91,11 @@ public class GdbController {
         this.state = State.STOPPED;
     }
 
-    private void initializeGdb() {
-        this.state = State.INITIALIZING;
-        for (String s : gdbInitSequence) {
-            messageQueue.add(s.getBytes());
-        }
+    public boolean openDevice() {
+        return flashService.OpenDevice();
     }
 
-    public void startFlash(TextView statusTextView, TextView fingerprintStatus) {
-        this.statusTextView = statusTextView;
-        this.fingerprintTextView = fingerprintStatus;
+    public void initializeGdb() {
         this.quitFlag = false;
 
 //        View cancelBtnView = view.findViewById(R.id.cancelbutton_id);
@@ -113,18 +110,28 @@ public class GdbController {
         for (String s : gdbInitSequence) {
             messageQueue.add(s.getBytes());
         }
+//        messageQueue.add(gdbEnterSwd.getBytes());
         /**
          * Flash the connected NeuroBytes board with correct firmware
          */
         Log.d(TAG, "started");
-        statusTextView.setText("Trying to connect to NID");
-        flashService.OpenDevice();
-        flashService.StartReadingThread();
+//        if (flashService.OpenDevice())
         sendNextMessage();
-        GdbCallbackRunnable callback = new GdbCallbackRunnable(flashService);
+        callback = new GdbCallbackRunnable(flashService);
 //                flashService.StartReadingThread();
         timerHandler.postDelayed(callback, 10);
 //                flashService.CloseTheDevice();
+    }
+
+    public void startFlash(TextView statusTextView, TextView fingerprintStatus) {
+        this.fingerprintTextView = fingerprintStatus;
+        this.quitFlag = false;
+        this.statusTextView = statusTextView;
+        statusTextView.setText("Trying to connect to NID");
+        this.state = State.INITIALIZING;
+        flashService.StartReadingThread();
+        sendNextMessage();
+        timerHandler.postDelayed(callback, 10);
     }
 
     public void enterUart() {
@@ -467,6 +474,10 @@ public class GdbController {
                     messageQueue.add(s.getBytes());
                 }
                 statusTextView.setText("NID online. Waiting for NeuroBytes");
+                this.state = State.INITIALIZED;
+//                this.state = State.DETECTING;
+//                sendNextMessage();
+            } else if (this.state == State.INITIALIZED) {
                 this.state = State.DETECTING;
                 sendNextMessage();
             } else if (this.state == State.DETECTING) {
