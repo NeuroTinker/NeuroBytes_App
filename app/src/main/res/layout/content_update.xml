@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    app:layout_behavior="@string/appbar_scrolling_view_behavior"
+    tools:context=".UpdateActivity"
+    tools:showIn="@layout/activity_update">
+
+    <TextView
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:text="NeuroBytes Firmware Updater" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_vertical"
+        android:text="Status" />
+
+    <TextView
+        android:id="@+id/status"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:paddingLeft="10sp"
+        android:text="Waiting for NeuroBytes connection" />
+
+    <Button
+        android:id="@+id/flashButton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Flash" />
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Fingerprint" />
+
+    <TextView
+        android:id="@+id/fingerprintStatus"
+        android:paddingLeft="10sp"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="None" />
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Flash Status" />
+
+    <TextView
+        android:id="@+id/flashStatus"
+        android:paddingLeft="10sp"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="None" />
+    <Button
+        android:id="@+id/dfuButton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="DFU" />
+
+    <Button
+        android:id="@+id/cancelButton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Cancel" />
+
+    <Button
+        android:id="@+id/updateFirmware"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Update Stored Firmware" />
+
+</LinearLayout>
