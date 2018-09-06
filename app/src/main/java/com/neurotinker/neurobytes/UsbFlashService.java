@@ -234,7 +234,6 @@ public class UsbFlashService {
 
                         try
                         {
-
                             readConnection = _usbManager.openDevice(_usbDevice);
 
                             if (readConnection == null) {

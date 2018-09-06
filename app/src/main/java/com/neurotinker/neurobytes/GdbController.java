@@ -43,7 +43,8 @@ public class GdbController {
     private final String gdbEnterSwd = "qRcmd,656e7465725f73776";
     private final String gdbEnterUart = "qRcmd,656e7465725f75617274";
     private final String gdbEnterDfu = "qRcmd,656e7465725f646675";
-    private final String[] gdbInitSequence = {"!", "qRcmd,747020656e", "qRcmd,v"};
+    private final String gdbConnectUnderSrstCommand = "$qRcmd,636f6e6e6563745f7372737420656e61626c65#1b";
+    private final String[] gdbInitSequence = {"!", "qRcmd,747020656e", "qRcmd,v", gdbConnectUnderSrstCommand};
     private Queue<byte[]> messageQueue = new LinkedList<>();
     private byte[] prevMessage;
     private byte[] ACK = {'+'};
@@ -117,9 +118,9 @@ public class GdbController {
         Log.d(TAG, "started");
 //        if (flashService.OpenDevice())
         sendNextMessage();
-        callback = new GdbCallbackRunnable(flashService);
+        this.callback = new GdbCallbackRunnable(flashService);
 //                flashService.StartReadingThread();
-        timerHandler.postDelayed(callback, 10);
+        timerHandler.postDelayed(this.callback, 10);
 //                flashService.CloseTheDevice();
     }
 
@@ -131,7 +132,7 @@ public class GdbController {
         this.state = State.INITIALIZING;
         flashService.StartReadingThread();
         sendNextMessage();
-        timerHandler.postDelayed(callback, 10);
+        timerHandler.postDelayed(this.callback, 10);
     }
 
     public void enterUart() {
@@ -142,6 +143,7 @@ public class GdbController {
         flashService.OpenDevice();
         flashService.StartReadingThread();
         sendNextMessage();
+        timerHandler.postDelayed(this.callback, 10);
     }
 
     public void enterSwd() {
@@ -152,7 +154,7 @@ public class GdbController {
         flashService.StartReadingThread();
         sendNextMessage();
 //        GdbCallbackRunnable callback = new GdbCallbackRunnable(flashService);
-//        timerHandler.postDelayed()
+        timerHandler.postDelayed(this.callback, 10);
     }
 
     public void quit() {

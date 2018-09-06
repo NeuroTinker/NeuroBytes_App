@@ -61,7 +61,6 @@ public class UsbService extends Service {
         ByteArrayOutputStream nidStream = new ByteArrayOutputStream();
         int count = 0;
         int offset = 0;
-        short[] allowedHeaders = {-24544, -24512};
 
         @Override
         public void onReceivedData(byte[] arg0) {

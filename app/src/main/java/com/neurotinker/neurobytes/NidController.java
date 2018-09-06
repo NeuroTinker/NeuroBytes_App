@@ -43,7 +43,6 @@ public class NidController {
     /**
      * Connect to data receivers and UsbService
      */
-
     private UsbService usbService;
     private final ServiceConnection usbConnection = new ServiceConnection() {
         @Override
