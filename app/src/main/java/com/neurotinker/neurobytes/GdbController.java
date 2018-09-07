@@ -43,8 +43,8 @@ public class GdbController {
     private final String gdbEnterSwd = "qRcmd,656e7465725f73776";
     private final String gdbEnterUart = "qRcmd,656e7465725f75617274";
     private final String gdbEnterDfu = "qRcmd,656e7465725f646675";
-    private final String gdbConnectUnderSrstCommand = "$qRcmd,636f6e6e6563745f7372737420656e61626c65#1b";
-    private final String[] gdbInitSequence = {"!", "qRcmd,747020656e", "qRcmd,v", gdbConnectUnderSrstCommand};
+    public static final String gdbConnectUnderSrstCommand = "$qRcmd,636f6e6e6563745f7372737420656e61626c65";
+    public static final String[] gdbInitSequence = {"!", "qRcmd,747020656e", "qRcmd,v", gdbConnectUnderSrstCommand};
     private Queue<byte[]> messageQueue = new LinkedList<>();
     private byte[] prevMessage;
     private byte[] ACK = {'+'};
@@ -447,7 +447,6 @@ public class GdbController {
                         }
                     }
                 }
-
             } else {
                 if (timeout++ >= TIMEOUT && state != State.DETECTING && state != State.DONE) {
                     state = State.DETECTING;

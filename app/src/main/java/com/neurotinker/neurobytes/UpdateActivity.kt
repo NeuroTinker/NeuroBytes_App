@@ -36,20 +36,24 @@ class UpdateActivity : AppCompatActivity() {
 
         connectToNidButton.setOnClickListener {
             launch(UI) {
-//                isConnectedToNid = connectToNid()
-                status.text = "test"
+                isConnectedToNid = connectToNid()
+                if (isConnectedToNid) {
+                    status.text = "Successfully connected to NID"
+                } else {
+                    status.text = "Failed to connect to NID"
+                }
             }
         }
 
         initializeGdbButton.setOnClickListener {
-            launch {
+            launch(UI) {
                 if (isConnectedToNid) {
                     var initialized : Boolean = false
                     async{ initialized = initializeGdb() != null }
                     if (initialized) {
-                        status.setText("GDB initialized. OK.")
+                        status.text = "GDB initialized. OK."
                     } else {
-                        status.setText("Failed to initialize GDB")
+                        status.text = "Failed to initialize GDB"
                     }
                 }
             }
@@ -123,7 +127,6 @@ class UpdateActivity : AppCompatActivity() {
             responseValidater: (String) -> Boolean,
             valueFilter: (String) -> String = { it }
     ) : String? {
-
         var response : String? = null
         for (message in messageSeq) {
             response = readMessageBlocking()
