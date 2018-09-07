@@ -25,13 +25,25 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:paddingLeft="10sp"
-        android:text="Waiting for NeuroBytes connection" />
+        android:text="not connected to NID" />
 
     <Button
-        android:id="@+id/flashButton"
+        android:id="@+id/connectToNidButton"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Flash" />
+        tools:text="Connect to NID" />
+
+    <Button
+        android:id="@+id/initializeGdbButton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Initialize GDB" />
+
+    <Button
+        android:id="@+id/connectToNbButton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Connect To NeuroBytes Board" />
 
     <TextView
         android:layout_width="match_parent"
@@ -44,6 +56,12 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="None" />
+
+    <Button
+        android:id="@+id/flashButton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Flash" />
 
     <TextView
         android:layout_width="match_parent"

@@ -13,6 +13,7 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.charset.Charset;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Queue;
 
 public final class GdbUtils {
@@ -23,8 +24,8 @@ public final class GdbUtils {
     private final String gdbEnterSwd = "qRcmd,656e7465725f73776";
     private final String gdbEnterUart = "qRcmd,656e7465725f75617274";
     private final String gdbEnterDfu = "qRcmd,656e7465725f646675";
-    private final String gdbConnectUnderSrstCommand = "$qRcmd,636f6e6e6563745f7372737420656e61626c65#1b";
-    private final String[] gdbInitSequence = {"!", "qRcmd,747020656e", "qRcmd,v", gdbConnectUnderSrstCommand};
+    public static final String gdbConnectUnderSrstCommand = "$qRcmd,636f6e6e6563745f7372737420656e61626c65#1b";
+    public static final String[] gdbInitSequence = {"!", "qRcmd,747020656e", "qRcmd,v", gdbConnectUnderSrstCommand};
     private Queue<byte[]> messageQueue = new LinkedList<>();
     private byte[] prevMessage;
     public static byte[] ACK = {'+'};
@@ -39,6 +40,14 @@ public final class GdbUtils {
     private Integer timeout = 0;
     private final Integer TIMEOUT = 50;
     private boolean quitFlag = false;
+
+    public static List<byte[]> getGdbInitSequence() {
+        List<byte[]> seq = new LinkedList<byte[]>();
+        for (String m : gdbInitSequence) {
+            seq.add(m.getBytes());
+        }
+        return seq;
+    }
 
     public static byte[] buildPacket(byte[] msg) {
         final String startTok = "$";

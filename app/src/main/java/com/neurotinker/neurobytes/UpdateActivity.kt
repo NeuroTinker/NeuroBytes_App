@@ -2,9 +2,15 @@ package com.neurotinker.neurobytes
 
 import android.os.Bundle
 import android.support.v7.app.AppCompatActivity
+import android.text.format.Time
 
 import kotlinx.android.synthetic.main.activity_update.*
 import kotlinx.android.synthetic.main.content_update.*
+import kotlinx.coroutines.experimental.CommonPool
+import kotlinx.coroutines.experimental.android.UI
+import kotlinx.coroutines.experimental.async
+import kotlinx.coroutines.experimental.delay
+import kotlinx.coroutines.experimental.launch
 
 const val UPDATE_INTENT = "com.neurontinker.neurobytes.UPDATE"
 
@@ -21,62 +27,84 @@ class UpdateActivity : AppCompatActivity() {
      */
 
     private val flashService = UsbFlashService(this, 0x6018, 0x1d50)
-    val gdbController = GdbController(flashService!!)
+    var isConnectedToNid : Boolean = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_update)
         setSupportActionBar(toolbar)
 
-        // check NID firmware version then enable neurobytes firmware updates
-        // update stored firmware versions from online sources
-        Firmware.updatePath(filesDir.path)
-        Firmware.UpdateFirmwareAsyncTask().execute()
+        connectToNidButton.setOnClickListener {
+            launch(UI) {
+//                isConnectedToNid = connectToNid()
+                status.text = "test"
+            }
+        }
 
-        connectToGdb()
+        initializeGdbButton.setOnClickListener {
+            launch {
+                if (isConnectedToNid) {
+                    var initialized : Boolean = false
+                    async{ initialized = initializeGdb() != null }
+                    if (initialized) {
+                        status.setText("GDB initialized. OK.")
+                    } else {
+                        status.setText("Failed to initialize GDB")
+                    }
+                }
+            }
+        }
+
+        connectToNbButton.setOnClickListener {
+
+        }
 
         flashButton.setOnClickListener{
-            if (gdbController.state == GdbController.State.INITIALIZED) {
-                gdbController.startFlash(flashStatus, fingerprintStatus)
-                flashStatus.setText("initializing now...")
-            } else {
-                flashStatus.setText("not initialized yet")
-                connectToGdb()
-            }
-            setSupportActionBar(toolbar)
+//            if (gdbController.state == GdbController.State.INITIALIZED) {
+//                gdbController.startFlash(flashStatus, fingerprintStatus)
+//                flashStatus.setText("initializing now...")
+//            } else {
+//                flashStatus.setText("not initialized yet")
+//                connectToGdb()
+//            }
+//            setSupportActionBar(toolbar)
         }
 
         cancelButton.setOnClickListener {
-            gdbController.stopFlash()
+
         }
 
         updateFirmware.setOnClickListener{
+            Firmware.updatePath(filesDir.path)
             Firmware.UpdateFirmwareAsyncTask().execute()
         }
     }
 
-    /**
-     * Send a message to NID and send response to callback
-     */
-    private  fun sendMessage(message: ByteArray) {
-        flashService.WriteData(GdbUtils.buildPacket(message))
+    override fun onPause() {
+        super.onPause()
+
+        disconnectNid()
     }
 
-    private fun readMessageBlocking(): String? {
+    /**
+     * Wait until a message has been received.
+     * Checks if the message is valid and returns the message string.
+     */
+    private suspend fun readMessageBlocking(): String? {
         // wait until data has been received
         var timeout = 0
         while (!flashService.IsThereAnyReceivedData()) {
-            timeout += 1
-            if (timeout > 50) {
+            if (timeout++ > 50) {
                 return null
             }
+            delay(10L) // wait 10 milliseconds
         }
 
         val message : ByteArray = flashService.GetReceivedDataFromQueue()
 
         return if (GdbUtils.isDataValid(message)) {
             if (GdbUtils.isEndOfMessage(message)) {
-                sendMessage(GdbUtils.ACK)
+                flashService.WriteData(GdbUtils.ACK)
             }
 
             GdbUtils.getMessageContent(message)
@@ -85,23 +113,69 @@ class UpdateActivity : AppCompatActivity() {
         }
     }
 
-    private suspend fun connectToNid() : Boolean? {
-        val connected = gdbController.openDevice()
-        if (connected) {
-            flashStatus.text = "connected"
-        } else {
-            return null
+    /**
+     * Execute a sequence of GDB commands.
+     * Each GDB response message is validated by responseValidater
+     * and a return value is determined using valueFilter
+     */
+    private suspend fun executeGdbSequence(
+            messageSeq: List<ByteArray>,
+            responseValidater: (String) -> Boolean,
+            valueFilter: (String) -> String = { it }
+    ) : String? {
+
+        var response : String? = null
+        for (message in messageSeq) {
+            response = readMessageBlocking()
+            if (response == null) {
+                return null
+            } else if (responseValidater(response)) {
+                continue
+            }
         }
-        return connected
+        // value filter is performed for LAST message response
+        return response?.let { valueFilter(response) }
     }
 
-    fun connectToGdb() {
-        val connected = gdbController.openDevice()
-        val initialized = false
-        if (connected) {
-            gdbController.initializeGdb()
-            flashStatus.text = "connected"
+    /**
+     * Send a message to NID and validate response
+     */
+    private suspend fun sendMessage(message: ByteArray) {
+        flashService.WriteData(GdbUtils.buildPacket(message))
+
+    }
+
+    /**
+     * Sends initialization commands to NID via gdb.
+     * Returns true for success
+     */
+    private suspend fun initializeGdb() : String? {
+        val messageSeq : List<ByteArray> = GdbUtils.getGdbInitSequence()
+        val responseValidater : (String) -> Boolean = {
+            it.contains("OK")
         }
+
+        return executeGdbSequence(messageSeq, responseValidater)
+
+    }
+
+    private suspend fun connectToNb() {
+
+    }
+
+    private suspend fun connectToNid() : Boolean {
+        val connected = flashService.OpenDevice()
+        return if (connected) {
+//            flashStatus.text = "connected"
+            true
+        } else {
+//            flashStatus.text = "unable to connect to NID"
+            false
+        }
+    }
+
+    private fun disconnectNid() {
+        flashService.CloseTheDevice()
     }
 
 }
