@@ -2,11 +2,11 @@ package com.neurotinker.neurobytes
 
 import android.os.Bundle
 import android.support.v7.app.AppCompatActivity
-import android.text.format.Time
+import android.util.Log
+import com.felhr.utils.HexData
 
 import kotlinx.android.synthetic.main.activity_update.*
 import kotlinx.android.synthetic.main.content_update.*
-import kotlinx.coroutines.experimental.CommonPool
 import kotlinx.coroutines.experimental.android.UI
 import kotlinx.coroutines.experimental.async
 import kotlinx.coroutines.experimental.delay
@@ -27,6 +27,7 @@ class UpdateActivity : AppCompatActivity() {
      */
 
     private val flashService = UsbFlashService(this, 0x6018, 0x1d50)
+    private val TAG = "UpdateActivity"
     var isConnectedToNid : Boolean = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -48,7 +49,7 @@ class UpdateActivity : AppCompatActivity() {
         initializeGdbButton.setOnClickListener {
             launch(UI) {
                 if (isConnectedToNid) {
-                    var initialized : Boolean = false
+                    var initialized = false
                     async{ initialized = initializeGdb() != null }
                     if (initialized) {
                         status.text = "GDB initialized. OK."
@@ -99,11 +100,13 @@ class UpdateActivity : AppCompatActivity() {
         var timeout = 0
         while (!flashService.IsThereAnyReceivedData()) {
             if (timeout++ > 50) {
+                Log.d(TAG, "readMessageBlocking() timed out")
                 return null
             }
+            Log.d(TAG, "readMessageBlocking() read tick")
             delay(10L) // wait 10 milliseconds
         }
-
+        Log.d(TAG, "readMessageBlocking() received data")
         val message : ByteArray = flashService.GetReceivedDataFromQueue()
 
         return if (GdbUtils.isDataValid(message)) {
@@ -119,20 +122,22 @@ class UpdateActivity : AppCompatActivity() {
 
     /**
      * Execute a sequence of GDB commands.
-     * Each GDB response message is validated by responseValidater
+     * Each GDB response message is validated by responseValidator
      * and a return value is determined using valueFilter
      */
     private suspend fun executeGdbSequence(
             messageSeq: List<ByteArray>,
-            responseValidater: (String) -> Boolean,
+            responseValidator: (String) -> Boolean,
             valueFilter: (String) -> String = { it }
     ) : String? {
         var response : String? = null
         for (message in messageSeq) {
+            sendMessage(message)
             response = readMessageBlocking()
+            Log.d(TAG, "Response received: $response")
             if (response == null) {
                 return null
-            } else if (responseValidater(response)) {
+            } else if (responseValidator(response)) {
                 continue
             }
         }
@@ -144,8 +149,8 @@ class UpdateActivity : AppCompatActivity() {
      * Send a message to NID and validate response
      */
     private suspend fun sendMessage(message: ByteArray) {
+        Log.d(TAG, "sendMessage() sent: " + HexData.hexToString(message))
         flashService.WriteData(GdbUtils.buildPacket(message))
-
     }
 
     /**
@@ -166,15 +171,16 @@ class UpdateActivity : AppCompatActivity() {
 
     }
 
+    /**
+     * Do we want these GDB funcitons to return success flags or
+     * status strings?
+     *
+     * Probably abstract status strings to state variables that have
+     * strings and enabled-button state
+     */
+
     private suspend fun connectToNid() : Boolean {
-        val connected = flashService.OpenDevice()
-        return if (connected) {
-//            flashStatus.text = "connected"
-            true
-        } else {
-//            flashStatus.text = "unable to connect to NID"
-            false
-        }
+        return flashService.OpenDevice()
     }
 
     private fun disconnectNid() {

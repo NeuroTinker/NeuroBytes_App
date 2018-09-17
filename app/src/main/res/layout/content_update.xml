@@ -31,7 +31,7 @@
         android:id="@+id/connectToNidButton"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        tools:text="Connect to NID" />
+        android:text="Connect to NID" />
 
     <Button
         android:id="@+id/initializeGdbButton"
