@@ -40,7 +40,13 @@
         android:text="Initialize GDB" />
 
     <Button
-        android:id="@+id/connectToNbButton"
+        android:id="@+id/enterSwdButton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Enter SWD" />
+
+    <Button
+        android:id="@+id/detectNbButton"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="Connect To NeuroBytes Board" />

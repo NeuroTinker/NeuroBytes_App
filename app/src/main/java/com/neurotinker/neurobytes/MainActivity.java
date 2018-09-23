@@ -92,8 +92,8 @@ public class MainActivity extends AppCompatActivity
 //        updateFirmwareTask = new Firmware.UpdateFirmwareAsyncTask();
 //        updateFirmwareTask.execute(Firmware.values());
         gdbController = new GdbController(flashService);
-        gdbController.enterUart();
-        gdbController.quit();
+//        gdbController.enterUart();
+//        gdbController.quit();
 
         ImageView pausePlayView = (ImageView) findViewById(R.id.pauseplay_id);
         pausePlayView.setOnClickListener(new View.OnClickListener() {
@@ -121,14 +121,14 @@ public class MainActivity extends AppCompatActivity
 
             @Override
             public void onClick(View view) {
-//                LayoutInflater popupInflater = getLayoutInflater();
-//                View popupLayout = popupInflater.inflate(
-//                        R.layout.flashing_popup,
-//                        (ViewGroup) findViewById(R.id.popup_element)
-//                );
-//                popupWindow = new PopupWindow(popupLayout, 300, 470, true);
-//                popupWindow.showAtLocation(findViewById(R.id.channelfragment_id), Gravity.CENTER, 0, 0);
-//                gdbController.startFlash(popupWindow);
+                LayoutInflater popupInflater = getLayoutInflater();
+                View popupLayout = popupInflater.inflate(
+                        R.layout.flashing_popup,
+                        (ViewGroup) findViewById(R.id.popup_element)
+                );
+                popupWindow = new PopupWindow(popupLayout, 300, 470, true);
+                popupWindow.showAtLocation(findViewById(R.id.channelfragment_id), Gravity.CENTER, 0, 0);
+                gdbController.start(popupWindow);
             }
         });
     }

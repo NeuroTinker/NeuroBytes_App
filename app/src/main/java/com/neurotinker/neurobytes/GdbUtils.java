@@ -20,10 +20,11 @@ public final class GdbUtils {
     private final String TAG = GdbUtils.class.getSimpleName();
 
     private final String[] gdbFingerprintSequence = {"m08003e00,c"};
-    private final String[] gdbDetectSequence = {"qRcmd,73", "vAttach;1"};
-    private final String gdbEnterSwd = "qRcmd,656e7465725f73776";
+    public static final String[] gdbDetectSequence = {"qRcmd,73", "vAttach;1"};
+    private static final String gdbEnterSwd = "qRcmd,656e7465725f73776";
+    private static final String[] gdbEnterSwdSequence = {gdbEnterSwd};
     private final String gdbEnterUart = "qRcmd,656e7465725f75617274";
-    private final String gdbEnterDfu = "qRcmd,656e7465725f646675";
+    private static final String gdbEnterDfu = "qRcmd,656e7465725f646675";
     public static final String gdbConnectUnderSrstCommand = "$qRcmd,636f6e6e6563745f7372737420656e61626c65#1b";
     public static final String[] gdbInitSequence = {"!", "qRcmd,747020656e", "qRcmd,v", gdbConnectUnderSrstCommand};
     private Queue<byte[]> messageQueue = new LinkedList<>();
@@ -41,13 +42,27 @@ public final class GdbUtils {
     private final Integer TIMEOUT = 50;
     private boolean quitFlag = false;
 
-    public static List<byte[]> getGdbInitSequence() {
+    private static List<byte[]> getMessageSequence(String[] messageSeq) {
         List<byte[]> seq = new LinkedList<byte[]>();
-        for (String m : gdbInitSequence) {
+        for (String m : messageSeq) {
             seq.add(m.getBytes());
         }
         return seq;
     }
+
+    public static List<byte[]> getGdbDetectSequence() {
+        return getMessageSequence(gdbDetectSequence);
+    }
+
+    public static List<byte[]> getGdbInitSequence() {
+        return getMessageSequence(gdbInitSequence);
+    }
+
+    public static List<byte[]> getEnterSwdSequence() {
+        return getMessageSequence(gdbEnterSwdSequence);
+    }
+
+//    public static
 
     public static byte[] buildPacket(byte[] msg) {
         final String startTok = "$";
@@ -261,6 +276,16 @@ public final class GdbUtils {
         }
     }
 
+    public static boolean isDataAck(byte[] data) {
+        String asciiData = new String(data, Charset.forName("UTF-8"));
+
+        if (asciiData.contains("+")) {
+            return true;
+        }
+
+        return false;
+    }
+
     public static boolean isDataValid(byte[] data) {
         String asciiData = new String(data, Charset.forName("UTF-8"));
 
@@ -279,6 +304,10 @@ public final class GdbUtils {
         } else {
             return false;
         }
+    }
+
+    public static String getAsciiFromMessageBytes(byte[] message) {
+        return new String(message, Charset.forName("UTF-8"));
     }
 
     public static String getMessageContent(byte[] data) {

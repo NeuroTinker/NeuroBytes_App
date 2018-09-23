@@ -12,8 +12,6 @@ import android.widget.TextView;
 
 import com.felhr.utils.HexData;
 
-import org.w3c.dom.Text;
-
 import java.io.BufferedInputStream;
 import java.io.DataInputStream;
 import java.io.File;
@@ -40,11 +38,7 @@ public class GdbController {
     private final String TAG = GdbController.class.getSimpleName();
     private final String[] gdbFingerprintSequence = {"m08003e00,c"};
     private final String[] gdbDetectSequence = {"qRcmd,73", "vAttach;1"};
-    private final String gdbEnterSwd = "qRcmd,656e7465725f73776";
-    private final String gdbEnterUart = "qRcmd,656e7465725f75617274";
-    private final String gdbEnterDfu = "qRcmd,656e7465725f646675";
-    public static final String gdbConnectUnderSrstCommand = "$qRcmd,636f6e6e6563745f7372737420656e61626c65";
-    public static final String[] gdbInitSequence = {"!", "qRcmd,747020656e", "qRcmd,v", gdbConnectUnderSrstCommand};
+    private final String[] gdbInitSequence = {"!", "qRcmd,747020656e", "qRcmd,v"};
     private Queue<byte[]> messageQueue = new LinkedList<>();
     private byte[] prevMessage;
     private byte[] ACK = {'+'};
@@ -60,25 +54,19 @@ public class GdbController {
     private final Integer TIMEOUT = 50;
     private boolean quitFlag = false;
     private UsbFlashService flashService;
-    private GdbCallbackRunnable callback;
 
     private Integer deviceId;
     private Integer deviceType;
 
     private View view;
+    private PopupWindow popupWindow;
     private TextView statusTextView;
-    private TextView fingerprintTextView;
 
     enum State {
-        DISCONNECTED,
         STOPPED,
         INITIALIZING,
-        INITIALIZED,
         DETECTING,
         CONNECTING,
-        DFU,
-        SWITCHING,
-        SERIAL,
         FLASHING,
         DONE;
     }
@@ -92,85 +80,39 @@ public class GdbController {
         this.state = State.STOPPED;
     }
 
-    public boolean openDevice() {
-        return flashService.OpenDevice();
-    }
+    public void start(PopupWindow popupWindow) {
+        this.popupWindow = popupWindow;
+        this.view = popupWindow.getContentView();
+        this.statusTextView = view.findViewById(R.id.flashstatus_id);
 
-    public void initializeGdb() {
-        this.quitFlag = false;
-
-//        View cancelBtnView = view.findViewById(R.id.cancelbutton_id);
-//        cancelBtnView.setOnClickListener(new View.OnClickListener() {
-//            @Override
-//            public void onClick(View view) {
-//                stopFlash();
-//            }
-//        });
+        View cancelBtnView = view.findViewById(R.id.cancelbutton_id);
+        cancelBtnView.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                stop();
+            }
+        });
 
         this.state = State.INITIALIZING;
         for (String s : gdbInitSequence) {
             messageQueue.add(s.getBytes());
         }
-//        messageQueue.add(gdbEnterSwd.getBytes());
         /**
          * Flash the connected NeuroBytes board with correct firmware
          */
-        Log.d(TAG, "started");
-//        if (flashService.OpenDevice())
+        flashService.OpenDevice();
+        flashService.StartReadingThread();
         sendNextMessage();
-        this.callback = new GdbCallbackRunnable(flashService);
+        GdbCallbackRunnable callback = new GdbCallbackRunnable(flashService);
 //                flashService.StartReadingThread();
-        timerHandler.postDelayed(this.callback, 10);
+        timerHandler.postDelayed(callback, 10);
 //                flashService.CloseTheDevice();
     }
 
-    public void startFlash(TextView statusTextView, TextView fingerprintStatus) {
-        this.fingerprintTextView = fingerprintStatus;
-        this.quitFlag = false;
-        this.statusTextView = statusTextView;
-        statusTextView.setText("Trying to connect to NID");
-        this.state = State.INITIALIZING;
-        flashService.StartReadingThread();
-        sendNextMessage();
-        timerHandler.postDelayed(this.callback, 10);
-    }
-
-    public void enterUart() {
-        Log.d(TAG, "entering UART");
-        initializeGdb();
-        this.state = State.SWITCHING;
-        messageQueue.add(gdbEnterUart.getBytes());
-        flashService.OpenDevice();
-        flashService.StartReadingThread();
-        sendNextMessage();
-        timerHandler.postDelayed(this.callback, 10);
-    }
-
-    public void enterSwd() {
-        initializeGdb();
-        this.state = State.SWITCHING;
-        messageQueue.add(gdbEnterSwd.getBytes());
-        flashService.OpenDevice();
-        flashService.StartReadingThread();
-        sendNextMessage();
-//        GdbCallbackRunnable callback = new GdbCallbackRunnable(flashService);
-        timerHandler.postDelayed(this.callback, 10);
-    }
-
-    public void quit() {
-        this.state = State.DISCONNECTED;
+    public void stop() {
         this.quitFlag = true;
         flashService.CloseTheDevice();
-        this.messageQueue.clear();
-    }
-
-    public void stopFlash() {
-        Log.d(TAG, "stopped");
-        statusTextView.setText("Stopped");
-        this.state = State.DISCONNECTED;
-        this.quitFlag = true;
-        flashService.CloseTheDevice();
-        this.messageQueue.clear();
+        popupWindow.dismiss();
     }
 
     private byte[] concat(byte[] arr1, byte[] arr2) {
@@ -356,8 +298,6 @@ public class GdbController {
                 unencoded[i] = ByteBuffer.wrap(HexData.stringTobytes(String.valueOf(field))).getInt();
             }
             this.deviceType = unencoded[0];
-            this.deviceId = unencoded[1];
-            this.version = unencoded[2];
         }
     }
 
@@ -401,6 +341,7 @@ public class GdbController {
                         if (messageEncoded.contains("OK")) {
                             sendNextMessage();
                         }
+
                     } else if (state == State.DETECTING) {
                         if (messageEncoded.contains("T05")) {
                             // connection successful
@@ -408,7 +349,6 @@ public class GdbController {
                             sendNextMessage();
                             statusTextView.setText("NeuroBytes found! Trying to connect...");
                         } else if (messageEncoded.contains("E")) {
-                            statusTextView.setText("No NeuroBytes board connected");
                             sendNextMessage();
                         } else if (messageEncoded.contains("OK")) {
                             sendNextMessage();
@@ -424,7 +364,6 @@ public class GdbController {
                             Fingerprint fing = new Fingerprint(messageEncoded);
                             deviceType = fing.deviceType;
                             Log.d(TAG, "fingerprint int: " + deviceType.toString());
-                            fingerprintTextView.setText(deviceType.toString());
                             state = State.FLASHING;
                             statusTextView.setText("Flashing...");
                             sendNextMessage();
@@ -435,7 +374,6 @@ public class GdbController {
                             if (sendNextMessage()) {
                                 state = State.DONE;
                                 statusTextView.setText("Flashing completed. Please disconnect NeuroBytes board.");
-                                fingerprintTextView.setText("None");
                             }
                         }
                     } else if (state == State.DONE) {
@@ -447,19 +385,18 @@ public class GdbController {
                         }
                     }
                 }
+
             } else {
                 if (timeout++ >= TIMEOUT && state != State.DETECTING && state != State.DONE) {
                     state = State.DETECTING;
                     timeout = 0;
                     Log.d(TAG, "timeout");
-//                    stopFlash();
                 }
             }
             if (!quitFlag) {
                 timerHandler.postDelayed(this, 10);
             } else {
                 state = State.STOPPED;
-                Log.d(TAG, "read thread stopped");
             }
         }
     }
@@ -475,10 +412,6 @@ public class GdbController {
                     messageQueue.add(s.getBytes());
                 }
                 statusTextView.setText("NID online. Waiting for NeuroBytes");
-                this.state = State.INITIALIZED;
-//                this.state = State.DETECTING;
-//                sendNextMessage();
-            } else if (this.state == State.INITIALIZED) {
                 this.state = State.DETECTING;
                 sendNextMessage();
             } else if (this.state == State.DETECTING) {
@@ -495,8 +428,6 @@ public class GdbController {
             } else if (this.state == State.FLASHING) {
                 messageQueue.addAll(getFlashSequence(deviceType));
                 sendNextMessage();
-            } else if (this.state == State.SWITCHING) {
-                quit();
             }
         } else {
             byte[] msg = messageQueue.remove();

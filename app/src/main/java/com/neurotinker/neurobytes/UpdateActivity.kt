@@ -9,6 +9,7 @@ import kotlinx.android.synthetic.main.activity_update.*
 import kotlinx.android.synthetic.main.content_update.*
 import kotlinx.coroutines.experimental.android.UI
 import kotlinx.coroutines.experimental.async
+import kotlinx.coroutines.experimental.awaitAll
 import kotlinx.coroutines.experimental.delay
 import kotlinx.coroutines.experimental.launch
 
@@ -40,6 +41,7 @@ class UpdateActivity : AppCompatActivity() {
                 isConnectedToNid = connectToNid()
                 if (isConnectedToNid) {
                     status.text = "Successfully connected to NID"
+                    flashService.StartReadingThread()
                 } else {
                     status.text = "Failed to connect to NID"
                 }
@@ -49,9 +51,10 @@ class UpdateActivity : AppCompatActivity() {
         initializeGdbButton.setOnClickListener {
             launch(UI) {
                 if (isConnectedToNid) {
-                    var initialized = false
-                    async{ initialized = initializeGdb() != null }
-                    if (initialized) {
+//                    var initialized = false
+//                    initialized = async{ initialized = initializeGdb() != null }
+//                    (async{ initializeGdb() }).await()
+                    if ((async{ initializeGdb() }).await() != null) {
                         status.text = "GDB initialized. OK."
                     } else {
                         status.text = "Failed to initialize GDB"
@@ -60,11 +63,31 @@ class UpdateActivity : AppCompatActivity() {
             }
         }
 
-        connectToNbButton.setOnClickListener {
-
+        detectNbButton.setOnClickListener {
+            launch(UI) {
+                if (isConnectedToNid) {
+                    if ((async{ detectNb() }).await()) {
+                        status.text = "Detected a NeuroBytes board"
+                    } else {
+                        status.text = "No NeuroBytes board detected"
+                    }
+                }
+            }
         }
 
-        flashButton.setOnClickListener{
+        enterSwdButton.setOnClickListener {
+            launch(UI) {
+                if (isConnectedToNid) {
+                    if ((async{ enterSwd() }).await()) {
+                        status.text = "Entered SWD mode"
+                    } else {
+                        status.text = "Failed to enter SWD mode"
+                    }
+                }
+            }
+        }
+
+//        flashButton.setOnClickListener{
 //            if (gdbController.state == GdbController.State.INITIALIZED) {
 //                gdbController.startFlash(flashStatus, fingerprintStatus)
 //                flashStatus.setText("initializing now...")
@@ -73,7 +96,7 @@ class UpdateActivity : AppCompatActivity() {
 //                connectToGdb()
 //            }
 //            setSupportActionBar(toolbar)
-        }
+//        }
 
         cancelButton.setOnClickListener {
 
@@ -95,29 +118,30 @@ class UpdateActivity : AppCompatActivity() {
      * Wait until a message has been received.
      * Checks if the message is valid and returns the message string.
      */
-    private suspend fun readMessageBlocking(): String? {
+    private suspend fun readMessageBlocking(responseValidator: (String) -> Boolean): String? {
         // wait until data has been received
         var timeout = 0
-        while (!flashService.IsThereAnyReceivedData()) {
+        var message = ByteArray(64)
+        while (!responseValidator(GdbUtils.getAsciiFromMessageBytes(message))) {
+            if (flashService.IsThereAnyReceivedData()) {
+                if (!GdbUtils.isDataValid(message)) return null
+                Log.d(TAG, "received data")
+                message = flashService.GetReceivedDataFromQueue()
+                if (GdbUtils.isEndOfMessage(message)) {
+                    flashService.WriteData(GdbUtils.ACK)
+                }
+            }
             if (timeout++ > 50) {
                 Log.d(TAG, "readMessageBlocking() timed out")
                 return null
             }
-            Log.d(TAG, "readMessageBlocking() read tick")
             delay(10L) // wait 10 milliseconds
         }
-        Log.d(TAG, "readMessageBlocking() received data")
-        val message : ByteArray = flashService.GetReceivedDataFromQueue()
 
-        return if (GdbUtils.isDataValid(message)) {
-            if (GdbUtils.isEndOfMessage(message)) {
-                flashService.WriteData(GdbUtils.ACK)
-            }
+//        flashService.WriteData(GdbUtils.ACK)
 
-            GdbUtils.getMessageContent(message)
-        } else {
-            null
-        }
+        return GdbUtils.getMessageContent(message)
+
     }
 
     /**
@@ -133,7 +157,7 @@ class UpdateActivity : AppCompatActivity() {
         var response : String? = null
         for (message in messageSeq) {
             sendMessage(message)
-            response = readMessageBlocking()
+            response = readMessageBlocking(responseValidator)
             Log.d(TAG, "Response received: $response")
             if (response == null) {
                 return null
@@ -142,13 +166,14 @@ class UpdateActivity : AppCompatActivity() {
             }
         }
         // value filter is performed for LAST message response
+        Log.d(TAG, response)
         return response?.let { valueFilter(response) }
     }
 
     /**
      * Send a message to NID and validate response
      */
-    private suspend fun sendMessage(message: ByteArray) {
+    private fun sendMessage(message: ByteArray) {
         Log.d(TAG, "sendMessage() sent: " + HexData.hexToString(message))
         flashService.WriteData(GdbUtils.buildPacket(message))
     }
@@ -159,20 +184,35 @@ class UpdateActivity : AppCompatActivity() {
      */
     private suspend fun initializeGdb() : String? {
         val messageSeq : List<ByteArray> = GdbUtils.getGdbInitSequence()
-        val responseValidater : (String) -> Boolean = {
+        val responseValidator : (String) -> Boolean = {
             it.contains("OK")
         }
 
-        return executeGdbSequence(messageSeq, responseValidater)
-
+        return executeGdbSequence(messageSeq, responseValidator)
     }
 
-    private suspend fun connectToNb() {
+    private suspend fun detectNb() : Boolean {
+        val messageSeq : List<ByteArray> = GdbUtils.getGdbDetectSequence()
+        val responseValidator : (String) -> Boolean = {
+            it.contains("OK") || it.contains("E") || it.contains("T05")
+        }
 
+        val response : String = executeGdbSequence(messageSeq, responseValidator) ?: return false
+        return response.contains("T05")
+    }
+
+    private suspend fun enterSwd() : Boolean {
+        val messageSeq : List<ByteArray> = GdbUtils.getEnterSwdSequence()
+        val responseValidator : (String) -> Boolean = {
+            it.contains("OK")
+        }
+
+        val response : String = executeGdbSequence(messageSeq, responseValidator) ?: return false
+        return response.contains("OK")
     }
 
     /**
-     * Do we want these GDB funcitons to return success flags or
+     * Do we want these GDB functions to return success flags or
      * status strings?
      *
      * Probably abstract status strings to state variables that have
