@@ -49,15 +49,15 @@
         android:id="@+id/detectNbButton"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Connect To NeuroBytes Board" />
+        android:text="Detect NeuroBytes Board" />
 
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Fingerprint" />
+        android:text="Running:" />
 
     <TextView
-        android:id="@+id/fingerprintStatus"
+        android:id="@+id/runningStatus"
         android:paddingLeft="10sp"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"

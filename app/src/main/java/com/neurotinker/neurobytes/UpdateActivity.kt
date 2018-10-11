@@ -7,11 +7,8 @@ import com.felhr.utils.HexData
 
 import kotlinx.android.synthetic.main.activity_update.*
 import kotlinx.android.synthetic.main.content_update.*
+import kotlinx.coroutines.experimental.*
 import kotlinx.coroutines.experimental.android.UI
-import kotlinx.coroutines.experimental.async
-import kotlinx.coroutines.experimental.awaitAll
-import kotlinx.coroutines.experimental.delay
-import kotlinx.coroutines.experimental.launch
 
 const val UPDATE_INTENT = "com.neurontinker.neurobytes.UPDATE"
 
@@ -36,55 +33,74 @@ class UpdateActivity : AppCompatActivity() {
         setContentView(R.layout.activity_update)
         setSupportActionBar(toolbar)
 
+        var job: Job = Job()
+
+        runningStatus.text = "not running"
+
         connectToNidButton.setOnClickListener {
-            launch(UI) {
-                isConnectedToNid = connectToNid()
-                if (isConnectedToNid) {
-                    status.text = "Successfully connected to NID"
-                    flashService.StartReadingThread()
-                } else {
-                    status.text = "Failed to connect to NID"
-                }
-            }
+//            runBlocking {
+//                val request = launch {
+                    isConnectedToNid = connectToNid()
+                    if (isConnectedToNid) {
+                        status.text = "Successfully connected to NID"
+//                        flashService.StartReadingThread()
+                    } else {
+                        status.text = "Failed to connect to NID"
+                    }
+//                }
+                runningStatus.text = "running"
+//                request.join()
+                runningStatus.text = "not running"
+//            }
         }
 
         initializeGdbButton.setOnClickListener {
-            launch(UI) {
-                if (isConnectedToNid) {
+                job.cancel()
+                job = GlobalScope.launch(Dispatchers.Main) {
+                    flashService.StartReadingThread()
+                    if (isConnectedToNid) {
 //                    var initialized = false
 //                    initialized = async{ initialized = initializeGdb() != null }
 //                    (async{ initializeGdb() }).await()
-                    if ((async{ initializeGdb() }).await() != null) {
-                        status.text = "GDB initialized. OK."
-                    } else {
-                        status.text = "Failed to initialize GDB"
+                        if (initializeGdb() != null) {
+                            status.text = "GDB initialized. OK."
+                        } else {
+                            status.text = "Failed to initialize GDB"
+                        }
                     }
+                    flashService.StopReadingThread()
                 }
-            }
         }
 
         detectNbButton.setOnClickListener {
-            launch(UI) {
-                if (isConnectedToNid) {
-                    if ((async{ detectNb() }).await()) {
-                        status.text = "Detected a NeuroBytes board"
-                    } else {
-                        status.text = "No NeuroBytes board detected"
+                job.cancel()
+                job = GlobalScope.launch(Dispatchers.Main) {
+                    flashService.StartReadingThread()
+                    if (isConnectedToNid) {
+                        if (detectNb()) {
+                            status.text = "Detected a NeuroBytes board"
+                        } else {
+                            status.text = "No NeuroBytes board detected"
+                        }
                     }
+                    flashService.StopReadingThread()
                 }
-            }
         }
 
         enterSwdButton.setOnClickListener {
-            launch(UI) {
-                if (isConnectedToNid) {
-                    if ((async{ enterSwd() }).await()) {
-                        status.text = "Entered SWD mode"
-                    } else {
-                        status.text = "Failed to enter SWD mode"
+                job.cancel()
+                job = GlobalScope.launch(Dispatchers.Main) {
+                    flashService.StartReadingThread()
+                    delay(200L)
+                    if (isConnectedToNid) {
+                        if (enterSwd()) {
+                            status.text = "Entered SWD mode"
+                        } else {
+                            status.text = "Failed to enter SWD mode"
+                        }
                     }
+                    flashService.StopReadingThread()
                 }
-            }
         }
 
 //        flashButton.setOnClickListener{
@@ -99,7 +115,7 @@ class UpdateActivity : AppCompatActivity() {
 //        }
 
         cancelButton.setOnClickListener {
-
+            runningStatus.text = job.isCompleted.toString()
         }
 
         updateFirmware.setOnClickListener{
@@ -122,25 +138,31 @@ class UpdateActivity : AppCompatActivity() {
         // wait until data has been received
         var timeout = 0
         var message = ByteArray(64)
-        while (!responseValidator(GdbUtils.getAsciiFromMessageBytes(message))) {
+        var response: String? = null
+        while (timeout < 10) {
+            Log.d(TAG, "read")
             if (flashService.IsThereAnyReceivedData()) {
-                if (!GdbUtils.isDataValid(message)) return null
-                Log.d(TAG, "received data")
+                if (!GdbUtils.isDataValid(message)) break
                 message = flashService.GetReceivedDataFromQueue()
+                Log.d(TAG, "received message: $message")
                 if (GdbUtils.isEndOfMessage(message)) {
                     flashService.WriteData(GdbUtils.ACK)
+                    Log.d(TAG, "received complete message: ${GdbUtils.getMessageContent(message)}")
                 }
+                timeout = 0
+            } else {
+                timeout += 1
             }
-            if (timeout++ > 50) {
-                Log.d(TAG, "readMessageBlocking() timed out")
-                return null
+            if (responseValidator(GdbUtils.getAsciiFromMessageBytes(message))) {
+                response = GdbUtils.getMessageContent(message)
+                Log.d(TAG, "Valid response received: $response")
             }
             delay(10L) // wait 10 milliseconds
         }
 
 //        flashService.WriteData(GdbUtils.ACK)
 
-        return GdbUtils.getMessageContent(message)
+        return response
 
     }
 
@@ -198,7 +220,10 @@ class UpdateActivity : AppCompatActivity() {
         }
 
         val response : String = executeGdbSequence(messageSeq, responseValidator) ?: return false
-        return response.contains("T05")
+        if (response.contains("T05")) {
+            return true
+        }
+        return readMessageBlocking{ it.contains("T05")} != null
     }
 
     private suspend fun enterSwd() : Boolean {
@@ -219,7 +244,7 @@ class UpdateActivity : AppCompatActivity() {
      * strings and enabled-button state
      */
 
-    private suspend fun connectToNid() : Boolean {
+    private fun connectToNid() : Boolean {
         return flashService.OpenDevice()
     }
 

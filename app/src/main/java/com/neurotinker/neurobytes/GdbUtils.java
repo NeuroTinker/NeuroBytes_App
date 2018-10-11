@@ -25,7 +25,7 @@ public final class GdbUtils {
     private static final String[] gdbEnterSwdSequence = {gdbEnterSwd};
     private final String gdbEnterUart = "qRcmd,656e7465725f75617274";
     private static final String gdbEnterDfu = "qRcmd,656e7465725f646675";
-    public static final String gdbConnectUnderSrstCommand = "$qRcmd,636f6e6e6563745f7372737420656e61626c65#1b";
+    public static final String gdbConnectUnderSrstCommand = "qRcmd,636f6e6e6563745f7372737420656e61626c65";
     public static final String[] gdbInitSequence = {"!", "qRcmd,747020656e", "qRcmd,v", gdbConnectUnderSrstCommand};
     private Queue<byte[]> messageQueue = new LinkedList<>();
     private byte[] prevMessage;
