@@ -35,8 +35,6 @@ class UpdateActivity : AppCompatActivity() {
 
         var job: Job = Job()
 
-        runningStatus.text = "not running"
-
         connectToNidButton.setOnClickListener {
 //            runBlocking {
 //                val request = launch {
@@ -48,9 +46,6 @@ class UpdateActivity : AppCompatActivity() {
                         status.text = "Failed to connect to NID"
                     }
 //                }
-                runningStatus.text = "running"
-//                request.join()
-                runningStatus.text = "not running"
 //            }
         }
 
@@ -103,6 +98,23 @@ class UpdateActivity : AppCompatActivity() {
                 }
         }
 
+        getFingerprintButton.setOnClickListener {
+            job.cancel()
+            job = GlobalScope.launch(Dispatchers.Main) {
+                flashService.StartReadingThread()
+                delay(200L)
+                if (isConnectedToNid) {
+                    val fingerprint : GdbUtils.Fingerprint? = getFingerprint()
+                    if (fingerprint != null) {
+                        boardType.text = fingerprint.deviceType.toString()
+                        status.text = "Fingerprint read successfully"
+                    } else {
+                        status.text = "Unable to get fingerprint"
+                    }
+                }
+            }
+        }
+
 //        flashButton.setOnClickListener{
 //            if (gdbController.state == GdbController.State.INITIALIZED) {
 //                gdbController.startFlash(flashStatus, fingerprintStatus)
@@ -115,7 +127,6 @@ class UpdateActivity : AppCompatActivity() {
 //        }
 
         cancelButton.setOnClickListener {
-            runningStatus.text = job.isCompleted.toString()
         }
 
         updateFirmware.setOnClickListener{
@@ -139,7 +150,7 @@ class UpdateActivity : AppCompatActivity() {
         var timeout = 0
         var message = ByteArray(64)
         var response: String? = null
-        while (timeout < 10) {
+        while (timeout < 5) {
             Log.d(TAG, "read")
             if (flashService.IsThereAnyReceivedData()) {
                 if (!GdbUtils.isDataValid(message)) break
@@ -234,6 +245,16 @@ class UpdateActivity : AppCompatActivity() {
 
         val response : String = executeGdbSequence(messageSeq, responseValidator) ?: return false
         return response.contains("OK")
+    }
+
+    private suspend fun getFingerprint(): GdbUtils.Fingerprint? {
+        val messageSeq : List<ByteArray> = GdbUtils.getFingerprintSequence()
+        val responseValidator : (String) -> Boolean = {
+            it.contains("$") && it.length > 10
+        }
+
+        val response : String = executeGdbSequence(messageSeq, responseValidator) ?: return null
+        return GdbUtils.Fingerprint(response)
     }
 
     /**

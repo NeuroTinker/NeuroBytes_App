@@ -19,7 +19,6 @@ import java.util.Queue;
 public final class GdbUtils {
     private final String TAG = GdbUtils.class.getSimpleName();
 
-    private final String[] gdbFingerprintSequence = {"m08003e00,c"};
     public static final String[] gdbDetectSequence = {"qRcmd,73", "vAttach;1"};
     private static final String gdbEnterSwd = "qRcmd,656e7465725f73776";
     private static final String[] gdbEnterSwdSequence = {gdbEnterSwd};
@@ -27,6 +26,7 @@ public final class GdbUtils {
     private static final String gdbEnterDfu = "qRcmd,656e7465725f646675";
     public static final String gdbConnectUnderSrstCommand = "qRcmd,636f6e6e6563745f7372737420656e61626c65";
     public static final String[] gdbInitSequence = {"!", "qRcmd,747020656e", "qRcmd,v", gdbConnectUnderSrstCommand};
+    public static final String[] gdbFingerprintSequence = {"m08003e00,c"};
     private Queue<byte[]> messageQueue = new LinkedList<>();
     private byte[] prevMessage;
     public static byte[] ACK = {'+'};
@@ -62,7 +62,29 @@ public final class GdbUtils {
         return getMessageSequence(gdbEnterSwdSequence);
     }
 
-//    public static
+    public static List<byte[]> getFingerprintSequence() {
+        return getMessageSequence(gdbFingerprintSequence);
+    }
+
+    public static class Fingerprint {
+        public Integer deviceType;
+        public Integer deviceId;
+        public Integer version;
+
+        public Fingerprint(String encoded) {
+            int [] decoded = new int[3];
+            char [] field = new char[8];
+            for (int i = 0; i < 3; i++) {
+                // get each 32 bit field (8 chars)
+                for (int k=i*8, j=7; j >= 0; k++, j--) {
+                    // convert each 8 char field into big endian format
+                    field[j] = encoded.charAt(k - ((j+1) % 2) + (j % 2));
+                }
+                decoded[i] = ByteBuffer.wrap(HexData.stringTobytes(String.valueOf(field))).getInt();
+            }
+            this.deviceType = decoded[0];
+        }
+    }
 
     public static byte[] buildPacket(byte[] msg) {
         final String startTok = "$";
@@ -251,28 +273,6 @@ public final class GdbUtils {
             return flashSequence;
         } catch (IOException e) {
             throw new RuntimeException(e);
-        }
-    }
-
-    class Fingerprint {
-        public Integer deviceType;
-        public Integer deviceId;
-        public Integer version;
-
-        public Fingerprint(String encoded) {
-            int [] unencoded = new int[3];
-            char [] field = new char[8];
-            for (int i = 0; i < 3; i++) {
-                // get each 32 bit field (8 chars)
-                for (int k=i*8, j=7; j >= 0; k++, j--) {
-                    // convert each 8 char field into big endian format
-                    field[j] = encoded.charAt(k - ((j+1) % 2) + (j % 2));
-                }
-                unencoded[i] = ByteBuffer.wrap(HexData.stringTobytes(String.valueOf(field))).getInt();
-            }
-            this.deviceType = unencoded[0];
-            this.deviceId = unencoded[1];
-            this.version = unencoded[2];
         }
     }
 

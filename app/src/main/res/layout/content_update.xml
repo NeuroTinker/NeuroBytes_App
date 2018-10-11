@@ -51,13 +51,31 @@
         android:layout_height="wrap_content"
         android:text="Detect NeuroBytes Board" />
 
+    <Button
+        android:id="@+id/getFingerprintButton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Get Fingerprint" />
+
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Running:" />
+        android:text="Connected Board:" />
 
     <TextView
-        android:id="@+id/runningStatus"
+        android:id="@+id/boardType"
+        android:paddingLeft="10sp"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="None" />
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Flashing Status:" />
+
+    <TextView
+        android:id="@+id/flashingStatus"
         android:paddingLeft="10sp"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
