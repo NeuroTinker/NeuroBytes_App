@@ -34,6 +34,11 @@ class UpdateActivity : AppCompatActivity() {
         setSupportActionBar(toolbar)
 
         var job: Job = Job()
+        var fingerprint : GdbUtils.Fingerprint? = null
+
+        Firmware.updatePath(getFilesDir().getPath())
+        val updateFirmwareTask = Firmware.UpdateFirmwareAsyncTask()
+        updateFirmwareTask.execute(Firmware.Interneuron)
 
         connectToNidButton.setOnClickListener {
 //            runBlocking {
@@ -104,27 +109,33 @@ class UpdateActivity : AppCompatActivity() {
                 flashService.StartReadingThread()
                 delay(200L)
                 if (isConnectedToNid) {
-                    val fingerprint : GdbUtils.Fingerprint? = getFingerprint()
+                    fingerprint = getFingerprint()
                     if (fingerprint != null) {
-                        boardType.text = fingerprint.deviceType.toString()
+                        boardType.text = fingerprint!!.deviceType.toString()
                         status.text = "Fingerprint read successfully"
                     } else {
                         status.text = "Unable to get fingerprint"
                     }
                 }
+                flashService.StopReadingThread()
             }
         }
 
-//        flashButton.setOnClickListener{
-//            if (gdbController.state == GdbController.State.INITIALIZED) {
-//                gdbController.startFlash(flashStatus, fingerprintStatus)
-//                flashStatus.setText("initializing now...")
-//            } else {
-//                flashStatus.setText("not initialized yet")
-//                connectToGdb()
-//            }
-//            setSupportActionBar(toolbar)
-//        }
+        flashButton.setOnClickListener{
+            job.cancel()
+            job = GlobalScope.launch(Dispatchers.Main) {
+                flashService.StartReadingThread()
+                delay(200L)
+                if (isConnectedToNid && fingerprint != null) {
+                    if (flash(fingerprint!!)) {
+                        status.text = "flash success"
+                    } else {
+                        status.text = "flash fail"
+                    }
+                }
+            }
+
+        }
 
         cancelButton.setOnClickListener {
         }
@@ -255,6 +266,16 @@ class UpdateActivity : AppCompatActivity() {
 
         val response : String = executeGdbSequence(messageSeq, responseValidator) ?: return null
         return GdbUtils.Fingerprint(response)
+    }
+
+    private suspend fun flash(fingerprint: GdbUtils.Fingerprint): Boolean {
+        val messageSeq: List<ByteArray> = GdbUtils.getFlashSequence(fingerprint.deviceType)
+        val responseValidator: (String) -> Boolean = {
+            it.contains("OK") || it.contains("T05")
+        }
+
+        val response : String = executeGdbSequence(messageSeq, responseValidator) ?: return false
+        return true
     }
 
     /**

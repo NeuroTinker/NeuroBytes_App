@@ -17,7 +17,7 @@ import java.util.List;
 import java.util.Queue;
 
 public final class GdbUtils {
-    private final String TAG = GdbUtils.class.getSimpleName();
+    private static final String TAG = GdbUtils.class.getSimpleName();
 
     public static final String[] gdbDetectSequence = {"qRcmd,73", "vAttach;1"};
     private static final String gdbEnterSwd = "qRcmd,656e7465725f73776";
@@ -32,12 +32,12 @@ public final class GdbUtils {
     public static byte[] ACK = {'+'};
 
     private final String elfFilename = "main.elf";
-    private final Integer blocksize = 0x80;
-    private final Integer textSizeOffset = 0x44;
-    private final Integer textOffset = 0x10000;
-    private final Integer fingerprintOffset = 0x23e00;
-    private final Integer fingerprintAddress = 0x08003e00;
-    private final Integer fingerprintSize = 0xc;
+    private static final Integer blocksize = 0x80;
+    private static final Integer textSizeOffset = 0x44;
+    private static final Integer textOffset = 0x10000;
+    private static final Integer fingerprintOffset = 0x23e00;
+    private static final Integer fingerprintAddress = 0x08003e00;
+    private static final Integer fingerprintSize = 0xc;
     private Integer timeout = 0;
     private final Integer TIMEOUT = 50;
     private boolean quitFlag = false;
@@ -124,7 +124,7 @@ public final class GdbUtils {
         return arr1;
     }
 
-    public byte[] buildFlashCommand(int address, byte[] data) {
+    public static byte[] buildFlashCommand(int address, byte[] data) {
         StringBuilder cmd = new StringBuilder("vFlashWrite:");
         cmd.append(Integer.toHexString(address));
         cmd.append(":");
@@ -132,11 +132,11 @@ public final class GdbUtils {
         return bytes;
     }
 
-    private boolean isBadChar(byte bb) {
+    private static boolean isBadChar(byte bb) {
         return (bb == 0x23 || bb == 0x24 || bb == 0x7d);
     }
 
-    private byte[] escapeChars(byte[] bytes) {
+    private static byte[] escapeChars(byte[] bytes) {
 
         int numBadChars = 0;
         for (byte b : bytes) {
@@ -159,7 +159,7 @@ public final class GdbUtils {
         return escapedBytes;
     }
 
-    private LinkedList<byte[]> getFlashSequence(Integer deviceType) {
+    public static LinkedList<byte[]> getFlashSequence(Integer deviceType) {
 
         Firmware firmware = Firmware.get(deviceType);
 
