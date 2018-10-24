@@ -14,101 +14,201 @@
         android:layout_height="wrap_content"
         android:text="NeuroBytes Firmware Updater" />
 
+    <Space
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/materialize_baseline_grid_x2" />
+
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="center_vertical"
-        android:text="Status" />
+        android:text="NID Status:"
+        android:textAppearance="@style/TextAppearance.AppCompat.Subhead" />
 
     <TextView
-        android:id="@+id/status"
+        android:id="@+id/nidStatus"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:paddingLeft="10sp"
-        android:text="not connected to NID" />
+        android:text="Not connected!"
+        android:textAppearance="@style/TextAppearance.AppCompat.Headline" />
 
-    <Button
-        android:id="@+id/connectToNidButton"
+    <Space
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/materialize_baseline_grid_x2" />
+
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Connect to NID" />
+        android:orientation="horizontal">
 
-    <Button
-        android:id="@+id/initializeGdbButton"
+        <Button
+            android:id="@+id/connectToNidButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Connect to NID" />
+
+        <Button
+            android:id="@+id/initializeGdbButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Initialize GDB"
+            android:visibility="gone" />
+
+        <Button
+            android:id="@+id/enterSwdButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Enter SWD"
+            android:visibility="gone" />
+
+        <Button
+            android:id="@+id/detectNbButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Detect NeuroBytes Board" />
+
+        <Button
+            android:id="@+id/getFingerprintButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Get Fingerprint"
+            android:visibility="gone" />
+
+    </LinearLayout>
+
+    <Space
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/materialize_baseline_grid_x2" />
+
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Initialize GDB" />
+        android:orientation="horizontal">
 
-    <Button
-        android:id="@+id/enterSwdButton"
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginRight="10sp"
+            android:text="Board Type:" />
+
+        <Spinner
+            android:id="@+id/boardSelect"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:entries="@array/boards"
+            android:fadingEdge="horizontal"
+            android:visibility="visible" />
+
+        <CheckBox
+            android:id="@+id/autoDetect"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:checked="true"
+            android:text="Read Fingerprint" />
+
+        <TextView
+            android:id="@+id/boardType"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:visibility="gone" />
+
+    </LinearLayout>
+
+    <Space
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/materialize_baseline_grid_x2" />
+
+    <Space
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/materialize_baseline_grid_x2" />
+
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Enter SWD" />
+        android:orientation="horizontal">
 
-    <Button
-        android:id="@+id/detectNbButton"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Detect NeuroBytes Board" />
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
 
-    <Button
-        android:id="@+id/getFingerprintButton"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Get Fingerprint" />
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Board Status" />
+
+            <TextView
+                android:id="@+id/boardStatus"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:paddingLeft="10sp"
+                android:text="None" />
+
+        </LinearLayout>
+
+        <ImageView
+            android:id="@+id/boardImage"
+            android:layout_width="@android:dimen/notification_large_icon_width"
+            android:layout_height="@android:dimen/notification_large_icon_height"
+            app:srcCompat="@drawable/clear" />
+
+        <Button
+            android:id="@+id/flashButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Flash" />
+
+        <Button
+            android:id="@+id/eraseButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Erase" />
+
+        <CheckBox
+            android:id="@+id/autoFlash"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Auto-Flash" />
+    </LinearLayout>
 
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Connected Board:" />
-
-    <TextView
-        android:id="@+id/boardType"
-        android:paddingLeft="10sp"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="None" />
-
-    <TextView
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Flashing Status:" />
-
-    <TextView
-        android:id="@+id/flashingStatus"
-        android:paddingLeft="10sp"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="None" />
-
-    <Button
-        android:id="@+id/flashButton"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Flash" />
-
-    <TextView
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Flash Status" />
+        android:text="Flash Status"
+        android:visibility="gone" />
 
     <TextView
         android:id="@+id/flashStatus"
-        android:paddingLeft="10sp"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:paddingLeft="10sp"
+        android:text="None"
+        android:visibility="gone" />
+
+    <Space
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/materialize_baseline_grid_x2" />
+
+    <TextView
+        android:id="@+id/textView3"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="DFU Status" />
+
+    <TextView
+        android:id="@+id/dfuStatus"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingLeft="10sp"
         android:text="None" />
+
     <Button
         android:id="@+id/dfuButton"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="DFU" />
-
-    <Button
-        android:id="@+id/cancelButton"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Cancel" />
 
     <Button
         android:id="@+id/updateFirmware"

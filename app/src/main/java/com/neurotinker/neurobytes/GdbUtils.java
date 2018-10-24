@@ -19,14 +19,41 @@ import java.util.Queue;
 public final class GdbUtils {
     private static final String TAG = GdbUtils.class.getSimpleName();
 
-    public static final String[] gdbDetectSequence = {"qRcmd,73", "vAttach;1"};
+    public static final String gdbConnectUnderSrstEnable = "qRcmd,636f6e6e6563745f7372737420656e61626c65";
+    public static final String gdbConnectUnderSrstDisable = "qRcmd,636f6e6e6563745f737273742064697361626c65";
+    private static final String gdbHardSrstCommand = "qRcmd,686172645f73727374";
+//    private static final String gdbKillCommand = "vKill;1";
+    private static final String gdbKillCommand = "k";
+    private static final String gdbScan = "qRcmd,73";
+    private static final String gdbAttach = "vAttach;1";
+    public static final String[] gdbDetectSequence = {
+            /**
+             * This is weird and probably means there is a problem with
+             * the way SRST is being handled
+            */
+//            gdbHardSrstCommand,
+            gdbConnectUnderSrstEnable,
+            gdbScan,
+            gdbAttach,
+            gdbConnectUnderSrstDisable,
+            gdbScan,
+            gdbKillCommand,
+            gdbAttach,
+//            "qRcmd,73",
+//            "vAttach;1"
+    };
     private static final String gdbEnterSwd = "qRcmd,656e7465725f73776";
     private static final String[] gdbEnterSwdSequence = {gdbEnterSwd};
     private final String gdbEnterUart = "qRcmd,656e7465725f75617274";
-    private static final String gdbEnterDfu = "qRcmd,656e7465725f646675";
-    public static final String gdbConnectUnderSrstCommand = "qRcmd,636f6e6e6563745f7372737420656e61626c65";
-    public static final String[] gdbInitSequence = {"!", "qRcmd,747020656e", "qRcmd,v", gdbConnectUnderSrstCommand};
+    public static final String gdbEnterDfu = "qRcmd,656e7465725f646675";
+    public static final String[] gdbInitSequence = {"!", "qRcmd,747020656e", "qRcmd,v",
+//            gdbConnectUnderSrstCommand,
+//            gdbEnterSwd
+    };
+    private static final String[] gdbEnterDfuSequence = {gdbEnterDfu};
     public static final String[] gdbFingerprintSequence = {"m08003e00,c"};
+    public static final String[] gdbEraseSequence = {"vFlashErase:08000000,00004000"};
+
     private Queue<byte[]> messageQueue = new LinkedList<>();
     private byte[] prevMessage;
     public static byte[] ACK = {'+'};
@@ -62,14 +89,35 @@ public final class GdbUtils {
         return getMessageSequence(gdbEnterSwdSequence);
     }
 
+    public static List<byte[]> getEnterDfuSequence() {
+        return getMessageSequence(gdbEnterDfuSequence);
+    }
+
     public static List<byte[]> getFingerprintSequence() {
         return getMessageSequence(gdbFingerprintSequence);
     }
 
+    public static List<byte[]> getEraseSequence() {
+        return getMessageSequence(gdbEraseSequence);
+    }
+
     public static class Fingerprint {
+        public void setDeviceType(Integer deviceType) {
+            this.deviceType = deviceType;
+        }
+
         public Integer deviceType;
+
+        public void setDeviceId(Integer deviceId) {
+            this.deviceId = deviceId;
+        }
+
         public Integer deviceId;
         public Integer version;
+
+        public Fingerprint() {
+
+        }
 
         public Fingerprint(String encoded) {
             int [] decoded = new int[3];
@@ -253,6 +301,9 @@ public final class GdbUtils {
              */
             LinkedList<byte[]> flashSequence = new LinkedList<>();
 
+//            flashSequence.add("vRun;".getBytes());
+//            flashSequence.add("c".getBytes());
+//            flashSequence.add("R00".getBytes());
             flashSequence.add("vFlashErase:08000000,00004000".getBytes());
 
             int address = 0x8000000;
@@ -312,7 +363,7 @@ public final class GdbUtils {
 
     public static String getMessageContent(byte[] data) {
         String asciiData = new String(data, Charset.forName("UTF-8"));
-
+        if (asciiData.contains("+")) return "+";
         return asciiData.split("[$#]")[1];
     }
 }

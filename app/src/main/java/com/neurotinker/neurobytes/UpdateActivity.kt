@@ -1,14 +1,15 @@
 package com.neurotinker.neurobytes
 
+import android.content.Intent
 import android.os.Bundle
 import android.support.v7.app.AppCompatActivity
 import android.util.Log
 import com.felhr.utils.HexData
+import com.neurotinker.neurobytes.GdbUtils.gdbEnterDfu
 
 import kotlinx.android.synthetic.main.activity_update.*
 import kotlinx.android.synthetic.main.content_update.*
 import kotlinx.coroutines.experimental.*
-import kotlinx.coroutines.experimental.android.UI
 
 const val UPDATE_INTENT = "com.neurontinker.neurobytes.UPDATE"
 
@@ -41,17 +42,35 @@ class UpdateActivity : AppCompatActivity() {
         updateFirmwareTask.execute(Firmware.Interneuron)
 
         connectToNidButton.setOnClickListener {
-//            runBlocking {
-//                val request = launch {
-                    isConnectedToNid = connectToNid()
-                    if (isConnectedToNid) {
-                        status.text = "Successfully connected to NID"
+
+            isConnectedToNid = connectToNid()
+            if (isConnectedToNid) {
+                nidStatus.text = "Attempting to connect to NID..."
 //                        flashService.StartReadingThread()
+            } else {
+                nidStatus.text = "Failed to connect to NID"
+            }
+
+            job.cancel()
+            job = GlobalScope.launch(Dispatchers.Main) {
+                flashService.StartReadingThread()
+                if (isConnectedToNid) {
+                    if (initializeGdb() != null) {
+                        nidStatus.text = "GDB initialized. OK."
                     } else {
-                        status.text = "Failed to connect to NID"
+                        nidStatus.text = "Failed to initialize GDB"
                     }
-//                }
-//            }
+                }
+                delay(200L)
+                if (isConnectedToNid) {
+                    if (enterSwd()) {
+                        nidStatus.text = "Nid connected. Initialized."
+                    } else {
+                        nidStatus.text = "Failed to enter SWD mode"
+                    }
+                }
+                flashService.StopReadingThread()
+            }
         }
 
         initializeGdbButton.setOnClickListener {
@@ -63,9 +82,9 @@ class UpdateActivity : AppCompatActivity() {
 //                    initialized = async{ initialized = initializeGdb() != null }
 //                    (async{ initializeGdb() }).await()
                         if (initializeGdb() != null) {
-                            status.text = "GDB initialized. OK."
+                            nidStatus.text = "GDB initialized. OK."
                         } else {
-                            status.text = "Failed to initialize GDB"
+                            nidStatus.text = "Failed to initialize GDB"
                         }
                     }
                     flashService.StopReadingThread()
@@ -76,14 +95,27 @@ class UpdateActivity : AppCompatActivity() {
                 job.cancel()
                 job = GlobalScope.launch(Dispatchers.Main) {
                     flashService.StartReadingThread()
+                    nidStatus.text = "Looking for NeuroBytes board..."
                     if (isConnectedToNid) {
                         if (detectNb()) {
-                            status.text = "Detected a NeuroBytes board"
+                            boardStatus.text = "Detected a NeuroBytes board"
                         } else {
-                            status.text = "No NeuroBytes board detected"
+                            boardStatus.text = "No NeuroBytes board detected"
+                        }
+                    }
+                    delay(200L)
+                    if (isConnectedToNid && autoDetect.isChecked) {
+                        fingerprint = getFingerprint()
+                        if (fingerprint != null) {
+                            boardSelect.setSelection(fingerprint!!.deviceType)
+//                        boardType.text = fingerprint!!.deviceType.toString()
+                            boardStatus.text = "Fingerprint read successfully"
+                        } else {
+                            boardStatus.text = "Unable to get fingerprint"
                         }
                     }
                     flashService.StopReadingThread()
+                    nidStatus.text = "Nid connected. Idle."
                 }
         }
 
@@ -94,9 +126,9 @@ class UpdateActivity : AppCompatActivity() {
                     delay(200L)
                     if (isConnectedToNid) {
                         if (enterSwd()) {
-                            status.text = "Entered SWD mode"
+                            nidStatus.text = "Entered SWD mode"
                         } else {
-                            status.text = "Failed to enter SWD mode"
+                            nidStatus.text = "Failed to enter SWD mode"
                         }
                     }
                     flashService.StopReadingThread()
@@ -111,10 +143,11 @@ class UpdateActivity : AppCompatActivity() {
                 if (isConnectedToNid) {
                     fingerprint = getFingerprint()
                     if (fingerprint != null) {
-                        boardType.text = fingerprint!!.deviceType.toString()
-                        status.text = "Fingerprint read successfully"
+                        boardSelect.setSelection(fingerprint!!.deviceType)
+//                        boardType.text = fingerprint!!.deviceType.toString()
+                        nidStatus.text = "Fingerprint read successfully"
                     } else {
-                        status.text = "Unable to get fingerprint"
+                        nidStatus.text = "Unable to get fingerprint"
                     }
                 }
                 flashService.StopReadingThread()
@@ -126,18 +159,54 @@ class UpdateActivity : AppCompatActivity() {
             job = GlobalScope.launch(Dispatchers.Main) {
                 flashService.StartReadingThread()
                 delay(200L)
-                if (isConnectedToNid && fingerprint != null) {
-                    if (flash(fingerprint!!)) {
-                        status.text = "flash success"
-                    } else {
-                        status.text = "flash fail"
+
+                if (isConnectedToNid) {
+                    nidStatus.text = "Flashing..."
+                    // allow manual fingerprint selection
+                    if (boardSelect.selectedItemPosition != 0 && !autoDetect.isChecked) {
+                        val selectedFingerprint = GdbUtils.Fingerprint()
+                        selectedFingerprint.setDeviceType(boardSelect.selectedItemPosition)
+                        if (flash(selectedFingerprint)) {
+                            boardStatus.text = "flash success"
+                        } else {
+                            boardStatus.text = "flash fail"
+                        }
+                    } else if (fingerprint != null) {
+                        if (flash(fingerprint!!)) {
+                            boardStatus.text = "flash success"
+                        } else {
+                            boardStatus.text = "flash fail"
+                        }
                     }
+                    nidStatus.text = "Nid connected. Idle."
                 }
             }
 
         }
 
-        cancelButton.setOnClickListener {
+        eraseButton.setOnClickListener{
+            job.cancel()
+            job = GlobalScope.launch(Dispatchers.Main) {
+                flashService.StartReadingThread()
+                delay(200L)
+                if (isConnectedToNid) {
+                    if (erase()) {
+                        boardStatus.text = "erase success"
+                    } else {
+                        boardStatus.text = "erase failed"
+                    }
+                }
+            }
+        }
+
+        dfuButton.setOnClickListener {
+            // enter dfu mode
+            if (isConnectedToNid) {
+                sendMessage(gdbEnterDfu.toByteArray())
+                flashService.CloseTheDevice()
+                val intent = Intent(this, DfuActivity::class.java)
+                startActivity(intent)
+            }
         }
 
         updateFirmware.setOnClickListener{
@@ -156,12 +225,16 @@ class UpdateActivity : AppCompatActivity() {
      * Wait until a message has been received.
      * Checks if the message is valid and returns the message string.
      */
-    private suspend fun readMessageBlocking(responseValidator: (String) -> Boolean): String? {
+    private suspend fun readMessageBlocking(
+            responseValidator: (String) -> Boolean,
+            Timeout: Int = 5,
+            stopOnValid: Boolean = false
+    ): String? {
         // wait until data has been received
-        var timeout = 0
+        var timeout: Int = 0
         var message = ByteArray(64)
         var response: String? = null
-        while (timeout < 5) {
+        while (timeout < Timeout) {
             Log.d(TAG, "read")
             if (flashService.IsThereAnyReceivedData()) {
                 if (!GdbUtils.isDataValid(message)) break
@@ -178,6 +251,7 @@ class UpdateActivity : AppCompatActivity() {
             if (responseValidator(GdbUtils.getAsciiFromMessageBytes(message))) {
                 response = GdbUtils.getMessageContent(message)
                 Log.d(TAG, "Valid response received: $response")
+                if (stopOnValid) return response
             }
             delay(10L) // wait 10 milliseconds
         }
@@ -196,12 +270,14 @@ class UpdateActivity : AppCompatActivity() {
     private suspend fun executeGdbSequence(
             messageSeq: List<ByteArray>,
             responseValidator: (String) -> Boolean,
-            valueFilter: (String) -> String = { it }
+            valueFilter: (String) -> String = { it },
+            timeout: Int = 5,
+            stopOnValid: Boolean = false
     ) : String? {
         var response : String? = null
         for (message in messageSeq) {
             sendMessage(message)
-            response = readMessageBlocking(responseValidator)
+            response = readMessageBlocking(responseValidator, timeout, stopOnValid)
             Log.d(TAG, "Response received: $response")
             if (response == null) {
                 return null
@@ -238,20 +314,20 @@ class UpdateActivity : AppCompatActivity() {
     private suspend fun detectNb() : Boolean {
         val messageSeq : List<ByteArray> = GdbUtils.getGdbDetectSequence()
         val responseValidator : (String) -> Boolean = {
-            it.contains("OK") || it.contains("E") || it.contains("T05")
+            it.contains("OK") || it.contains("E") || it.contains("T05") || it.contains("+")
         }
 
         val response : String = executeGdbSequence(messageSeq, responseValidator) ?: return false
         if (response.contains("T05")) {
             return true
         }
-        return readMessageBlocking{ it.contains("T05")} != null
+        return readMessageBlocking({ it.contains("T05")}) != null
     }
 
     private suspend fun enterSwd() : Boolean {
         val messageSeq : List<ByteArray> = GdbUtils.getEnterSwdSequence()
         val responseValidator : (String) -> Boolean = {
-            it.contains("OK")
+            it.contains("OK") || it.contains("E")
         }
 
         val response : String = executeGdbSequence(messageSeq, responseValidator) ?: return false
@@ -272,9 +348,21 @@ class UpdateActivity : AppCompatActivity() {
         val messageSeq: List<ByteArray> = GdbUtils.getFlashSequence(fingerprint.deviceType)
         val responseValidator: (String) -> Boolean = {
             it.contains("OK") || it.contains("T05")
+//            || it.contains("+")
+            || it.contains("X1D")
         }
 
-        val response : String = executeGdbSequence(messageSeq, responseValidator) ?: return false
+        val response : String = executeGdbSequence(messageSeq, responseValidator, timeout = 20, stopOnValid = true) ?: return false
+        return true
+    }
+
+    private suspend fun erase(): Boolean {
+        val messageSeq: List<ByteArray> = GdbUtils.getEraseSequence()
+        val responseValidator: (String) -> Boolean = {
+            it.contains("OK") || it.contains("T05")
+        }
+
+        val response: String = executeGdbSequence(messageSeq, responseValidator, timeout = 50) ?: return false
         return true
     }
 

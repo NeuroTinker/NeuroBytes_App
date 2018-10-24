@@ -166,7 +166,7 @@ public class UsbFlashService {
 
         } catch(NullPointerException e)
         {
-            Log("Error happend while writing. Could not connect to the device or interface is busy?");
+            Log("Error happened while writing. Could not connect to the device or interface is busy?");
             Log.e("HidBridge", Log.getStackTraceString(e));
             return false;
         }

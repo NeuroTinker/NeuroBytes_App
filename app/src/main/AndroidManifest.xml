@@ -36,6 +36,18 @@
             </intent-filter>
         </activity>
 
+        <activity android:name=".DfuActivity"
+            android:parentActivityName=".DfuActivity"
+            android:theme="@style/AppTheme">
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value=".DfuActivity"/>
+            <intent-filter>
+                <action android:name="com.neurotinker.neurobytes.DFU"/>
+                <category android:name="android.intent.category.LAUNCHER"/>
+            </intent-filter>
+        </activity>
+
         <service
             android:name=".UsbService"
             android:enabled="true"
