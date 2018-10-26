@@ -66,7 +66,7 @@ class UpdateActivity : AppCompatActivity() {
                     if (enterSwd()) {
                         nidStatus.text = "Nid connected. Initialized."
                     } else {
-                        nidStatus.text = "Failed to enter SWD mode"
+                        nidStatus.text = "Nid connected. Initialized."
                     }
                 }
                 flashService.StopReadingThread()
@@ -114,6 +114,15 @@ class UpdateActivity : AppCompatActivity() {
                             boardStatus.text = "Unable to get fingerprint"
                         }
                     }
+                    boardImage.setImageResource(when (boardSelect.selectedItemPosition) {
+                        1 -> R.drawable.interneuron_square
+                        2 -> R.drawable.photoreceptor_square
+                        3 -> R.drawable.motor_square
+                        4 -> R.drawable.touch_square
+                        5 -> R.drawable.tonic_square
+                        6 -> R.drawable.boards_subitem_pressure_sensory_neuron
+                        else -> R.drawable.clear
+                    })
                     flashService.StopReadingThread()
                     nidStatus.text = "Nid connected. Idle."
                 }
@@ -143,6 +152,15 @@ class UpdateActivity : AppCompatActivity() {
                 if (isConnectedToNid) {
                     fingerprint = getFingerprint()
                     if (fingerprint != null) {
+                        boardImage.setImageResource(when (fingerprint!!.deviceType) {
+                            1 -> R.drawable.interneuron_square
+                            2 -> R.drawable.photoreceptor_square
+                            3 -> R.drawable.motor_square
+                            4 -> R.drawable.touch_square
+                            5 -> R.drawable.tonic_square
+                            6 -> R.drawable.boards_subitem_pressure_sensory_neuron
+                            else -> R.drawable.clear
+                        })
                         boardSelect.setSelection(fingerprint!!.deviceType)
 //                        boardType.text = fingerprint!!.deviceType.toString()
                         nidStatus.text = "Fingerprint read successfully"
@@ -172,6 +190,9 @@ class UpdateActivity : AppCompatActivity() {
                             boardStatus.text = "flash fail"
                         }
                     } else if (fingerprint != null) {
+
+
+
                         if (flash(fingerprint!!)) {
                             boardStatus.text = "flash success"
                         } else {
@@ -181,7 +202,6 @@ class UpdateActivity : AppCompatActivity() {
                     nidStatus.text = "Nid connected. Idle."
                 }
             }
-
         }
 
         eraseButton.setOnClickListener{
@@ -204,9 +224,10 @@ class UpdateActivity : AppCompatActivity() {
             if (isConnectedToNid) {
                 sendMessage(gdbEnterDfu.toByteArray())
                 flashService.CloseTheDevice()
-                val intent = Intent(this, DfuActivity::class.java)
-                startActivity(intent)
             }
+            flashService.CloseTheDevice()
+            val intent = Intent(this, DfuActivity::class.java)
+            startActivity(intent)
         }
 
         updateFirmware.setOnClickListener{

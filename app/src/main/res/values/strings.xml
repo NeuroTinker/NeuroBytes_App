@@ -117,6 +117,9 @@
         <item>interneuron</item>
         <item>photoreceptor</item>
         <item>motor neuron</item>
+        <item>touch sensor</item>
+        <item>tonic neuron</item>
+        <item>force sensor</item>
     </string-array>
 
 </resources>
