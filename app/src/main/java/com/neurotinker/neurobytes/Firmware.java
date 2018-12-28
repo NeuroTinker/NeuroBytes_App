@@ -19,8 +19,8 @@ public enum Firmware {
     Interneuron (1, "interneuron.elf", "NeuroBytes_Interneuron"),
     Photoreceptor (2, "photoreceptor.elf", "NeuroBytes_Photoreceptor"),
     MotorNeuron (3, "motor_neuron.elf", "NeuroBytes_Motor_Neuron"),
-    TouchSensor (4, "touch_sensor.elf", "NeuroBytes_Touch_Sensor"),
-    TonicNeuron (5, "tonic_neuron.elf", "NeuroBytes_Tonic_Neuron"),
+    TouchSensor (5, "touch_sensor.elf", "NeuroBytes_Touch_Sensor"),
+    TonicNeuron (4, "tonic_neuron.elf", "NeuroBytes_Tonic_Neuron"),
     ForceSensor (6, "force_sensor.elf", "NeuroBytes_Force_Sensor");
 
     public final Integer deviceId;

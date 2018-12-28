@@ -68,6 +68,13 @@
             android:layout_height="wrap_content"
             android:text="Detect NeuroBytes Board" />
 
+        <CheckBox
+            android:id="@+id/autoDetect"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:checked="true"
+            android:text="auto-detect" />
+
         <Button
             android:id="@+id/getFingerprintButton"
             android:layout_width="wrap_content"
@@ -101,11 +108,11 @@
             android:visibility="visible" />
 
         <CheckBox
-            android:id="@+id/autoDetect"
+            android:id="@+id/useFingerprint"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:checked="true"
-            android:text="Read Fingerprint" />
+            android:text="Use Fingerprint" />
 
         <TextView
             android:id="@+id/boardType"
