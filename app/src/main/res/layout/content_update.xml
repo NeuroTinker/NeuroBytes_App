@@ -72,7 +72,7 @@
             android:id="@+id/autoDetect"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:checked="true"
+            android:checked="false"
             android:text="auto-detect" />
 
         <Button
@@ -202,20 +202,23 @@
         android:id="@+id/textView3"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="DFU Status" />
+        android:text="DFU Status"
+        android:visibility="gone" />
 
     <TextView
         android:id="@+id/dfuStatus"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:paddingLeft="10sp"
-        android:text="None" />
+        android:text="None"
+        android:visibility="gone" />
 
     <Button
         android:id="@+id/dfuButton"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="DFU" />
+        android:text="DFU"
+        android:visibility="gone" />
 
     <Button
         android:id="@+id/updateFirmware"

@@ -50,6 +50,7 @@ public final class GdbUtils {
 //            gdbConnectUnderSrstCommand,
 //            gdbEnterSwd
     };
+    private static final String[] gdbCheckConnectionSequence = {"?"};
     private static final String[] gdbEnterDfuSequence = {gdbEnterDfu};
     public static final String[] gdbFingerprintSequence = {"m08003e00,c"};
     public static final String[] gdbEraseSequence = {"vFlashErase:08000000,00004000"};
@@ -61,13 +62,19 @@ public final class GdbUtils {
     private final String elfFilename = "main.elf";
     private static final Integer blocksize = 0x80;
     private static final Integer textSizeOffset = 0x44;
+    private static final Integer dataSizeOffset = 0x64;
     private static final Integer textOffset = 0x10000;
+    private static final Integer dataOffset = 0x20000;
     private static final Integer fingerprintOffset = 0x23e00;
     private static final Integer fingerprintAddress = 0x08003e00;
     private static final Integer fingerprintSize = 0xc;
     private Integer timeout = 0;
     private final Integer TIMEOUT = 50;
     private boolean quitFlag = false;
+
+    public static List<byte[]> getCheckConnectionSequence() {
+        return getMessageSequence(gdbCheckConnectionSequence);
+    }
 
     private static List<byte[]> getMessageSequence(String[] messageSeq) {
         List<byte[]> seq = new LinkedList<byte[]>();
@@ -246,6 +253,30 @@ public final class GdbUtils {
             int extraBlockSize = textSize % blocksize;
 
             /**
+             * Skip to start of .data program header
+             */
+            length = dataInStream.skipBytes(dataSizeOffset - fLoc);
+            fLoc += length;
+            if (fLoc != dataSizeOffset) Log.d(TAG, "incorrect skip");
+
+            /**
+             * Read .data size and calculate number of blocks
+             */
+            length = dataInStream.read(programHeader, 0, 4);
+            if (length != 4) Log.d(TAG, "incorrect read");
+            fLoc += length;
+            Log.d(TAG, "program header hex: " + HexData.hexToString(programHeader));
+            buff = ByteBuffer.wrap(programHeader);
+            buff.order(ByteOrder.LITTLE_ENDIAN);
+            buff.rewind();
+            Log.d(TAG, HexData.hexToString(buff.array()));
+            Integer dataSize = buff.getInt(0);
+            int numDataBlocks = (dataSize / blocksize);
+            int extraDataBlockSize = dataSize % blocksize;
+            Log.d(TAG, "data size: " + Integer.toString(dataSize));
+
+
+            /**
              * Skip to the start of the .text section
              */
             length = dataInStream.skipBytes(textOffset - fLoc);
@@ -279,6 +310,30 @@ public final class GdbUtils {
             }
 
             /**
+             * Skip to start of the .data section
+             */
+            length = dataInStream.skipBytes(dataOffset - fLoc);
+            fLoc += length;
+
+            /**
+             * Read .data content into blocks of size [blocksize]
+             */
+            byte[][] dataBlocks = new byte[numDataBlocks][blocksize];
+            for (int i=0; i< numDataBlocks; i++) {
+                length = dataInStream.read(dataBlocks[i], 0, blocksize);
+                fLoc += length;
+            }
+
+            /**
+             * Read extra .data block
+             */
+            byte[] extraDataBlock = new byte[extraDataBlockSize];
+            if (extraDataBlockSize > 0) {
+                length = dataInStream.read(extraDataBlock, 0, extraDataBlockSize);
+                fLoc += length;
+            }
+
+            /**
              * Skip to the .fingerprint section
              */
             dataInStream.skipBytes(fingerprintOffset - fLoc);
@@ -304,7 +359,8 @@ public final class GdbUtils {
 //            flashSequence.add("vRun;".getBytes());
 //            flashSequence.add("c".getBytes());
 //            flashSequence.add("R00".getBytes());
-            flashSequence.add("vFlashErase:08000000,00004000".getBytes());
+            flashSequence.add(("vFlashErase:0800" +
+                    "0000,00004000").getBytes());
 
             int address = 0x8000000;
             for (int i = 0; i < numBlocks; i++) {
@@ -314,11 +370,20 @@ public final class GdbUtils {
                 address += blocksize;
             }
             if (extraBlockSize > 0) flashSequence.add(buildFlashCommand(address, extraBlock));
+            address += extraBlockSize;
+//            address = 0x20000000;
+            for (int i = 0; i < numDataBlocks; i++) {
+                flashSequence.add(buildFlashCommand(address, dataBlocks[i]));
+                address += blocksize;
+            }
+            if (extraDataBlockSize > 0) flashSequence.add(buildFlashCommand(address, extraDataBlock));
+
+
             flashSequence.add(buildFlashCommand(fingerprintAddress, fingerprint));
 
             flashSequence.add("vFlashDone".getBytes());
             flashSequence.add("vRun;".getBytes());
-            flashSequence.add("c".getBytes());
+//            flashSequence.add("c".getBytes());
 //            flashSequence.add("R00".getBytes());
 
             return flashSequence;

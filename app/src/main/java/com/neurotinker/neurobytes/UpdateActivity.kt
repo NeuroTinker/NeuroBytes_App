@@ -95,54 +95,84 @@ class UpdateActivity : AppCompatActivity() {
                 job.cancel()
                 job = GlobalScope.launch(Dispatchers.Main) {
                     flashService.StartReadingThread()
-                    nidStatus.text = "Looking for NeuroBytes board..."
-                    if (isConnectedToNid) {
-                        if (detectNb()) {
+                    var detected: Boolean = false
+                    val timeout: Int
+                    if (autoDetect.isChecked) {
+                        timeout = 20
+                    } else {
+                        timeout = 1
+                    }
+                    var attempts: Int = 0
+                    while (attempts < timeout) {
+                        nidStatus.text = "Looking for NeuroBytes board..."
+                        attempts = 0
+                        detected = false
+                        delay(200L)
+                        while (attempts < timeout && !detected) {
+                            attempts++
+                            Log.d(TAG, attempts.toString())
+                            if (isConnectedToNid) {
+                                if (detectNb()) {
+                                    detected = true
+                                }
+                            }
+                            delay(200L)
+                        }
+
+                        if (detected) {
                             boardStatus.text = "Detected a NeuroBytes board"
                         } else {
                             boardStatus.text = "No NeuroBytes board detected"
                         }
-                    }
-                    delay(200L)
-                    if (isConnectedToNid && useFingerprint.isChecked) {
-                        fingerprint = getFingerprint()
-                        if (fingerprint != null) {
-                            boardSelect.setSelection(fingerprint!!.deviceType)
-//                        boardType.text = fingerprint!!.deviceType.toString()
-                            boardStatus.text = "Fingerprint read successfully"
-                        } else {
-                            boardStatus.text = "Unable to get fingerprint"
-                        }
-                    }
-                    boardImage.setImageResource(when (boardSelect.selectedItemPosition) {
-                        1 -> R.drawable.interneuron_square
-                        2 -> R.drawable.photoreceptor_square
-                        3 -> R.drawable.motor_square
-                        5 -> R.drawable.touch_square
-                        4 -> R.drawable.tonic_square
-                        6 -> R.drawable.boards_subitem_pressure_sensory_neuron
-                        else -> R.drawable.clear
-                    })
-                    if (autoFlash.isChecked) {
-                        if (isConnectedToNid) {
-                            nidStatus.text = "Flashing..."
-                            // allow manual fingerprint selection
-                            if (boardSelect.selectedItemPosition != 0 && !useFingerprint.isChecked) {
-                                val selectedFingerprint = GdbUtils.Fingerprint()
-                                selectedFingerprint.setDeviceType(boardSelect.selectedItemPosition)
-                                if (flash(selectedFingerprint.deviceType)) {
-                                    boardStatus.text = "flash success"
-                                } else {
-                                    boardStatus.text = "flash fail"
-                                }
-                            } else if (fingerprint != null) {
 
-                                if (flash(fingerprint!!.deviceType)) {
-                                    boardStatus.text = "flash success"
-                                } else {
-                                    boardStatus.text = "flash fail"
+                        if (isConnectedToNid && detected && useFingerprint.isChecked) {
+                            fingerprint = getFingerprint()
+                            if (fingerprint != null && fingerprint!!.deviceType >= 1 && fingerprint!!.deviceType <= 6 ) {
+                                boardSelect.setSelection(fingerprint!!.deviceType)
+//                        boardType.text = fingerprint!!.deviceType.toString()
+                                boardStatus.text = "Fingerprint read successfully"
+                            } else {
+                                boardSelect.setSelection(0)
+                                boardStatus.text = "Unable to get fingerprint"
+                            }
+                        }
+                        boardImage.setImageResource(when (boardSelect.selectedItemPosition) {
+                            1 -> R.drawable.interneuron_square
+                            2 -> R.drawable.photoreceptor_square
+                            3 -> R.drawable.motor_square
+                            5 -> R.drawable.touch_square
+                            4 -> R.drawable.tonic_square
+                            6 -> R.drawable.boards_subitem_pressure_sensory_neuron
+                            else -> R.drawable.clear
+                        })
+                        if (autoFlash.isChecked) {
+                            if (isConnectedToNid && detected) {
+                                nidStatus.text = "Flashing..."
+                                // allow manual fingerprint selection
+                                if (boardSelect.selectedItemPosition != 0 && !useFingerprint.isChecked) {
+                                    val selectedFingerprint = GdbUtils.Fingerprint()
+                                    selectedFingerprint.setDeviceType(boardSelect.selectedItemPosition)
+                                    if (flash(selectedFingerprint.deviceType)) {
+                                        boardStatus.text = "flash success"
+                                    } else {
+                                        boardStatus.text = "flash fail"
+                                    }
+                                } else if (fingerprint != null) {
+                                        if (flash(fingerprint!!.deviceType)) {
+                                            boardStatus.text = "flash success"
+                                        } else {
+                                            boardStatus.text = "flash fail"
+                                        }
+
                                 }
                             }
+                        }
+                        if (autoDetect.isChecked && detected) {
+                            // wait for disconnect
+                            nidStatus.text = "Waiting for disconnect..."
+                            if (!waitForDisconnect(50)) break
+                        } else {
+                            break
                         }
                     }
                     nidStatus.text = "Nid connected. Idle."
@@ -180,8 +210,8 @@ class UpdateActivity : AppCompatActivity() {
                             1 -> R.drawable.interneuron_square
                             2 -> R.drawable.photoreceptor_square
                             3 -> R.drawable.motor_square
-                            4 -> R.drawable.touch_square
-                            5 -> R.drawable.tonic_square
+                            5 -> R.drawable.touch_square
+                            4 -> R.drawable.tonic_square
                             6 -> R.drawable.boards_subitem_pressure_sensory_neuron
                             else -> R.drawable.clear
                         })
@@ -205,7 +235,7 @@ class UpdateActivity : AppCompatActivity() {
                 if (isConnectedToNid) {
                     nidStatus.text = "Flashing..."
                     // allow manual fingerprint selection
-                    if (boardSelect.selectedItemPosition != 0 && !autoDetect.isChecked) {
+                    if (boardSelect.selectedItemPosition != 0 && !useFingerprint.isChecked) {
                         val selectedFingerprint = GdbUtils.Fingerprint()
                         selectedFingerprint.setDeviceType(boardSelect.selectedItemPosition)
                         if (flash(selectedFingerprint.deviceType)) {
@@ -268,7 +298,8 @@ class UpdateActivity : AppCompatActivity() {
 
     /**
      * Wait until a message has been received.
-     * Checks if the message is valid and returns the message string.
+     * Checks if the message is valid and returns the message
+     * .
      */
     private suspend fun readMessageBlocking(
             responseValidator: (String) -> Boolean,
@@ -355,6 +386,33 @@ class UpdateActivity : AppCompatActivity() {
 
         return executeGdbSequence(messageSeq, responseValidator)
     }
+
+    private suspend fun waitForDisconnect(Timeout: Int = 10): Boolean {
+        var timeout = 0
+        while (timeout < Timeout) {
+            Log.d(TAG, "Waiting" + timeout.toString())
+            timeout++
+            if (checkNbDisconnect()) {
+                return true
+            }
+            delay(100L)
+        }
+        return false
+    }
+
+    private suspend fun checkNbDisconnect() : Boolean {
+        val messageSeq : List<ByteArray> = GdbUtils.getCheckConnectionSequence()
+        val responseValidator : (String) -> Boolean = {
+            it.contains("T01") || it.contains("X1D") || it.contains("W00")
+        }
+        val response : String = executeGdbSequence(messageSeq, responseValidator) ?: return false
+        Log.d(TAG, response)
+        if (response.contains("T01") || response.contains("X1D") || response.contains("W00")) {
+            return true
+        }
+        return readMessageBlocking({it.contains("T01") || it.contains("X1D") || it.contains("W00")}) != null
+    }
+
 
     private suspend fun detectNb() : Boolean {
         val messageSeq : List<ByteArray> = GdbUtils.getGdbDetectSequence()
