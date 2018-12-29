@@ -114,6 +114,8 @@ class UpdateActivity : AppCompatActivity() {
                             if (isConnectedToNid) {
                                 if (detectNb()) {
                                     detected = true
+
+
                                 }
                             }
                             delay(200L)
@@ -170,7 +172,9 @@ class UpdateActivity : AppCompatActivity() {
                         if (autoDetect.isChecked && detected) {
                             // wait for disconnect
                             nidStatus.text = "Waiting for disconnect..."
-                            if (!waitForDisconnect(50)) break
+                            if (!waitForDisconnect(50)) {
+                                break
+                            }
                         } else {
                             break
                         }
@@ -255,6 +259,7 @@ class UpdateActivity : AppCompatActivity() {
                     }
                     nidStatus.text = "Nid connected. Idle."
                 }
+                flashService.StopReadingThread()
             }
         }
 
@@ -270,6 +275,7 @@ class UpdateActivity : AppCompatActivity() {
                         boardStatus.text = "erase failed"
                     }
                 }
+                flashService.StopReadingThread()
             }
         }
 
